@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  SafeAreaView,
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  StyleSheet,
-} from "react-native";
+import { SafeAreaView, View, Text, ScrollView, Pressable } from "react-native";
 
 export default function Insights() {
   // All data here is placeholder. Wire these to your real selectors / API.
@@ -65,186 +58,95 @@ export default function Insights() {
   };
 
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.container}>
+    <SafeAreaView className="flex-1">
+      <View className="flex-1">
         {/* HEADER */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Insights</Text>
-          <Text style={styles.subtitle}>
+        <View className="px-4 pt-3 pb-2">
+          <Text className="text-xl font-bold">Insights</Text>
+          <Text className="mt-1 text-xs">
             High-level view of how you actually train.
           </Text>
         </View>
 
         <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
           showsVerticalScrollIndicator={false}
         >
           {/* KEY METRICS STRIP */}
-          <View style={styles.metricsRow}>
-            {keyMetrics.map((m) => (
-              <View key={m.id} style={styles.metricCard}>
-                <Text style={styles.metricLabel}>{m.label}</Text>
-                <Text style={styles.metricValue}>{m.value}</Text>
+          <View className="flex-row justify-between mb-3">
+            {keyMetrics.map((m, index) => (
+              <View
+                key={m.id}
+                className={`flex-1 rounded-md border px-2 py-2 ${
+                  index !== keyMetrics.length - 1 ? "mr-2" : ""
+                }`}
+              >
+                <Text className="text-[11px]">{m.label}</Text>
+                <Text className="mt-1 text-sm font-semibold">{m.value}</Text>
               </View>
             ))}
           </View>
 
           {/* QUICK CHART PLACEHOLDERS */}
-          <View style={styles.chartBlock}>
-            <Text style={styles.sectionTitle}>Volume and trends</Text>
+          <View className="mb-4">
+            <Text className="text-sm font-semibold mb-1">
+              Volume and trends
+            </Text>
 
-            <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>7-day volume trend</Text>
-              <Text style={styles.chartHint}>
+            <View className="h-36 rounded-md border px-3 py-2 mb-2">
+              <Text className="text-[13px] font-semibold mb-1">
+                7-day volume trend
+              </Text>
+              <Text className="text-[11px]">
                 Render line / bar chart for total sets or tonnage here.
               </Text>
             </View>
 
-            <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>Muscle group distribution</Text>
-              <Text style={styles.chartHint}>
+            <View className="h-36 rounded-md border px-3 py-2 mb-2">
+              <Text className="text-[13px] font-semibold mb-1">
+                Muscle group distribution
+              </Text>
+              <Text className="text-[11px]">
                 Render stacked bar / radial chart for muscles here.
               </Text>
             </View>
 
-            <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>Fatigue vs recovery</Text>
-              <Text style={styles.chartHint}>
+            <View className="h-36 rounded-md border px-3 py-2">
+              <Text className="text-[13px] font-semibold mb-1">
+                Fatigue vs recovery
+              </Text>
+              <Text className="text-[11px]">
                 Render per-muscle readiness curve / traffic light bars here.
               </Text>
             </View>
           </View>
 
           {/* ADVANCED MODULES LIST – TAP TO OPEN DETAILED GRAPHS */}
-          <View style={styles.modulesBlock}>
-            <Text style={styles.sectionTitle}>Advanced insights</Text>
+          <View className="mt-1">
+            <Text className="text-sm font-semibold mb-1">
+              Advanced insights
+            </Text>
 
             {modules.map((mod) => (
               <Pressable
                 key={mod.id}
-                style={styles.moduleRow}
+                className="flex-row items-center justify-between py-2 border-b"
                 onPress={() => handleOpenModule(mod.id)}
               >
-                <View style={styles.moduleMain}>
-                  <Text style={styles.moduleTitle}>{mod.title}</Text>
-                  <Text style={styles.moduleSubtitle}>{mod.subtitle}</Text>
+                <View className="pr-2 flex-shrink">
+                  <Text className="text-[14px] font-semibold">{mod.title}</Text>
+                  <Text className="mt-0.5 text-xs">{mod.subtitle}</Text>
                 </View>
-                <Text style={styles.moduleChevron}>{">"}</Text>
+                <Text className="text-base">{">"}</Text>
               </Pressable>
             ))}
           </View>
 
           {/* BOTTOM SPACER FOR THUMB AREA */}
-          <View style={{ height: 24 }} />
+          <View className="h-6" />
         </ScrollView>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  subtitle: {
-    marginTop: 2,
-    fontSize: 12,
-  },
-
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-
-  // metrics
-  metricsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  metricCard: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    marginRight: 8,
-  },
-  metricLabel: {
-    fontSize: 11,
-  },
-  metricValue: {
-    marginTop: 2,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-
-  // charts block
-  chartBlock: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 6,
-  },
-  chartCard: {
-    height: 140, // placeholder space for actual chart
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: 10,
-    marginBottom: 8,
-  },
-  chartTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 4,
-  },
-  chartHint: {
-    fontSize: 11,
-  },
-
-  // modules list
-  modulesBlock: {
-    marginTop: 4,
-  },
-  moduleRow: {
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  moduleMain: {
-    flexShrink: 1,
-    paddingRight: 8,
-  },
-  moduleTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  moduleSubtitle: {
-    marginTop: 2,
-    fontSize: 12,
-  },
-  moduleChevron: {
-    fontSize: 16,
-  },
-});
