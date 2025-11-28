@@ -1,0 +1,13 @@
+{
+  "name": "gym-diary",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm --workspace apps/api run start:dev",
+    "dev:mobile": "npm --workspace apps/mobile run start",
+    "dev:web": "npm --workspace apps/web run dev"
+  }
+}
