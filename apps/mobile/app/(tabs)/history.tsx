@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { SafeAreaView, View, Text, Pressable, StyleSheet } from "react-native";
+import { SafeAreaView, View, Text, Pressable } from "react-native";
 
 type Session = {
   id: string;
@@ -122,58 +122,78 @@ export default function History() {
   }, [sessions, monthDate]);
 
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.container}>
+    <SafeAreaView className="flex-1 bg-black">
+      <View className="flex-1">
         {/* HEADER */}
-        <View style={styles.header}>
-          <Text style={styles.title}>History</Text>
-          <Text style={styles.subtitle}>Calendar view of sessions.</Text>
+        <View className="px-4 pt-3 pb-2">
+          <Text className="text-xl font-bold text-white">History</Text>
+          <Text className="mt-1 text-xs text-zinc-400">
+            Calendar view of sessions.
+          </Text>
         </View>
 
         {/* CALENDAR */}
-        <View style={styles.calendar}>
-          <View style={styles.monthHeader}>
-            <Pressable onPress={handlePrevMonth} style={styles.monthButton}>
-              <Text>{"<"}</Text>
+        <View className="px-4 pb-2">
+          <View className="flex-row items-center justify-between mb-1">
+            <Pressable onPress={handlePrevMonth} className="p-1">
+              <Text className="text-zinc-300">{"<"}</Text>
             </Pressable>
-            <Text style={styles.monthLabel}>{monthLabel}</Text>
-            <Pressable onPress={handleNextMonth} style={styles.monthButton}>
-              <Text>{">"}</Text>
+            <Text className="text-base font-semibold text-zinc-100">
+              {monthLabel}
+            </Text>
+            <Pressable onPress={handleNextMonth} className="p-1">
+              <Text className="text-zinc-300">{">"}</Text>
             </Pressable>
           </View>
 
-          <View style={styles.weekRow}>
+          <View className="flex-row justify-between mt-1 mb-0.5">
             {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-              <Text key={d} style={styles.weekday}>
+              <Text
+                key={d}
+                className="w-10 text-center text-[11px] text-zinc-500"
+              >
                 {d}
               </Text>
             ))}
           </View>
 
-          <View style={styles.daysGrid}>
+          <View className="flex-row flex-wrap">
             {monthCells.map((cell) => {
               const hasSessions = !!sessionsByDate[cell.key];
               const isSelected = cell.key === selectedDateKey;
+
+              const dayClasses = [
+                "w-10 h-10 items-center justify-center rounded-full my-0.5",
+                "border border-transparent",
+                !cell.inMonth && "opacity-30",
+                hasSessions && "border-zinc-600",
+                isSelected && "border-2 border-emerald-400",
+              ]
+                .filter(Boolean)
+                .join(" ");
+
+              const dayTextClasses = [
+                "text-[13px] text-zinc-100",
+                !cell.inMonth && "text-xs text-zinc-500",
+              ]
+                .filter(Boolean)
+                .join(" ");
+
+              const dotClasses = [
+                "mt-0.5 w-1 h-1 rounded-full",
+                hasSessions ? "bg-emerald-400" : "",
+              ]
+                .filter(Boolean)
+                .join(" ");
+
               return (
                 <Pressable
                   key={cell.key}
-                  style={[
-                    styles.dayCell,
-                    !cell.inMonth && styles.dayOutside,
-                    hasSessions && styles.dayWithSession,
-                    isSelected && styles.daySelected,
-                  ]}
+                  className={dayClasses}
                   onPress={() => handleSelectDay(cell.key)}
                 >
-                  <Text
-                    style={[
-                      styles.dayNumber,
-                      !cell.inMonth && styles.dayNumberOutside,
-                    ]}
-                  >
-                    {cell.date.getDate()}
-                  </Text>
-                  {hasSessions && <View style={styles.dot} />}
+                  <Text className={dayTextClasses}>{cell.date.getDate()}</Text>
+                  {hasSessions && <View className={dotClasses} />}
                 </Pressable>
               );
             })}
@@ -181,37 +201,45 @@ export default function History() {
         </View>
 
         {/* BOTTOM: SELECTED DAY CARD + SIMPLE STATS */}
-        <View style={styles.bottom}>
-          <View style={styles.dayCard}>
-            <Text style={styles.dayCardLabel}>Selected day</Text>
-            <Text style={styles.dayCardDate}>{selectedDateKey}</Text>
+        <View className="flex-1 px-4 pb-4">
+          <View className="mb-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2">
+            <Text className="text-xs text-zinc-400">Selected day</Text>
+            <Text className="mt-0.5 text-sm font-semibold text-zinc-100">
+              {selectedDateKey}
+            </Text>
 
             {selectedSession ? (
-              <View style={styles.dayCardContent}>
-                <Text style={styles.sessionName}>{selectedSession.name}</Text>
-                <Text style={styles.sessionMeta}>
+              <View className="mt-1.5">
+                <Text className="text-[15px] font-semibold text-zinc-100">
+                  {selectedSession.name}
+                </Text>
+                <Text className="mt-0.5 text-xs text-zinc-400">
                   Duration: {selectedSession.duration}
                 </Text>
-                <Text style={styles.sessionMeta}>Status: completed</Text>
+                <Text className="mt-0.5 text-xs text-zinc-400">
+                  Status: completed
+                </Text>
               </View>
             ) : (
-              <View style={styles.dayCardContent}>
-                <Text style={styles.restText}>No session logged.</Text>
+              <View className="mt-1.5">
+                <Text className="text-[13px] text-zinc-300">
+                  No session logged.
+                </Text>
               </View>
             )}
           </View>
 
-          <View style={styles.statsRow}>
-            <View style={styles.statsCard}>
-              <Text style={styles.statsLabel}>This month</Text>
-              <Text style={styles.statsValue}>
+          <View className="flex-row gap-2">
+            <View className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2">
+              <Text className="text-xs text-zinc-400">This month</Text>
+              <Text className="mt-0.5 text-sm font-semibold text-zinc-100">
                 {stats.thisMonthCount} session
                 {stats.thisMonthCount === 1 ? "" : "s"}
               </Text>
             </View>
-            <View style={styles.statsCard}>
-              <Text style={styles.statsLabel}>Last 7 days</Text>
-              <Text style={styles.statsValue}>
+            <View className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2">
+              <Text className="text-xs text-zinc-400">Last 7 days</Text>
+              <Text className="mt-0.5 text-sm font-semibold text-zinc-100">
                 {stats.last7Count} session
                 {stats.last7Count === 1 ? "" : "s"}
               </Text>
@@ -222,148 +250,3 @@ export default function History() {
     </SafeAreaView>
   );
 }
-
-const CELL_SIZE = 40;
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  subtitle: {
-    marginTop: 2,
-    fontSize: 12,
-  },
-
-  calendar: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  monthHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 4,
-  },
-  monthLabel: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  monthButton: {
-    padding: 4,
-  },
-
-  weekRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 4,
-    marginBottom: 2,
-  },
-  weekday: {
-    width: CELL_SIZE,
-    textAlign: "center",
-    fontSize: 11,
-  },
-
-  daysGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  dayCell: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: CELL_SIZE / 2,
-    marginVertical: 2,
-  },
-  dayOutside: {
-    opacity: 0.3,
-  },
-  dayWithSession: {
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  daySelected: {
-    borderWidth: 1,
-  },
-  dayNumber: {
-    fontSize: 13,
-  },
-  dayNumberOutside: {
-    fontSize: 12,
-  },
-  dot: {
-    marginTop: 2,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-  },
-
-  bottom: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-
-  dayCard: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 10,
-  },
-  dayCardLabel: {
-    fontSize: 12,
-  },
-  dayCardDate: {
-    marginTop: 2,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  dayCardContent: {
-    marginTop: 6,
-  },
-  sessionName: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  sessionMeta: {
-    marginTop: 2,
-    fontSize: 12,
-  },
-  restText: {
-    fontSize: 13,
-  },
-
-  statsRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  statsCard: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  statsLabel: {
-    fontSize: 12,
-  },
-  statsValue: {
-    marginTop: 2,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-});
