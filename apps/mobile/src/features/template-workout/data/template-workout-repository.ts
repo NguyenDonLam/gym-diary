@@ -1,5 +1,5 @@
 // src/features/workoutTemplate/data/workout-template-repository.ts
-import { WorkoutTemplate } from "../domain/type";
+import { TemplateWorkout } from "../domain/type";
 import { WorkoutTemplateDao } from "./template-workout-dao";
 import { WorkoutTemplateRow } from "./type";
 
@@ -13,7 +13,7 @@ import { TemplateSetRow } from "../../template-set/data/type";
 
 import { BaseRepository } from "@/src/lib/base-repository";
 
-export class WorkoutTemplateRepository extends BaseRepository<WorkoutTemplate> {
+export class WorkoutTemplateRepository extends BaseRepository<TemplateWorkout> {
   constructor(
     private readonly templateDao: WorkoutTemplateDao,
     private readonly exerciseDao: TemplateExerciseDao,
@@ -29,7 +29,7 @@ export class WorkoutTemplateRepository extends BaseRepository<WorkoutTemplate> {
   private _toEntity(
     row: WorkoutTemplateRow,
     exercises: TemplateExercise[]
-  ): WorkoutTemplate {
+  ): TemplateWorkout {
     return {
       id: row.id,
       name: row.name,
@@ -40,7 +40,7 @@ export class WorkoutTemplateRepository extends BaseRepository<WorkoutTemplate> {
     };
   }
 
-  private _toRow(entity: WorkoutTemplate): WorkoutTemplateRow {
+  private _toRow(entity: TemplateWorkout): WorkoutTemplateRow {
     return {
       id: entity.id,
       name: entity.name,
@@ -100,7 +100,7 @@ export class WorkoutTemplateRepository extends BaseRepository<WorkoutTemplate> {
   // Public methods
   // -----------------------------
 
-  async get(id: string): Promise<WorkoutTemplate | null> {
+  async get(id: string): Promise<TemplateWorkout | null> {
     const row = await this.templateDao.findById(id);
     if (!row) return null;
 
@@ -114,9 +114,9 @@ export class WorkoutTemplateRepository extends BaseRepository<WorkoutTemplate> {
     return this._toEntity(row, exercises);
   }
 
-  async getAll(): Promise<WorkoutTemplate[]> {
+  async getAll(): Promise<TemplateWorkout[]> {
     const rows = await this.templateDao.findAllOrdered();
-    const results: WorkoutTemplate[] = [];
+    const results: TemplateWorkout[] = [];
 
     for (const row of rows) {
       const exerciseRows = await this.exerciseDao.findByTemplateId(row.id);
@@ -132,7 +132,7 @@ export class WorkoutTemplateRepository extends BaseRepository<WorkoutTemplate> {
     return results;
   }
 
-  protected async insert(entity: WorkoutTemplate): Promise<WorkoutTemplate> {
+  protected async insert(entity: TemplateWorkout): Promise<TemplateWorkout> {
     const row = this._toRow(entity);
     await this.templateDao.insert(row);
 
@@ -157,7 +157,7 @@ export class WorkoutTemplateRepository extends BaseRepository<WorkoutTemplate> {
     return entity;
   }
 
-  protected async update(entity: WorkoutTemplate): Promise<WorkoutTemplate> {
+  protected async update(entity: TemplateWorkout): Promise<TemplateWorkout> {
     const row = this._toRow(entity);
 
     await this.templateDao.update(entity.id, {

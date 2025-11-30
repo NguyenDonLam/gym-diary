@@ -11,3 +11,12 @@ export type TemplateSet = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+
+export type TemplateSetFormData = {
+  id: string; // local UUID for the form
+  reps: string; // raw text input
+  weight: string; // raw text input
+  rpe: string; // raw text input
+};
+
