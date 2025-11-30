@@ -1,14 +1,6 @@
-// src/features/workoutTemplate/data/WorkoutTemplateDao.ts
 import { BaseDao } from "@/src/lib/base-dao";
 import type { SQLiteDatabase } from "expo-sqlite";
-
-export type WorkoutTemplateRow = {
-  id: string; // UUID
-  name: string;
-  description: string | null;
-  created_at: string; // ISO
-  updated_at: string; // ISO
-};
+import { WorkoutTemplateRow } from "./type";
 
 export class WorkoutTemplateDao extends BaseDao<WorkoutTemplateRow> {
   constructor(db: SQLiteDatabase) {
@@ -67,5 +59,12 @@ export class WorkoutTemplateDao extends BaseDao<WorkoutTemplateRow> {
     return this.getAll<WorkoutTemplateRow>(
       `SELECT * FROM workout_templates ORDER BY created_at DESC`
     );
+  }
+  async findById(id: string): Promise<WorkoutTemplateRow | null> {
+    const rows = await this.getAll<WorkoutTemplateRow>(
+      `SELECT * FROM workout_templates WHERE id = ? LIMIT 1`,
+      id
+    );
+    return rows[0] ?? null;
   }
 }
