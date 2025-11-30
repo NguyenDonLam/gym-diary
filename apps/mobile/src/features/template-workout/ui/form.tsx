@@ -7,7 +7,7 @@ import {
   Pressable,
   ScrollView,
 } from "react-native";
-import TemplateExcerciseForm from "@/src/features/template-exercise/ui/form";
+import TemplateExerciseForm from "@/src/features/template-exercise/ui/form";
 import { TemplateWorkoutFormData } from "../domain/type";
 import { TemplateExerciseFormData } from "../../template-exercise/domain/type";
 
@@ -124,11 +124,11 @@ export default function TemplateWorkoutForm({
           </View>
         ) : (
           exercises.map((ex, index) => (
-            <TemplateExcerciseForm
+            <TemplateExerciseForm
               key={ex.id}
-              value={ex}
+              formData={ex}
               index={index}
-              onChange={(next) => updateExercise(ex.id, () => next)}
+              setFormData={(next) => updateExercise(ex.id, () => next)}
               onRemove={() => removeExercise(ex.id)}
             />
           ))

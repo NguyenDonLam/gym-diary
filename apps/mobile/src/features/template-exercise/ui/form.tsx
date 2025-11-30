@@ -1,30 +1,31 @@
+// src/features/template-exercise/ui/form.tsx
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { TemplateExerciseFormData } from "../domain/type";
 import { TemplateSetFormData } from "../../template-set/domain/type";
 import { Exercise } from "../../exercise/domain/types";
 import { useExercises } from "../../exercise/hooks/use-exercises";
+import TemplateSetForm from "@/src/features/template-set/ui/form";
 
-type ExerciseRowProps = {
-  value: TemplateExerciseFormData;
+type TemplateExerciseFormProps = {
+  formData: TemplateExerciseFormData;
   index: number;
-  onChange: (next: TemplateExerciseFormData) => void;
+  setFormData: (next: TemplateExerciseFormData) => void;
   onRemove: () => void;
 };
 
-
-export default function TemplateExcerciseForm({
-  value,
+export default function TemplateExerciseForm({
+  formData,
   index,
-  onChange,
+  setFormData,
   onRemove,
-}: ExerciseRowProps) {
+}: TemplateExerciseFormProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
   const { options: exerciseOptions } = useExercises();
 
   const update = (patch: Partial<TemplateExerciseFormData>) => {
-    onChange({ ...value, ...patch });
+    setFormData({ ...formData, ...patch });
   };
 
   // exercise name / selection
@@ -60,11 +61,12 @@ export default function TemplateExcerciseForm({
 
   const addSet = () => {
     const nextSets: TemplateSetFormData[] = [
-      ...value.sets,
+      ...formData.sets,
       {
         id: Math.random().toString(36).slice(2),
         reps: "",
-        weight: "",
+        loadValue: "",
+        loadUnit: "kg", // default, adjust if you want per-user default
         rpe: "",
       },
     ];
@@ -76,7 +78,8 @@ export default function TemplateExcerciseForm({
       () => ({
         id: Math.random().toString(36).slice(2),
         reps: String(reps),
-        weight: "",
+        loadValue: "",
+        loadUnit: "kg",
         rpe: "",
       })
     );
@@ -84,33 +87,23 @@ export default function TemplateExcerciseForm({
   };
 
   const copyLastSetDown = () => {
-    if (value.sets.length === 0) return;
-    const last = value.sets[value.sets.length - 1];
+    if (formData.sets.length === 0) return;
+    const last = formData.sets[formData.sets.length - 1];
     const nextSets: TemplateSetFormData[] = [
-      ...value.sets,
+      ...formData.sets,
       {
         id: Math.random().toString(36).slice(2),
         reps: last.reps,
-        weight: last.weight,
+        loadValue: last.loadValue,
+        loadUnit: last.loadUnit,
         rpe: last.rpe,
       },
     ];
     update({ sets: nextSets });
   };
 
-  const changeSetField = (
-    setId: string,
-    field: keyof TemplateSetFormData,
-    v: string
-  ) => {
-    const nextSets = value.sets.map((s) =>
-      s.id === setId ? { ...s, [field]: v } : s
-    );
-    update({ sets: nextSets });
-  };
-
   const removeSet = (setId: string) => {
-    const nextSets = value.sets.filter((s) => s.id !== setId);
+    const nextSets = formData.sets.filter((s) => s.id !== setId);
     update({ sets: nextSets });
   };
 
@@ -146,11 +139,11 @@ export default function TemplateExcerciseForm({
         >
           <Text
             className={`text-sm ${
-              value.name ? "text-neutral-900" : "text-neutral-400"
+              formData.name ? "text-neutral-900" : "text-neutral-400"
             }`}
             numberOfLines={1}
           >
-            {value.name || "Select exercise"}
+            {formData.name || "Select exercise"}
           </Text>
           <Text className="text-xs text-neutral-400">
             {pickerOpen ? "▲" : "▼"}
@@ -158,12 +151,12 @@ export default function TemplateExcerciseForm({
         </Pressable>
 
         {/* Custom name input (only when isCustom) */}
-        {value.isCustom && (
+        {formData.isCustom && (
           <TextInput
             className="mt-2 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-900"
             placeholder="Custom exercise name"
             placeholderTextColor="#9CA3AF"
-            value={value.name}
+            value={formData.name}
             onChangeText={setExerciseCustomName}
           />
         )}
@@ -236,7 +229,7 @@ export default function TemplateExcerciseForm({
         >
           <Text className="text-[11px] text-neutral-800">5 × 5</Text>
         </Pressable>
-        {value.sets.length > 0 && (
+        {formData.sets.length > 0 && (
           <Pressable
             className="rounded-full border border-dashed border-neutral-400 px-2 py-0.5"
             onPress={copyLastSetDown}
@@ -252,59 +245,32 @@ export default function TemplateExcerciseForm({
       <View className="mt-3 flex-row border-b border-neutral-200 pb-1">
         <Text className="w-8 text-[11px] text-neutral-500">#</Text>
         <Text className="flex-1 text-[11px] text-neutral-500">Reps</Text>
-        <Text className="flex-1 text-[11px] text-neutral-500">Weight</Text>
+        <Text className="flex-1 text-[11px] text-neutral-500">Load</Text>
         <Text className="flex-1 text-[11px] text-neutral-500">RPE</Text>
         <Text className="w-8 text-right text-[11px] text-neutral-500">—</Text>
       </View>
 
       {/* Sets rows */}
-      {value.sets.length === 0 ? (
+      {formData.sets.length === 0 ? (
         <View className="mt-2">
           <Text className="text-[11px] text-neutral-400">
             No sets yet. Use presets above or Add set below.
           </Text>
         </View>
       ) : (
-        value.sets.map((s, setIndex) => (
-          <View key={s.id} className="mt-1 flex-row items-center gap-1">
-            <Text className="w-8 text-[11px] text-neutral-500">
-              {setIndex + 1}
-            </Text>
-
-            <TextInput
-              className="flex-1 rounded border border-neutral-300 px-2 py-1 text-[11px] text-neutral-900"
-              placeholder="8"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-              value={s.reps}
-              onChangeText={(v) => changeSetField(s.id, "reps", v)}
-            />
-
-            <TextInput
-              className="flex-1 rounded border border-neutral-300 px-2 py-1 text-[11px] text-neutral-900"
-              placeholder="60 (kg)"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-              value={s.weight}
-              onChangeText={(v) => changeSetField(s.id, "weight", v)}
-            />
-
-            <TextInput
-              className="flex-1 rounded border border-neutral-300 px-2 py-1 text-[11px] text-neutral-900"
-              placeholder="7.5"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="numeric"
-              value={s.rpe}
-              onChangeText={(v) => changeSetField(s.id, "rpe", v)}
-            />
-
-            <Pressable
-              className="w-8 items-end"
-              onPress={() => removeSet(s.id)}
-            >
-              <Text className="text-[11px] text-red-500">✕</Text>
-            </Pressable>
-          </View>
+        formData.sets.map((s, setIndex) => (
+          <TemplateSetForm
+            key={s.id}
+            formData={s}
+            index={setIndex}
+            setFormData={(next) => {
+              const nextSets = formData.sets.map((curr) =>
+                curr.id === s.id ? next : curr
+              );
+              update({ sets: nextSets });
+            }}
+            onRemove={() => removeSet(s.id)}
+          />
         ))
       )}
 

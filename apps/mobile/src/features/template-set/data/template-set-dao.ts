@@ -11,24 +11,26 @@ export class TemplateSetDao extends BaseDao<TemplateSetRow> {
   async insert(row: TemplateSetRow): Promise<void> {
     await this.run(
       `
-        INSERT INTO template_sets (
-          id,
-          template_exercise_id,
-          order_index,
-          target_reps,
-          target_weight,
-          target_rpe,
-          notes,
-          created_at,
-          updated_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
+      INSERT INTO template_sets (
+        id,
+        template_exercise_id,
+        order_index,
+        target_reps,
+        load_unit,
+        load_value,
+        target_rpe,
+        notes,
+        created_at,
+        updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
       row.id,
       row.template_exercise_id,
       row.order_index,
       row.target_reps,
-      row.target_weight,
+      row.load_unit,
+      row.load_value,
       row.target_rpe,
       row.notes,
       row.created_at,
@@ -48,9 +50,13 @@ export class TemplateSetDao extends BaseDao<TemplateSetRow> {
       fields.push("target_reps = ?");
       values.push(patch.target_reps);
     }
-    if (patch.target_weight !== undefined) {
-      fields.push("target_weight = ?");
-      values.push(patch.target_weight);
+    if (patch.load_unit !== undefined) {
+      fields.push("load_unit = ?");
+      values.push(patch.load_unit);
+    }
+    if (patch.load_value !== undefined) {
+      fields.push("load_value = ?");
+      values.push(patch.load_value);
     }
     if (patch.target_rpe !== undefined) {
       fields.push("target_rpe = ?");
@@ -68,10 +74,10 @@ export class TemplateSetDao extends BaseDao<TemplateSetRow> {
     if (fields.length === 0) return;
 
     const sql = `
-      UPDATE template_sets
-      SET ${fields.join(", ")}
-      WHERE id = ?
-    `;
+    UPDATE template_sets
+    SET ${fields.join(", ")}
+    WHERE id = ?
+  `;
 
     values.push(id);
     await this.run(sql, ...values);

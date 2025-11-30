@@ -51,19 +51,20 @@ export function migrate0To1(db: SQLite.SQLiteDatabase): void {
 
   // template_set
   db.execSync(`
-    CREATE TABLE IF NOT EXISTS template_sets (
-      id                   TEXT PRIMARY KEY, -- UUID
-      template_exercise_id TEXT NOT NULL,
-      order_index          INTEGER NOT NULL,
-      target_reps          INTEGER,
-      target_weight        REAL,
-      target_rpe           REAL,
-      notes                TEXT,
-      created_at           TEXT NOT NULL,
-      updated_at           TEXT NOT NULL,
-      FOREIGN KEY (template_exercise_id) REFERENCES template_exercises (id)
-    );
-  `);
+  CREATE TABLE IF NOT EXISTS template_sets (
+    id                   TEXT PRIMARY KEY, -- UUID
+    template_exercise_id TEXT NOT NULL,
+    order_index          INTEGER NOT NULL,
+    target_reps          INTEGER,
+    load_unit            TEXT NOT NULL,    -- "kg", "lb", "band", "bodyweight", "none"
+    load_value           TEXT,             -- number-as-text or label ("green", "pin 7")
+    target_rpe           REAL,
+    notes                TEXT,
+    created_at           TEXT NOT NULL,
+    updated_at           TEXT NOT NULL,
+    FOREIGN KEY (template_exercise_id) REFERENCES template_exercises (id)
+  );
+`);
 
   // workout_session
   db.execSync(`
@@ -102,7 +103,8 @@ export function migrate0To1(db: SQLite.SQLiteDatabase): void {
       template_set_id     TEXT,
       order_index         INTEGER NOT NULL,
       reps                INTEGER,
-      weight              REAL,
+      load_unit           TEXT NOT NULL,    -- same enum as template_sets
+      load_value          TEXT,             -- actual logged load
       rpe                 REAL,
       is_warmup           INTEGER NOT NULL DEFAULT 0,
       note                TEXT,
