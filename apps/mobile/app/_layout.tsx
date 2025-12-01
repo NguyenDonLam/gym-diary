@@ -8,11 +8,8 @@ import migrations from "../drizzle/migrations";
 import { drizzle } from "drizzle-orm/expo-sqlite";
 import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 import { runAllSeeds } from "@/db/seeds";
-
-export const DATABASE_NAME ="gym_diary.db"
+import { DATABASE_NAME, db, expoDb } from "@/db";
 export default function RootLayout() {
-  const expoDb = openDatabaseSync(DATABASE_NAME);
-  const db = drizzle(expoDb);
   useDrizzleStudio(expoDb);
   const {success, error} = useMigrations(db, migrations);
   useEffect(() => {

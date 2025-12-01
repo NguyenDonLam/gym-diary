@@ -1,5 +1,6 @@
 import { Exercise } from "@packages/exercise/type";
 import { useEffect, useState } from "react";
+import { exerciseRepository } from "../data/exercise-repository";
 
 export function useExercises() {
   const [options, setOptions] = useState<Exercise[]>([]);
@@ -10,10 +11,11 @@ export function useExercises() {
 
     async function load() {
       try {
-        // TODO: use real repository
-        // const rows = await exerciseDao.findAllOrderedByName();
-        // const mapped: ExerciseOption[] = rows.map(...);
-        const mapped: Exercise[] = []; // placeholder
+        const exercises: Exercise[] = await exerciseRepository.getAll();
+
+        // implement this mapping with your real fields
+        const mapped: Exercise[] = exercises.map((exercise) => (exercise));
+
         if (!cancelled) {
           setOptions(mapped);
         }
@@ -23,6 +25,7 @@ export function useExercises() {
     }
 
     load();
+
     return () => {
       cancelled = true;
     };
