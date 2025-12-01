@@ -1,4 +1,4 @@
-import { Exercise } from "./types/exercise";
+import { Exercise } from "./type";
 
 export const DEFAULT_EXERCISES: Exercise[] = [
   // DUMBBELL – CHEST

@@ -1,4 +1,4 @@
-import { Exercise } from "@packages/types/exercise";
+import { Exercise } from "@packages/exercise/type";
 import { useEffect, useState } from "react";
 
 export function useExercises() {
