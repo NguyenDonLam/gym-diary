@@ -1,5 +1,5 @@
+import { Exercise } from "@packages/types/exercise";
 import { useEffect, useState } from "react";
-import { Exercise } from "../domain/types";
 
 export function useExercises() {
   const [options, setOptions] = useState<Exercise[]>([]);

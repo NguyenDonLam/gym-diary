@@ -12,9 +12,6 @@ export class AppDatabase {
 
     // enforce foreign key constraints
     this.db.execSync("PRAGMA foreign_keys = ON;");
-
-    // run schema upgrades
-    this.runMigrations();
   }
 
   static getInstance(): AppDatabase {

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { TemplateExerciseFormData } from "../domain/type";
 import { TemplateSetFormData } from "../../template-set/domain/type";
-import { Exercise } from "../../exercise/domain/types";
+import { Exercise } from "../../../../../../packages/types/exercise";
 import { useExercises } from "../../exercise/hooks/use-exercises";
 import TemplateSetForm from "@/src/features/template-set/ui/form";
 
