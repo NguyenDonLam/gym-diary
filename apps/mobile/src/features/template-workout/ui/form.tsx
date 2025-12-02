@@ -10,6 +10,7 @@ import {
 import TemplateExerciseForm from "@/src/features/template-exercise/ui/form";
 import { TemplateWorkoutFormData } from "../domain/type";
 import { TemplateExerciseFormData } from "../../template-exercise/domain/type";
+import { generateId } from "@/src/lib/id";
 
 type TemplateWorkoutFormProps = {
   formData: TemplateWorkoutFormData;
@@ -38,7 +39,7 @@ export default function TemplateWorkoutForm({
 
   const addExercise = () => {
     const newExercise: TemplateExerciseFormData = {
-      id: Math.random().toString(36).slice(2),
+      id: generateId(),
       exerciseId: null,
       name: "",
       isCustom: false,

@@ -34,10 +34,11 @@ export abstract class BaseRepository<TEntity> {
    *
    * Requires the entity to expose `id: string | null | undefined`.
    */
-  async save(entity: TEntity & { id?: string | null }): Promise<TEntity> {
-    if (!entity.id) {
-      return this.insert(entity);
+  async save(entity: TEntity & { id: string }): Promise<TEntity> {
+    const existing = await this.get(entity.id);
+    if (existing) {
+      return this.update(entity);
     }
-    return this.update(entity);
+    return this.insert(entity);
   }
 }

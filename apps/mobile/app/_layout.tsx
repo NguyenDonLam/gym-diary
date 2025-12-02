@@ -9,6 +9,7 @@ import { drizzle } from "drizzle-orm/expo-sqlite";
 import { useDrizzleStudio } from "expo-drizzle-studio-plugin";
 import { runAllSeeds } from "@/db/seeds";
 import { DATABASE_NAME, db, expoDb } from "@/db";
+import "react-native-get-random-values";
 export default function RootLayout() {
   useDrizzleStudio(expoDb);
   const {success, error} = useMigrations(db, migrations);

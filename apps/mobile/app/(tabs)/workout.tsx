@@ -1,11 +1,12 @@
 import React from "react";
 import { SafeAreaView, View, Text, ScrollView, Pressable } from "react-native";
 import { useRouter } from "expo-router";
+import { useWorkoutTemplates } from "@/src/features/template-workout/hooks/useWorkoutTemplate";
 
 export default function Workout() {
   const router = useRouter();
 
-  const templates = []; // no demo data
+  const {templates} = useWorkoutTemplates(); // no demo data
 
   const handleStartFromTemplate = (id: string) => {
     console.log("start session from template", id);
@@ -65,7 +66,7 @@ export default function Workout() {
                     <Text className="text-[15px] font-semibold text-neutral-900">
                       {tpl.name}
                     </Text>
-                    <View className="mt-0.5 flex-row flex-wrap">
+                    {/* <View className="mt-0.5 flex-row flex-wrap">
                       {tpl.tag ? (
                         <Text className="mr-2 text-xs text-neutral-600">
                           {tpl.tag}
@@ -74,7 +75,7 @@ export default function Workout() {
                       <Text className="mr-2 text-xs text-neutral-600">
                         {tpl.duration}
                       </Text>
-                    </View>
+                    </View> */}
                     <Text className="mt-0.5 text-[11px] text-neutral-400">
                       Tap to start · long-press to edit
                     </Text>

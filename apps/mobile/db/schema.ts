@@ -86,18 +86,25 @@ export const workoutSessions = sqliteTable("workout_sessions", {
  * session_exercises
  */
 export const sessionExercises = sqliteTable("session_exercises", {
-  id: text("id").primaryKey(), // UUID
+  id: text("id").primaryKey(),
   workoutSessionId: text("workout_session_id")
     .notNull()
     .references(() => workoutSessions.id),
+
+  exerciseId: text("exercise_id")
+    .notNull()
+    .references(() => exercises.id),
+
   templateExerciseId: text("template_exercise_id").references(
     () => templateExercises.id
   ),
+
   orderIndex: integer("order_index").notNull(),
   note: text("note"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
 
 /**
  * session_sets

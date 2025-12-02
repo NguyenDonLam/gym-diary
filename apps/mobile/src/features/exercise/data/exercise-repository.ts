@@ -7,6 +7,7 @@ import { BaseRepository } from "@/src/lib/base-repository";
 import { exercises } from "@/db/schema";
 import { db } from "@/db";
 import { toDomain, toRow } from "./types";
+import { generateId } from "@/src/lib/id";
 
 type ExerciseRow = InferSelectModel<typeof exercises>;
 type NewExerciseRow = InferInsertModel<typeof exercises>;
@@ -40,7 +41,7 @@ export class ExerciseRepository extends BaseRepository<Exercise> {
   protected async insert(
     entity: Exercise & { id?: string | null }
   ): Promise<Exercise> {
-    const id = entity.id ?? crypto.randomUUID();
+    const id = entity.id ?? generateId();
     const withId: Exercise = { ...(entity as Exercise), id };
 
     const row = this.toRow(withId);
