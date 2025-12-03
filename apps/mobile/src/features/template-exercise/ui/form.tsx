@@ -1,6 +1,6 @@
 // src/features/template-exercise/ui/form.tsx
 import { useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View, ScrollView } from "react-native";
 import { TemplateExerciseFormData } from "../domain/type";
 import { TemplateSetFormData } from "../../template-set/domain/type";
 import { Exercise } from "../../../../../../packages/exercise/type";
@@ -14,7 +14,7 @@ type TemplateExerciseFormProps = {
   onRemove: () => void;
 };
 
-// TODO: replace this with real repository call.
+// TODO: wire this to your real repository.
 async function createExercise(name: string): Promise<Exercise> {
   throw new Error("createExercise(name: string) is not implemented yet.");
 }
@@ -37,7 +37,6 @@ export default function TemplateExerciseForm({
     setFormData({ ...formData, ...patch });
   };
 
-  // currently selected exercise, based on exerciseId in formData
   const selectedExercise = useMemo(
     () =>
       formData.exerciseId
@@ -106,7 +105,7 @@ export default function TemplateExerciseForm({
           .filter((opt) =>
             query ? opt.name.toLowerCase().includes(query) : true
           )
-          .slice(0, 10)
+          .slice(0, 100)
       : [];
 
   const selectExerciseOption = (option: Exercise) => {
@@ -147,29 +146,62 @@ export default function TemplateExerciseForm({
   };
 
   const selectorLabel =
-    selectedExercise?.name ?? "Select an exercise from the list";
+    selectedExercise?.name ?? "Select an exercise from your library";
+
+  const getInitial = (opt: Exercise) => {
+    const trimmed = (opt.name ?? "").trim();
+    if (!trimmed) return "?";
+    return trimmed[0]!.toUpperCase();
+  };
 
   return (
-    <View className="mb-4 rounded-2xl border border-neutral-200 bg-white px-3 py-3">
+    // make the card a stacking context so its children z-index correctly
+    <View
+      className="mb-4 rounded-2xl border border-neutral-200 bg-white px-3 py-3"
+      style={{ overflow: "visible", zIndex: pickerOpen ? 10 : 0 }}
+    >
       {/* Exercise header */}
       <View className="mb-2 flex-row items-center justify-between">
-        <View className="flex-row items-center gap-2">
-          <Text className="w-5 text-[11px] text-neutral-500">#{index + 1}</Text>
-          <Text className="text-[11px] text-neutral-400">Exercise</Text>
+        <View>
+          <View className="flex-row items-center gap-2">
+            <Text className="rounded-full bg-neutral-900 px-2 py-[1px] text-[10px] font-semibold text-white">
+              #{index + 1}
+            </Text>
+            <Text className="text-[11px] font-semibold text-neutral-700">
+              Exercise
+            </Text>
+          </View>
+          {selectedExercise && (
+            <Text
+              className="mt-1 max-w-[220px] text-[11px] text-neutral-500"
+              numberOfLines={1}
+            >
+              {selectedExercise.name}
+            </Text>
+          )}
         </View>
-        <Pressable onPress={onRemove}>
-          <Text className="text-[11px] text-red-500">Remove</Text>
+
+        <Pressable
+          onPress={onRemove}
+          className="rounded-full bg-red-50 px-2 py-1"
+        >
+          <Text className="text-[10px] font-semibold text-red-500">Remove</Text>
         </Pressable>
       </View>
 
       {/* Exercise selector */}
-      <View>
+      <View className="relative z-10">
         {/* Selector button */}
         <Pressable
-          className="flex-row items-center justify-between rounded-lg border border-neutral-300 bg-white px-3 py-1.5"
+          className="flex-row items-center justify-between rounded-xl border border-neutral-300 bg-white px-3 py-2"
           onPress={() => setPickerOpen((prev) => !prev)}
         >
-          <Text className="flex-1 text-xs text-neutral-900" numberOfLines={1}>
+          <Text
+            className={`flex-1 text-[12px] ${
+              selectedExercise ? "text-neutral-900" : "text-neutral-400 italic"
+            }`}
+            numberOfLines={1}
+          >
             {selectorLabel}
           </Text>
           <Text className="ml-2 text-xs text-neutral-400">
@@ -177,60 +209,114 @@ export default function TemplateExerciseForm({
           </Text>
         </Pressable>
 
-        {/* Picker dropdown */}
+        {/* Picker dropdown – floating, scrollable list, above other cards */}
         {pickerOpen && (
-          <View className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50">
+          <View className="absolute left-0 right-0 top-10 z-50 rounded-xl border border-neutral-200 bg-neutral-50">
             {/* Search bar */}
             <View className="border-b border-neutral-200 px-3 py-1.5">
+              <Text className="mb-1 text-[10px] font-medium text-neutral-500">
+                Search library
+              </Text>
               <TextInput
-                className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs text-neutral-900"
-                placeholder="Search exercises"
+                className="rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1.5 text-xs text-neutral-900"
+                placeholder="Type to filter exercises"
                 placeholderTextColor="#9CA3AF"
                 value={pickerSearch}
                 onChangeText={setPickerSearch}
               />
             </View>
 
-            {matches.length === 0 ? (
-              <View className="px-3 py-2">
-                <Text className="text-[11px] text-neutral-500">
-                  No matches found.
-                </Text>
-              </View>
-            ) : (
-              matches.map((opt, i) => {
-                const isSelected = opt.id === formData.exerciseId;
-                return (
-                  <Pressable
-                    key={opt.id}
-                    className={`flex-row items-center justify-between px-3 py-1.5 ${
-                      i < matches.length - 1
-                        ? "border-b border-neutral-200"
-                        : ""
-                    } ${isSelected ? "bg-neutral-200" : ""}`}
-                    onPress={() => selectExerciseOption(opt)}
+            {/* Scrollable list */}
+            <View className="max-h-72">
+              {matches.length === 0 ? (
+                <View className="px-3 py-3">
+                  <Text className="text-[11px] text-neutral-500">
+                    No matches in your library.
+                  </Text>
+                  <Text className="mt-1 text-[10px] text-neutral-400">
+                    You can create a new exercise below.
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text className="px-3 pt-2 text-[10px] font-medium uppercase tracking-wide text-neutral-400">
+                    Results
+                  </Text>
+                  <ScrollView
+                    keyboardShouldPersistTaps="handled"
+                    nestedScrollEnabled
+                    className="mt-1"
                   >
-                    <Text className="text-xs text-neutral-900">{opt.name}</Text>
-                    {isSelected && (
-                      <Text className="text-[10px] text-neutral-600">
-                        Selected
-                      </Text>
-                    )}
-                  </Pressable>
-                );
-              })
-            )}
+                    {matches.map((opt) => {
+                      const isSelected = opt.id === formData.exerciseId;
+                      const initial = getInitial(opt);
+
+                      return (
+                        <Pressable
+                          key={opt.id}
+                          className={`mx-2 mb-1 flex-row items-center rounded-xl px-2 py-1.5 ${
+                            isSelected ? "bg-neutral-900" : "bg-transparent"
+                          }`}
+                          onPress={() => selectExerciseOption(opt)}
+                        >
+                          {/* Icon / thumbnail placeholder */}
+                          <View
+                            className={`mr-2 h-7 w-7 items-center justify-center rounded-xl ${
+                              isSelected ? "bg-neutral-800" : "bg-neutral-100"
+                            }`}
+                          >
+                            <Text
+                              className={`text-[11px] font-semibold ${
+                                isSelected ? "text-white" : "text-neutral-700"
+                              }`}
+                            >
+                              {initial}
+                            </Text>
+                          </View>
+
+                          {/* Name */}
+                          <View className="flex-1">
+                            <Text
+                              className={`text-[12px] ${
+                                isSelected
+                                  ? "font-semibold text-white"
+                                  : "text-neutral-900"
+                              }`}
+                              numberOfLines={1}
+                            >
+                              {opt.name}
+                            </Text>
+                          </View>
+
+                          {isSelected && (
+                            <Text className="ml-2 text-[10px] font-medium text-neutral-200">
+                              Selected
+                            </Text>
+                          )}
+                        </Pressable>
+                      );
+                    })}
+                    <View className="h-2" />
+                  </ScrollView>
+                </>
+              )}
+            </View>
 
             {/* Create new exercise section */}
             <View className="border-t border-neutral-200 px-3 py-2">
               {!creatingNew ? (
-                <Pressable onPress={startCreateNew}>
-                  <Text className="text-[11px] font-semibold text-neutral-800">
-                    + Create new exercise
-                  </Text>
-                  <Text className="text-[10px] text-neutral-500">
-                    Add a new exercise to your library
-                  </Text>
+                <Pressable
+                  onPress={startCreateNew}
+                  className="flex-row items-center justify-between"
+                >
+                  <View>
+                    <Text className="text-[11px] font-semibold text-neutral-900">
+                      + Create new exercise
+                    </Text>
+                    <Text className="text-[10px] text-neutral-500">
+                      Add it once, reuse in any template
+                    </Text>
+                  </View>
                 </Pressable>
               ) : (
                 <>
@@ -238,13 +324,13 @@ export default function TemplateExerciseForm({
                     New exercise name
                   </Text>
                   <TextInput
-                    className="mb-2 rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-900"
+                    className="mb-2 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-xs text-neutral-900"
                     placeholder="e.g. Dumbbell incline press"
                     placeholderTextColor="#9CA3AF"
                     value={newExerciseName}
                     onChangeText={setNewExerciseName}
                   />
-                  <View className="flex-row justify-end gap-3">
+                  <View className="flex-row justify-end gap-4">
                     <Pressable onPress={cancelCreateNew} disabled={isCreating}>
                       <Text className="text-[11px] text-neutral-500">
                         Cancel
@@ -253,8 +339,9 @@ export default function TemplateExerciseForm({
                     <Pressable
                       onPress={handleCreateNew}
                       disabled={isCreating || !newExerciseName.trim()}
+                      className="rounded-full bg-neutral-900 px-3 py-1"
                     >
-                      <Text className="text-[11px] font-semibold text-neutral-900">
+                      <Text className="text-[11px] font-semibold text-white">
                         {isCreating ? "Creating..." : "Create"}
                       </Text>
                     </Pressable>
@@ -267,25 +354,31 @@ export default function TemplateExerciseForm({
       </View>
 
       {/* Presets row */}
-      <View className="mt-3 flex-row flex-wrap gap-2">
+      <View className="mt-4 flex-row flex-wrap items-center gap-2">
         <Text className="text-[11px] text-neutral-500">Quick presets:</Text>
         <Pressable
-          className="rounded-full border border-neutral-300 px-2 py-0.5"
+          className="rounded-full bg-white px-2 py-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
           onPress={() => applyPreset(1, 8)}
         >
-          <Text className="text-[11px] text-neutral-800">1 × 8</Text>
+          <Text className="text-[11px] font-medium text-neutral-900">
+            1 × 8
+          </Text>
         </Pressable>
         <Pressable
-          className="rounded-full border border-neutral-300 px-2 py-0.5"
+          className="rounded-full bg-white px-2 py-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
           onPress={() => applyPreset(2, 10)}
         >
-          <Text className="text-[11px] text-neutral-800">2 × 10</Text>
+          <Text className="text-[11px] font-medium text-neutral-900">
+            2 × 10
+          </Text>
         </Pressable>
         <Pressable
-          className="rounded-full border border-neutral-300 px-2 py-0.5"
+          className="rounded-full bg-white px-2 py-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
           onPress={() => applyPreset(3, 12)}
         >
-          <Text className="text-[11px] text-neutral-800">3 × 12</Text>
+          <Text className="text-[11px] font-medium text-neutral-900">
+            3 × 12
+          </Text>
         </Pressable>
         {formData.sets.length > 0 && (
           <Pressable
@@ -334,10 +427,12 @@ export default function TemplateExerciseForm({
 
       {/* Add set button */}
       <Pressable
-        className="mt-2 self-start rounded-full border border-dashed border-neutral-400 px-3 py-1"
+        className="mt-2 self-start rounded-full border border-dashed border-neutral-400 bg-white px-3 py-1 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
         onPress={addSet}
       >
-        <Text className="text-[11px] text-neutral-700">+ Add set</Text>
+        <Text className="text-[11px] font-medium text-neutral-800">
+          + Add set
+        </Text>
       </Pressable>
     </View>
   );
