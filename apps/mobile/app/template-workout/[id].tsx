@@ -6,6 +6,8 @@ import {
   Text,
   Pressable,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
@@ -109,6 +111,7 @@ export default function TemplateWorkoutEditScreen() {
   if (isLoading || !hasLoadedTemplate) {
     return (
       <SafeAreaView className="flex-1 bg-white">
+        
         <View className="flex-row items-center justify-between border-b border-neutral-200 px-4 py-3">
           <Pressable onPress={handleCancel} disabled={isSaving}>
             <Text className="text-sm text-neutral-500">Cancel</Text>
@@ -140,34 +143,40 @@ export default function TemplateWorkoutEditScreen() {
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* Top bar */}
-      <View className="flex-row items-center justify-between border-b border-neutral-200 px-4 py-3">
-        <Pressable onPress={handleCancel} disabled={isSaving}>
-          <Text className="text-sm text-neutral-500">Cancel</Text>
-        </Pressable>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0} // adjust in screen if you have a header
+      >
+        <View className="flex-row items-center justify-between border-b border-neutral-200 px-4 py-3">
+          <Pressable onPress={handleCancel} disabled={isSaving}>
+            <Text className="text-sm text-neutral-500">Cancel</Text>
+          </Pressable>
 
-        <Text className="text-base font-semibold text-neutral-900">
-          Edit template
-        </Text>
+          <Text className="text-base font-semibold text-neutral-900">
+            Edit template
+          </Text>
 
-        <Pressable
-          onPress={handleSave}
-          disabled={!canSave}
-          className={`rounded-full px-3 py-1.5 ${
-            canSave ? "bg-black" : "bg-neutral-300"
-          }`}
-        >
-          <Text
-            className={`text-xs font-semibold ${
-              canSave ? "text-white" : "text-neutral-500"
+          <Pressable
+            onPress={handleSave}
+            disabled={!canSave}
+            className={`rounded-full px-3 py-1.5 ${
+              canSave ? "bg-black" : "bg-neutral-300"
             }`}
           >
-            Save
-          </Text>
-        </Pressable>
-      </View>
+            <Text
+              className={`text-xs font-semibold ${
+                canSave ? "text-white" : "text-neutral-500"
+              }`}
+            >
+              Save
+            </Text>
+          </Pressable>
+        </View>
 
-      {/* Form body */}
-      <TemplateWorkoutForm formData={formData} setFormData={setFormData} />
+        {/* Form body */}
+        <TemplateWorkoutForm formData={formData} setFormData={setFormData} />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

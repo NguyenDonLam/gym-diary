@@ -6,6 +6,8 @@ import {
   TextInput,
   Pressable,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import TemplateExerciseForm from "@/src/features/template-exercise/ui/form";
 import { TemplateWorkoutFormData } from "../domain/type";

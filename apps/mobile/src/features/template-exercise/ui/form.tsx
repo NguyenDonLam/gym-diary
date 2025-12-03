@@ -1,5 +1,5 @@
 // src/features/template-exercise/ui/form.tsx
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { TemplateExerciseFormData } from "../domain/type";
 import { TemplateSetFormData } from "../../template-set/domain/type";
@@ -28,34 +28,15 @@ export default function TemplateExerciseForm({
     setFormData({ ...formData, ...patch });
   };
 
-  // exercise name / selection
-
-  const setExerciseCustomName = (name: string) => {
-    update({
-      name,
-      isCustom: true,
-      exerciseId: null,
-    });
-  };
-
-  const selectExerciseOption = (option: Exercise) => {
-    update({
-      exerciseId: option.id,
-      name: option.name,
-      isCustom: false,
-    });
-    setPickerOpen(false);
-    setPickerSearch("");
-  };
-
-  const switchToCustom = () => {
-    update({
-      isCustom: true,
-      exerciseId: null,
-    });
-    setPickerOpen(false);
-    setPickerSearch("");
-  };
+  // currently selected exercise, based on exerciseId in formData
+  const selectedExercise = useMemo(
+    () =>
+      formData.exerciseId
+        ? (exerciseOptions.find((opt) => opt.id === formData.exerciseId) ??
+          null)
+        : null,
+    [exerciseOptions, formData.exerciseId]
+  );
 
   // sets
 
@@ -66,7 +47,7 @@ export default function TemplateExerciseForm({
         id: Math.random().toString(36).slice(2),
         reps: "",
         loadValue: "",
-        loadUnit: "kg", // default, adjust if you want per-user default
+        loadUnit: "kg",
         rpe: "",
       },
     ];
@@ -109,13 +90,26 @@ export default function TemplateExerciseForm({
 
   // picker matches
 
-  const query = pickerSearch.trim();
+  const query = pickerSearch.trim().toLowerCase();
   const matches =
     pickerOpen && exerciseOptions.length > 0
       ? exerciseOptions
-          .filter((opt) => opt.name.toLowerCase().includes(query.toLowerCase()))
+          .filter((opt) =>
+            query ? opt.name.toLowerCase().includes(query) : true
+          )
           .slice(0, 10)
       : [];
+
+  const selectExerciseOption = (option: Exercise) => {
+    update({
+      exerciseId: option.id,
+    });
+    setPickerOpen(false);
+    setPickerSearch("");
+  };
+
+  const selectorLabel =
+    selectedExercise?.name ?? "Select an exercise from the list";
 
   return (
     <View className="mb-4 rounded-2xl border border-neutral-200 bg-white px-3 py-3">
@@ -137,29 +131,13 @@ export default function TemplateExerciseForm({
           className="flex-row items-center justify-between rounded-lg border border-neutral-300 bg-white px-3 py-1.5"
           onPress={() => setPickerOpen((prev) => !prev)}
         >
-          <Text
-            className={`text-sm ${
-              formData.name ? "text-neutral-900" : "text-neutral-400"
-            }`}
-            numberOfLines={1}
-          >
-            {formData.name || "Select exercise"}
+          <Text className="text-xs text-neutral-900" numberOfLines={1}>
+            {selectorLabel}
           </Text>
-          <Text className="text-xs text-neutral-400">
+          <Text className="ml-2 text-xs text-neutral-400">
             {pickerOpen ? "▲" : "▼"}
           </Text>
         </Pressable>
-
-        {/* Custom name input (only when isCustom) */}
-        {formData.isCustom && (
-          <TextInput
-            className="mt-2 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-900"
-            placeholder="Custom exercise name"
-            placeholderTextColor="#9CA3AF"
-            value={formData.name}
-            onChangeText={setExerciseCustomName}
-          />
-        )}
 
         {/* Picker dropdown */}
         {pickerOpen && (
@@ -178,32 +156,32 @@ export default function TemplateExerciseForm({
             {matches.length === 0 ? (
               <View className="px-3 py-2">
                 <Text className="text-[11px] text-neutral-500">
-                  No matches. Use custom name below.
+                  No matches found.
                 </Text>
               </View>
             ) : (
-              matches.map((opt, i) => (
-                <Pressable
-                  key={opt.id}
-                  className={`px-3 py-1.5 ${
-                    i < matches.length - 1 ? "border-b border-neutral-200" : ""
-                  }`}
-                  onPress={() => selectExerciseOption(opt)}
-                >
-                  <Text className="text-xs text-neutral-900">{opt.name}</Text>
-                </Pressable>
-              ))
+              matches.map((opt, i) => {
+                const isSelected = opt.id === formData.exerciseId;
+                return (
+                  <Pressable
+                    key={opt.id}
+                    className={`flex-row items-center justify-between px-3 py-1.5 ${
+                      i < matches.length - 1
+                        ? "border-b border-neutral-200"
+                        : ""
+                    } ${isSelected ? "bg-neutral-200" : ""}`}
+                    onPress={() => selectExerciseOption(opt)}
+                  >
+                    <Text className="text-xs text-neutral-900">{opt.name}</Text>
+                    {isSelected && (
+                      <Text className="text-[10px] text-neutral-600">
+                        Selected
+                      </Text>
+                    )}
+                  </Pressable>
+                );
+              })
             )}
-
-            {/* Custom option */}
-            <Pressable className="px-3 py-2" onPress={switchToCustom}>
-              <Text className="text-[11px] font-semibold text-neutral-800">
-                + Custom exercise name
-              </Text>
-              <Text className="text-[10px] text-neutral-500">
-                Use your own label (not in list).
-              </Text>
-            </Pressable>
           </View>
         )}
       </View>

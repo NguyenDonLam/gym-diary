@@ -26,7 +26,7 @@ export default function RootLayout() {
     <Suspense fallback={<ActivityIndicator size="large" />}>
       <SQLiteProvider
         databaseName={DATABASE_NAME}
-        options={{enableChangeListener:true}}
+        options={{ enableChangeListener: true }}
         useSuspense
       >
         <Stack>
@@ -35,9 +35,17 @@ export default function RootLayout() {
             options={{ headerShown: false }}
           ></Stack.Screen>
           <Stack.Screen
-            name="test"
+            name="template-workout"
             options={{ headerShown: false }}
           ></Stack.Screen>
+          <Stack.Screen
+            name="template-workout/new"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="template-workout/[id]"
+            options={{ headerShown: false }}
+          />
         </Stack>
       </SQLiteProvider>
     </Suspense>
