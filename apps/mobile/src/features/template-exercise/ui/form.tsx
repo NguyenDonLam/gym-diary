@@ -14,6 +14,11 @@ type TemplateExerciseFormProps = {
   onRemove: () => void;
 };
 
+// TODO: replace this with real repository call.
+async function createExercise(name: string): Promise<Exercise> {
+  throw new Error("createExercise(name: string) is not implemented yet.");
+}
+
 export default function TemplateExerciseForm({
   formData,
   index,
@@ -22,6 +27,10 @@ export default function TemplateExerciseForm({
 }: TemplateExerciseFormProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
+  const [creatingNew, setCreatingNew] = useState(false);
+  const [newExerciseName, setNewExerciseName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+
   const { options: exerciseOptions } = useExercises();
 
   const update = (patch: Partial<TemplateExerciseFormData>) => {
@@ -106,6 +115,35 @@ export default function TemplateExerciseForm({
     });
     setPickerOpen(false);
     setPickerSearch("");
+    setCreatingNew(false);
+    setNewExerciseName("");
+  };
+
+  const startCreateNew = () => {
+    setCreatingNew(true);
+    setNewExerciseName(pickerSearch.trim());
+  };
+
+  const cancelCreateNew = () => {
+    setCreatingNew(false);
+    setNewExerciseName("");
+  };
+
+  const handleCreateNew = async () => {
+    const name = newExerciseName.trim();
+    if (!name) return;
+
+    try {
+      setIsCreating(true);
+      const created = await createExercise(name);
+      update({ exerciseId: created.id });
+      setPickerOpen(false);
+      setPickerSearch("");
+      setNewExerciseName("");
+      setCreatingNew(false);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const selectorLabel =
@@ -131,7 +169,7 @@ export default function TemplateExerciseForm({
           className="flex-row items-center justify-between rounded-lg border border-neutral-300 bg-white px-3 py-1.5"
           onPress={() => setPickerOpen((prev) => !prev)}
         >
-          <Text className="text-xs text-neutral-900" numberOfLines={1}>
+          <Text className="flex-1 text-xs text-neutral-900" numberOfLines={1}>
             {selectorLabel}
           </Text>
           <Text className="ml-2 text-xs text-neutral-400">
@@ -182,6 +220,48 @@ export default function TemplateExerciseForm({
                 );
               })
             )}
+
+            {/* Create new exercise section */}
+            <View className="border-t border-neutral-200 px-3 py-2">
+              {!creatingNew ? (
+                <Pressable onPress={startCreateNew}>
+                  <Text className="text-[11px] font-semibold text-neutral-800">
+                    + Create new exercise
+                  </Text>
+                  <Text className="text-[10px] text-neutral-500">
+                    Add a new exercise to your library
+                  </Text>
+                </Pressable>
+              ) : (
+                <>
+                  <Text className="mb-1 text-[11px] text-neutral-600">
+                    New exercise name
+                  </Text>
+                  <TextInput
+                    className="mb-2 rounded-md border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-900"
+                    placeholder="e.g. Dumbbell incline press"
+                    placeholderTextColor="#9CA3AF"
+                    value={newExerciseName}
+                    onChangeText={setNewExerciseName}
+                  />
+                  <View className="flex-row justify-end gap-3">
+                    <Pressable onPress={cancelCreateNew} disabled={isCreating}>
+                      <Text className="text-[11px] text-neutral-500">
+                        Cancel
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={handleCreateNew}
+                      disabled={isCreating || !newExerciseName.trim()}
+                    >
+                      <Text className="text-[11px] font-semibold text-neutral-900">
+                        {isCreating ? "Creating..." : "Create"}
+                      </Text>
+                    </Pressable>
+                  </View>
+                </>
+              )}
+            </View>
           </View>
         )}
       </View>
@@ -191,21 +271,21 @@ export default function TemplateExerciseForm({
         <Text className="text-[11px] text-neutral-500">Quick presets:</Text>
         <Pressable
           className="rounded-full border border-neutral-300 px-2 py-0.5"
-          onPress={() => applyPreset(3, 8)}
+          onPress={() => applyPreset(1, 8)}
         >
-          <Text className="text-[11px] text-neutral-800">3 × 8</Text>
+          <Text className="text-[11px] text-neutral-800">1 × 8</Text>
         </Pressable>
         <Pressable
           className="rounded-full border border-neutral-300 px-2 py-0.5"
-          onPress={() => applyPreset(4, 10)}
+          onPress={() => applyPreset(2, 10)}
         >
-          <Text className="text-[11px] text-neutral-800">4 × 10</Text>
+          <Text className="text-[11px] text-neutral-800">2 × 10</Text>
         </Pressable>
         <Pressable
           className="rounded-full border border-neutral-300 px-2 py-0.5"
-          onPress={() => applyPreset(5, 5)}
+          onPress={() => applyPreset(3, 12)}
         >
-          <Text className="text-[11px] text-neutral-800">5 × 5</Text>
+          <Text className="text-[11px] text-neutral-800">3 × 12</Text>
         </Pressable>
         {formData.sets.length > 0 && (
           <Pressable
