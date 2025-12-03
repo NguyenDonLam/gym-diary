@@ -11,14 +11,25 @@ import {
 import TemplateExerciseForm from "@/src/features/template-exercise/ui/form";
 import { TemplateWorkoutFormData } from "../domain/type";
 import { TemplateExerciseFormData } from "../../template-exercise/domain/type";
+import { TemplateSetFormData } from "../../template-set/domain/type";
 import { generateId } from "@/src/lib/id";
-import { useExercises } from "@/src/features/exercise/hooks/use-exercises";
+import { useExercises } from "../../exercise/hooks/use-exercises";
 import { Exercise } from "@packages/exercise";
 
 type TemplateWorkoutFormProps = {
   formData: TemplateWorkoutFormData;
   setFormData: React.Dispatch<React.SetStateAction<TemplateWorkoutFormData>>;
 };
+
+function makeDefaultSets(): TemplateSetFormData[] {
+  return Array.from({ length: 3 }).map(() => ({
+    id: generateId(),
+    reps: "8",
+    loadValue: "",
+    loadUnit: "kg",
+    rpe: "",
+  }));
+}
 
 export default function TemplateWorkoutForm({
   formData,
@@ -45,25 +56,35 @@ export default function TemplateWorkoutForm({
   };
 
   const addExercisesFromLibrary = (selected: Exercise[]) => {
-    const existingIds = new Set(
-      exercises.map((ex) => ex.exerciseId).filter(Boolean) as string[]
-    );
+    if (selected.length === 0) return;
 
-    const newOnes: TemplateExerciseFormData[] = selected
-      .filter((ex) => !existingIds.has(ex.id))
-      .map((ex) => ({
-        id: generateId(),
-        exerciseId: ex.id,
-        isCustom: false,
-        sets: [],
-      }));
+    setFormData((prev) => {
+      const existingIds = new Set(
+        prev.exercises
+          .map((ex) => ex.exerciseId)
+          .filter((id): id is string => !!id)
+      );
 
-    if (newOnes.length === 0) return;
+      const nextExercises: TemplateExerciseFormData[] = [...prev.exercises];
 
-    setFormData((prev) => ({
-      ...prev,
-      exercises: [...prev.exercises, ...newOnes],
-    }));
+      for (const ex of selected) {
+        if (existingIds.has(ex.id)) continue;
+
+        nextExercises.push({
+          id: generateId(),
+          exerciseId: ex.id,
+          isCustom: false,
+          sets: makeDefaultSets(),
+        });
+
+        existingIds.add(ex.id);
+      }
+
+      return {
+        ...prev,
+        exercises: nextExercises,
+      };
+    });
   };
 
   const updateExercise = (
@@ -138,7 +159,7 @@ export default function TemplateWorkoutForm({
             />
           </View>
 
-          {/* Exercises header row – minimal, add = open library */}
+          {/* Exercises header row – add opens multi-select library */}
           <View className="mb-2 flex-row items-center justify-between">
             <View className="h-6 w-6 items-center justify-center rounded-full bg-neutral-100">
               <Text className="text-[11px] text-neutral-500">●</Text>
@@ -170,7 +191,6 @@ export default function TemplateWorkoutForm({
             ))
           )}
 
-          {/* Bottom spacer */}
           <View className="h-6" />
         </ScrollView>
 
@@ -201,7 +221,9 @@ export default function TemplateWorkoutForm({
               <ScrollView keyboardShouldPersistTaps="handled" className="mt-1">
                 {exerciseOptions.map((opt) => {
                   const isSelected = selectedIds.has(opt.id);
-                  const initial = (opt.name?.trim?.()[0] ?? "?").toUpperCase();
+                  const name = (opt as any).name ?? "";
+                  const trimmed = String(name).trim();
+                  const initial = trimmed ? trimmed[0]!.toUpperCase() : "?";
 
                   return (
                     <Pressable
@@ -212,11 +234,7 @@ export default function TemplateWorkoutForm({
                       }`}
                     >
                       {/* check circle */}
-                      <View
-                        className={`mr-2 h-6 w-6 items-center justify-center rounded-full ${
-                          isSelected ? "bg-white" : "bg-white"
-                        }`}
-                      >
+                      <View className="mr-2 h-6 w-6 items-center justify-center rounded-full bg-white">
                         <Text
                           className={`text-[12px] ${
                             isSelected ? "text-neutral-900" : "text-neutral-400"
@@ -249,7 +267,7 @@ export default function TemplateWorkoutForm({
                           }`}
                           numberOfLines={1}
                         >
-                          {opt.name}
+                          {name}
                         </Text>
                       </View>
                     </Pressable>

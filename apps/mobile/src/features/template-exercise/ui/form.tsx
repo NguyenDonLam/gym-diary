@@ -147,13 +147,7 @@ export default function TemplateExerciseForm({
       }}
     >
       {/* Header: index + name, icon remove */}
-      <View className="mb-2 flex-row items-center justify-between">
-        <View className="flex-row items-center gap-2">
-          <Text className="rounded-full bg-neutral-900 px-2 py-[1px] text-[10px] font-semibold text-white">
-            {index + 1}
-          </Text>
-        </View>
-
+      <View className="mb-2 flex-row justify-end">
         <Pressable
           onPress={onRemove}
           className="h-6 w-6 items-center justify-center rounded-full bg-red-50"
@@ -297,28 +291,30 @@ export default function TemplateExerciseForm({
       </View>
 
       {/* Presets – chips only */}
-      <View className="mt-3 flex-row flex-wrap gap-2">
-        <Pressable
-          className="flex-row items-center rounded-full bg-neutral-900 px-3 py-1"
-          onPress={() => applyPreset(1, 8)}
-        >
-          <Text className="text-[11px] font-semibold text-white">1×8</Text>
-        </Pressable>
+      {formData.sets.length === 0 && (
+        <View className="mt-3 flex-row flex-wrap gap-2">
+          <Pressable
+            className="flex-row items-center rounded-full bg-neutral-900 px-3 py-1"
+            onPress={() => applyPreset(1, 8)}
+          >
+            <Text className="text-[11px] font-semibold text-white">1×8</Text>
+          </Pressable>
 
-        <Pressable
-          className="flex-row items-center rounded-full bg-neutral-800 px-3 py-1"
-          onPress={() => applyPreset(2, 10)}
-        >
-          <Text className="text-[11px] font-semibold text-white">2×10</Text>
-        </Pressable>
+          <Pressable
+            className="flex-row items-center rounded-full bg-neutral-800 px-3 py-1"
+            onPress={() => applyPreset(2, 10)}
+          >
+            <Text className="text-[11px] font-semibold text-white">2×10</Text>
+          </Pressable>
 
-        <Pressable
-          className="flex-row items-center rounded-full bg-neutral-700 px-3 py-1"
-          onPress={() => applyPreset(3, 12)}
-        >
-          <Text className="text-[11px] font-semibold text-white">3×12</Text>
-        </Pressable>
-      </View>
+          <Pressable
+            className="flex-row items-center rounded-full bg-neutral-700 px-3 py-1"
+            onPress={() => applyPreset(3, 12)}
+          >
+            <Text className="text-[11px] font-semibold text-white">3×12</Text>
+          </Pressable>
+        </View>
+      )}
 
       {formData.sets.map((s, setIndex) => (
         <TemplateSetForm

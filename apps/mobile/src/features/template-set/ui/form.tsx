@@ -36,17 +36,13 @@ export default function TemplateSetForm({
   return (
     <View className="mt-2 flex-row items-center gap-2">
       {/* Set index pill */}
-      <View className="h-7 items-center justify-center rounded-full bg-neutral-900 px-2">
-        <Text className="text-[10px] font-semibold text-white">
-          {index + 1}
-        </Text>
-      </View>
+      <Text className="w-5 text-center text-[10px] text-neutral-400">
+        {index + 1}
+      </Text>
 
       {/* REPS pill */}
       <View className="flex-1 rounded-2xl bg-neutral-50 px-2 py-1">
-        <View className="mb-0.5 flex-row items-center justify-between">
-          <Text className="text-[9px] font-medium text-neutral-500">REPS</Text>
-        </View>
+        <Text className="text-[9px] font-medium text-neutral-500">REPS</Text>
         <TextInput
           className="mt-0.5 text-center text-[11px] text-neutral-900"
           keyboardType="number-pad"
@@ -82,9 +78,7 @@ export default function TemplateSetForm({
 
       {/* RPE pill */}
       <View className="flex-1 rounded-2xl bg-neutral-50 px-2 py-1">
-        <View className="mb-0.5 flex-row items-center justify-between">
-          <Text className="text-[9px] font-medium text-neutral-500">RPE</Text>
-        </View>
+        <Text className="text-[9px] font-medium text-neutral-500">RPE</Text>
         <TextInput
           className="mt-0.5 text-center text-[11px] text-neutral-900"
           keyboardType="numeric"
