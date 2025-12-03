@@ -158,7 +158,11 @@ export default function TemplateExerciseForm({
     // make the card a stacking context so its children z-index correctly
     <View
       className="mb-4 rounded-2xl border border-neutral-200 bg-white px-3 py-3"
-      style={{ overflow: "visible", zIndex: pickerOpen ? 10 : 0 }}
+      style={{
+        overflow: "visible",
+        zIndex: pickerOpen ? 20 : 0,
+        elevation: pickerOpen ? 20 : 0, // Android
+      }}
     >
       {/* Exercise header */}
       <View className="mb-2 flex-row items-center justify-between">
@@ -211,7 +215,13 @@ export default function TemplateExerciseForm({
 
         {/* Picker dropdown – floating, scrollable list, above other cards */}
         {pickerOpen && (
-          <View className="absolute left-0 right-0 top-10 z-50 rounded-xl border border-neutral-200 bg-neutral-50">
+          <View
+            className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50"
+            style={{
+              zIndex: 30,
+              elevation: 30, // Android
+            }}
+          >
             {/* Search bar */}
             <View className="border-b border-neutral-200 px-3 py-1.5">
               <Text className="mb-1 text-[10px] font-medium text-neutral-500">
