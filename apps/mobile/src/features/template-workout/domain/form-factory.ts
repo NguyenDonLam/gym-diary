@@ -1,0 +1,117 @@
+// features/template-workout/ui/form-factory.ts
+import {
+  TemplateWorkout,
+  TemplateWorkoutFormData,
+} from "@/src/features/template-workout/domain/type";
+import {
+  TemplateExercise,
+  TemplateExerciseFormData,
+} from "@/src/features/template-exercise/domain/type";
+import {
+  TemplateSet,
+  TemplateSetFormData,
+} from "@/src/features/template-set/domain/type";
+import { generateId } from "@/src/lib/id";
+
+function parseNumberOrNull(v: string): number | null {
+  const trimmed = v.trim();
+  if (!trimmed) return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : null;
+}
+
+export class TemplateWorkoutFormFactory {
+  // ------------------------------------------------------------
+  // createEmpty
+  // ------------------------------------------------------------
+  static createEmpty(): TemplateWorkoutFormData {
+    return {
+      name: "",
+      description: "",
+      exercises: [],
+    };
+  }
+
+  // ------------------------------------------------------------
+  // toDomain (form → domain)
+  // ------------------------------------------------------------
+  static toDomain(form: TemplateWorkoutFormData): TemplateWorkout {
+    const templateId = generateId();
+    const now = new Date();
+
+    const exercises: TemplateExercise[] = [];
+
+    for (let exIndex = 0; exIndex < form.exercises.length; exIndex++) {
+      const ex: TemplateExerciseFormData = form.exercises[exIndex];
+
+      if (!ex.exerciseId) {
+        throw new Error(
+          `TemplateWorkoutFormFactory: exerciseId missing at index ${exIndex}.`
+        );
+      }
+
+      const templateExerciseId = ex.id || generateId();
+
+      const sets: TemplateSet[] = ex.sets.map(
+        (s: TemplateSetFormData, setIndex: number) => ({
+          id: s.id || generateId(),
+          templateExerciseId,
+          orderIndex: setIndex,
+          targetReps: parseNumberOrNull(s.reps),
+          loadValue: parseNumberOrNull(s.loadValue),
+          loadUnit: s.loadUnit,
+          targetRpe: parseNumberOrNull(s.rpe),
+          notes: null,
+          createdAt: now,
+          updatedAt: now,
+        })
+      );
+
+      exercises.push({
+        id: templateExerciseId,
+        exerciseId: ex.exerciseId,
+        orderIndex: exIndex,
+        notes: null,
+        sets,
+      });
+    }
+
+    return {
+      id: templateId,
+      name: form.name.trim(),
+      description: form.description.trim() || null,
+      createdAt: now,
+      updatedAt: now,
+      exercises,
+    };
+  }
+
+  // ------------------------------------------------------------
+  // fromDomain (domain → form)
+  // ------------------------------------------------------------
+  static fromDomain(domain: TemplateWorkout): TemplateWorkoutFormData {
+    return {
+      name: domain.name,
+      description: domain.description ?? "",
+      exercises: domain.exercises.map((ex) => ({
+        id: ex.id,
+        exerciseId: ex.exerciseId,
+        isCustom: false,
+        sets: ex.sets.map((s) => ({
+          id: s.id,
+          reps: s.targetReps != null ? String(s.targetReps) : "",
+          loadValue: s.loadValue != null ? String(s.loadValue) : "",
+          loadUnit: s.loadUnit,
+          rpe: s.targetRpe != null ? String(s.targetRpe) : "",
+        })),
+      })),
+    };
+  }
+
+  // ------------------------------------------------------------
+  // toForm (alias)
+  // ------------------------------------------------------------
+  static toForm(domain: TemplateWorkout): TemplateWorkoutFormData {
+    return this.fromDomain(domain);
+  }
+}

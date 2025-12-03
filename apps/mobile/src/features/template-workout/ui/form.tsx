@@ -41,7 +41,6 @@ export default function TemplateWorkoutForm({
     const newExercise: TemplateExerciseFormData = {
       id: generateId(),
       exerciseId: null,
-      name: "",
       isCustom: false,
       sets: [],
     };

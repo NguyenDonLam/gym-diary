@@ -6,7 +6,7 @@ import { useWorkoutTemplates } from "@/src/features/template-workout/hooks/useWo
 export default function Workout() {
   const router = useRouter();
 
-  const {templates} = useWorkoutTemplates(); // no demo data
+  const {templates} = useWorkoutTemplates(); 
 
   const handleStartFromTemplate = (id: string) => {
     console.log("start session from template", id);
@@ -14,10 +14,15 @@ export default function Workout() {
 
   const handleEditTemplate = (id: string) => {
     console.log("edit template", id);
+    router.push({
+      pathname: "/template-workout/[id]",
+      params: { id },
+    });
   };
 
+
   const handleCreateTemplate = () => {
-    router.push("/template-workout/create");
+    router.push("/template-workout/new");
   };
 
   return (
