@@ -1,101 +1,46 @@
-import React, { useEffect, useState } from "react";
-import {
-  SafeAreaView,
-  View,
-  Text,
-  Pressable,
-  ActivityIndicator,
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useState } from "react";
+import { SafeAreaView, View, Text, Pressable } from "react-native";
+import { useRouter } from "expo-router";
 import {
   TemplateWorkout,
   TemplateWorkoutFormData,
 } from "@/src/features/template-workout/domain/type";
 import TemplateWorkoutForm from "@/src/features/template-workout/ui/form";
+import {
+  TemplateSet,
+  TemplateSetFormData,
+} from "@/src/features/template-set/domain/type";
+import {
+  TemplateExercise,
+  TemplateExerciseFormData,
+} from "@/src/features/template-exercise/domain/type";
+import { Exercise } from "@packages/exercise";
 import { workoutTemplateRepository } from "@/src/features/template-workout/data/template-workout-repository";
-
-function toFormData(template: TemplateWorkout): TemplateWorkoutFormData {
-  return {
-    name: template.name,
-    description: template.description ?? "",
-    // Adjust this mapping if your domain shape differs
-    exercises: template.exercises as TemplateWorkoutFormData["exercises"],
-  };
-}
-
-export default function TemplateWorkoutEdit() {
+import { TemplateWorkoutFormFactory } from "@/src/features/template-workout/domain/form-factory";
+export default function TemplateWorkoutCreate() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
 
-  const [formData, setFormData] = useState<TemplateWorkoutFormData | null>(
-    null
-  );
+  const [formData, setFormData] = useState<TemplateWorkoutFormData>({
+    name: "",
+    description: "",
+    exercises: [],
+  });
+
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      if (!id || typeof id !== "string") {
-        setLoadError("Invalid template id.");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setLoadError(null);
-
-        const template = await workoutTemplateRepository.findById(id);
-
-        if (!template) {
-          if (!cancelled) {
-            setLoadError("Template not found.");
-          }
-          return;
-        }
-
-        if (!cancelled) {
-          setFormData(toFormData(template));
-        }
-      } catch (e) {
-        if (!cancelled) {
-          setLoadError("Failed to load template.");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
-
-  const canSave =
-    !!formData && formData.name.trim().length > 0 && !isSaving && !isLoading;
+  const canSave = formData.name.trim().length > 0 && !isSaving;
 
   const handleCancel = () => {
     if (isSaving) return;
-    router.back();
+    router.push("/(tabs)/workout");
   };
 
   const handleSave = async () => {
-    if (!canSave || !formData || !id || typeof id !== "string") return;
-
+    if (!canSave) return;
     setIsSaving(true);
     try {
-      // Reuse your factory and force the existing id
-      const template = await TemplateWorkoutFactory.fromForm(formData);
-      // @ts-expect-error: ensure TemplateWorkout has an id field
-      template.id = id;
-
+      const template = await TemplateWorkoutFormFactory.toDomain(formData);
+      console.log("start saving", JSON.stringify(template, null, 2));
       await workoutTemplateRepository.save(template);
 
       router.replace("/workout");
@@ -103,34 +48,6 @@ export default function TemplateWorkoutEdit() {
       setIsSaving(false);
     }
   };
-
-  if (isLoading || !formData) {
-    return (
-      <SafeAreaView className="flex-1 bg-white">
-        <View className="flex-row items-center justify-between border-b border-neutral-200 px-4 py-3">
-          <Pressable onPress={handleCancel} disabled={isSaving}>
-            <Text className="text-sm text-neutral-500">Cancel</Text>
-          </Pressable>
-
-          <Text className="text-base font-semibold text-neutral-900">
-            Edit template
-          </Text>
-
-          <View className="px-3 py-1.5">
-            <ActivityIndicator />
-          </View>
-        </View>
-
-        <View className="flex-1 items-center justify-center">
-          {loadError ? (
-            <Text className="text-sm text-red-500">{loadError}</Text>
-          ) : (
-            <ActivityIndicator />
-          )}
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -141,7 +58,7 @@ export default function TemplateWorkoutEdit() {
         </Pressable>
 
         <Text className="text-base font-semibold text-neutral-900">
-          Edit template
+          New template
         </Text>
 
         <Pressable
