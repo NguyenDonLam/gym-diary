@@ -6,8 +6,6 @@ import {
   TextInput,
   Pressable,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import TemplateExerciseForm from "@/src/features/template-exercise/ui/form";
 import { TemplateWorkoutFormData } from "../domain/type";
@@ -81,19 +79,21 @@ export default function TemplateWorkoutForm({
       >
         {/* Template meta block */}
         <View className="mb-4 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3">
-          <Text className="mb-1 text-[11px] font-semibold text-neutral-600">
-            Template info
-          </Text>
+          {/* tiny icon row instead of text label */}
+          <View className="mb-1 flex-row items-center gap-1">
+            <Text className="text-[13px]">Session Details</Text>
+          </View>
+
           <TextInput
             className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
-            placeholder="Template name (e.g. Upper A, Full body)"
+            placeholder="Name"
             placeholderTextColor="#9CA3AF"
             value={name}
             onChangeText={setName}
           />
           <TextInput
-            className="mt-2 h-20 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
-            placeholder="Description (optional)"
+            className="mt-2 h-16 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+            placeholder="Notes"
             placeholderTextColor="#9CA3AF"
             value={description}
             onChangeText={setDescription}
@@ -102,27 +102,26 @@ export default function TemplateWorkoutForm({
           />
         </View>
 
-        {/* Exercises header row */}
+        {/* Exercises header row – minimal */}
         <View className="mb-2 flex-row items-center justify-between">
-          <Text className="text-xs font-semibold text-neutral-700">
-            Exercises & sets
-          </Text>
+          <View className="h-6 w-6 items-center justify-center rounded-full bg-neutral-100">
+            <Text className="text-[11px] text-neutral-500">●</Text>
+          </View>
           <Pressable
             onPress={addExercise}
-            className="rounded-full border border-neutral-300 px-3 py-1"
+            className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900"
           >
-            <Text className="text-[11px] font-semibold text-neutral-800">
-              + Add exercise
-            </Text>
+            <Text className="text-[14px] text-white">＋</Text>
           </Pressable>
         </View>
 
         {/* Exercises list */}
         {exercises.length === 0 ? (
           <View className="mt-4 items-center">
-            <Text className="text-xs text-neutral-500">
-              No exercises yet. Add one above.
-            </Text>
+            {/* subtle hint, no words */}
+            <View className="h-10 w-10 items-center justify-center rounded-2xl border border-dashed border-neutral-300">
+              <Text className="text-[16px] text-neutral-400">＋</Text>
+            </View>
           </View>
         ) : (
           exercises.map((ex, index) => (

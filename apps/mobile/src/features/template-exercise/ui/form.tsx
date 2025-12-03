@@ -75,22 +75,6 @@ export default function TemplateExerciseForm({
     update({ sets: nextSets });
   };
 
-  const copyLastSetDown = () => {
-    if (formData.sets.length === 0) return;
-    const last = formData.sets[formData.sets.length - 1];
-    const nextSets: TemplateSetFormData[] = [
-      ...formData.sets,
-      {
-        id: Math.random().toString(36).slice(2),
-        reps: last.reps,
-        loadValue: last.loadValue,
-        loadUnit: last.loadUnit,
-        rpe: last.rpe,
-      },
-    ];
-    update({ sets: nextSets });
-  };
-
   const removeSet = (setId: string) => {
     const nextSets = formData.sets.filter((s) => s.id !== setId);
     update({ sets: nextSets });
@@ -145,8 +129,7 @@ export default function TemplateExerciseForm({
     }
   };
 
-  const selectorLabel =
-    selectedExercise?.name ?? "Select an exercise from your library";
+  const selectorLabel = selectedExercise?.name ?? "Select";
 
   const getInitial = (opt: Exercise) => {
     const trimmed = (opt.name ?? "").trim();
@@ -155,294 +138,209 @@ export default function TemplateExerciseForm({
   };
 
   return (
-    // make the card a stacking context so its children z-index correctly
     <View
-      className="mb-4 rounded-2xl border border-neutral-200 bg-white px-3 py-3"
+      className="mb-3 rounded-2xl border border-neutral-200 bg-white px-3 py-3"
       style={{
         overflow: "visible",
         zIndex: pickerOpen ? 20 : 0,
-        elevation: pickerOpen ? 20 : 0, // Android
+        elevation: pickerOpen ? 20 : 0,
       }}
     >
-      {/* Exercise header */}
+      {/* Header: index + name, icon remove */}
       <View className="mb-2 flex-row items-center justify-between">
-        <View>
-          <View className="flex-row items-center gap-2">
-            <Text className="rounded-full bg-neutral-900 px-2 py-[1px] text-[10px] font-semibold text-white">
-              #{index + 1}
-            </Text>
-            <Text className="text-[11px] font-semibold text-neutral-700">
-              Exercise
-            </Text>
-          </View>
-          {selectedExercise && (
-            <Text
-              className="mt-1 max-w-[220px] text-[11px] text-neutral-500"
-              numberOfLines={1}
-            >
-              {selectedExercise.name}
-            </Text>
-          )}
+        <View className="flex-row items-center gap-2">
+          <Text className="rounded-full bg-neutral-900 px-2 py-[1px] text-[10px] font-semibold text-white">
+            {index + 1}
+          </Text>
         </View>
 
         <Pressable
           onPress={onRemove}
-          className="rounded-full bg-red-50 px-2 py-1"
+          className="h-6 w-6 items-center justify-center rounded-full bg-red-50"
         >
-          <Text className="text-[10px] font-semibold text-red-500">Remove</Text>
+          <Text className="text-[12px] text-red-500">✕</Text>
         </Pressable>
       </View>
 
-      {/* Exercise selector */}
+      {/* Selector + dropdown */}
       <View className="relative z-10">
-        {/* Selector button */}
         <Pressable
           className="flex-row items-center justify-between rounded-xl border border-neutral-300 bg-white px-3 py-2"
           onPress={() => setPickerOpen((prev) => !prev)}
         >
           <Text
             className={`flex-1 text-[12px] ${
-              selectedExercise ? "text-neutral-900" : "text-neutral-400 italic"
+              selectedExercise ? "text-neutral-900" : "text-neutral-400"
             }`}
             numberOfLines={1}
           >
             {selectorLabel}
           </Text>
           <Text className="ml-2 text-xs text-neutral-400">
-            {pickerOpen ? "▲" : "▼"}
+            {pickerOpen ? "▴" : "▾"}
           </Text>
         </Pressable>
 
-        {/* Picker dropdown – floating, scrollable list, above other cards */}
         {pickerOpen && (
           <View
             className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50"
             style={{
               zIndex: 30,
-              elevation: 30, // Android
+              elevation: 30,
             }}
           >
-            {/* Search bar */}
-            <View className="border-b border-neutral-200 px-3 py-1.5">
-              <Text className="mb-1 text-[10px] font-medium text-neutral-500">
-                Search library
-              </Text>
+            {/* Search */}
+            <View className="flex-row items-center border-b border-neutral-200 px-2 py-1.5">
+              <Text className="mr-1 text-[11px] text-neutral-500">🔍</Text>
               <TextInput
-                className="rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1.5 text-xs text-neutral-900"
-                placeholder="Type to filter exercises"
+                className="flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1.5 text-xs text-neutral-900"
+                placeholder=""
                 placeholderTextColor="#9CA3AF"
                 value={pickerSearch}
                 onChangeText={setPickerSearch}
               />
             </View>
 
-            {/* Scrollable list */}
+            {/* List */}
             <View className="max-h-72">
               {matches.length === 0 ? (
-                <View className="px-3 py-3">
-                  <Text className="text-[11px] text-neutral-500">
-                    No matches in your library.
-                  </Text>
-                  <Text className="mt-1 text-[10px] text-neutral-400">
-                    You can create a new exercise below.
-                  </Text>
-                </View>
+                <View className="px-3 py-3" />
               ) : (
-                <>
-                  <Text className="px-3 pt-2 text-[10px] font-medium uppercase tracking-wide text-neutral-400">
-                    Results
-                  </Text>
-                  <ScrollView
-                    keyboardShouldPersistTaps="handled"
-                    nestedScrollEnabled
-                    className="mt-1"
-                  >
-                    {matches.map((opt) => {
-                      const isSelected = opt.id === formData.exerciseId;
-                      const initial = getInitial(opt);
+                <ScrollView
+                  keyboardShouldPersistTaps="handled"
+                  nestedScrollEnabled
+                  className="mt-1"
+                >
+                  {matches.map((opt) => {
+                    const isSelected = opt.id === formData.exerciseId;
+                    const initial = getInitial(opt);
 
-                      return (
-                        <Pressable
-                          key={opt.id}
-                          className={`mx-2 mb-1 flex-row items-center rounded-xl px-2 py-1.5 ${
-                            isSelected ? "bg-neutral-900" : "bg-transparent"
+                    return (
+                      <Pressable
+                        key={opt.id}
+                        className={`mx-2 mb-1 flex-row items-center rounded-xl px-2 py-1.5 ${
+                          isSelected ? "bg-neutral-900" : "bg-transparent"
+                        }`}
+                        onPress={() => selectExerciseOption(opt)}
+                      >
+                        <View
+                          className={`mr-2 h-7 w-7 items-center justify-center rounded-xl ${
+                            isSelected ? "bg-neutral-800" : "bg-neutral-100"
                           }`}
-                          onPress={() => selectExerciseOption(opt)}
                         >
-                          {/* Icon / thumbnail placeholder */}
-                          <View
-                            className={`mr-2 h-7 w-7 items-center justify-center rounded-xl ${
-                              isSelected ? "bg-neutral-800" : "bg-neutral-100"
+                          <Text
+                            className={`text-[11px] font-semibold ${
+                              isSelected ? "text-white" : "text-neutral-700"
                             }`}
                           >
-                            <Text
-                              className={`text-[11px] font-semibold ${
-                                isSelected ? "text-white" : "text-neutral-700"
-                              }`}
-                            >
-                              {initial}
-                            </Text>
-                          </View>
+                            {initial}
+                          </Text>
+                        </View>
 
-                          {/* Name */}
-                          <View className="flex-1">
-                            <Text
-                              className={`text-[12px] ${
-                                isSelected
-                                  ? "font-semibold text-white"
-                                  : "text-neutral-900"
-                              }`}
-                              numberOfLines={1}
-                            >
-                              {opt.name}
-                            </Text>
-                          </View>
-
-                          {isSelected && (
-                            <Text className="ml-2 text-[10px] font-medium text-neutral-200">
-                              Selected
-                            </Text>
-                          )}
-                        </Pressable>
-                      );
-                    })}
-                    <View className="h-2" />
-                  </ScrollView>
-                </>
+                        <View className="flex-1">
+                          <Text
+                            className={`text-[12px] ${
+                              isSelected
+                                ? "font-semibold text-white"
+                                : "text-neutral-900"
+                            }`}
+                            numberOfLines={1}
+                          >
+                            {opt.name}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                  <View className="h-2" />
+                </ScrollView>
               )}
             </View>
 
-            {/* Create new exercise section */}
-            <View className="border-t border-neutral-200 px-3 py-2">
+            {/* Create new – icons only */}
+            <View className="border-t border-neutral-200 px-2 py-2">
               {!creatingNew ? (
                 <Pressable
                   onPress={startCreateNew}
-                  className="flex-row items-center justify-between"
+                  className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900"
                 >
-                  <View>
-                    <Text className="text-[11px] font-semibold text-neutral-900">
-                      + Create new exercise
-                    </Text>
-                    <Text className="text-[10px] text-neutral-500">
-                      Add it once, reuse in any template
-                    </Text>
-                  </View>
+                  <Text className="text-[13px] text-white">＋</Text>
                 </Pressable>
               ) : (
-                <>
-                  <Text className="mb-1 text-[11px] text-neutral-600">
-                    New exercise name
-                  </Text>
+                <View className="flex-row items-center gap-2">
                   <TextInput
-                    className="mb-2 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-xs text-neutral-900"
-                    placeholder="e.g. Dumbbell incline press"
+                    className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-xs text-neutral-900"
+                    placeholder=""
                     placeholderTextColor="#9CA3AF"
                     value={newExerciseName}
                     onChangeText={setNewExerciseName}
                   />
-                  <View className="flex-row justify-end gap-4">
-                    <Pressable onPress={cancelCreateNew} disabled={isCreating}>
-                      <Text className="text-[11px] text-neutral-500">
-                        Cancel
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={handleCreateNew}
-                      disabled={isCreating || !newExerciseName.trim()}
-                      className="rounded-full bg-neutral-900 px-3 py-1"
-                    >
-                      <Text className="text-[11px] font-semibold text-white">
-                        {isCreating ? "Creating..." : "Create"}
-                      </Text>
-                    </Pressable>
-                  </View>
-                </>
+                  <Pressable
+                    onPress={cancelCreateNew}
+                    disabled={isCreating}
+                    className="h-7 w-7 items-center justify-center rounded-full bg-neutral-200"
+                  >
+                    <Text className="text-[12px] text-neutral-600">✕</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleCreateNew}
+                    disabled={isCreating || !newExerciseName.trim()}
+                    className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900"
+                  >
+                    <Text className="text-[12px] text-white">✓</Text>
+                  </Pressable>
+                </View>
               )}
             </View>
           </View>
         )}
       </View>
 
-      {/* Presets row */}
-      <View className="mt-4 flex-row flex-wrap items-center gap-2">
-        <Text className="text-[11px] text-neutral-500">Quick presets:</Text>
+      {/* Presets – chips only */}
+      <View className="mt-3 flex-row flex-wrap gap-2">
         <Pressable
-          className="rounded-full bg-white px-2 py-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+          className="flex-row items-center rounded-full bg-neutral-900 px-3 py-1"
           onPress={() => applyPreset(1, 8)}
         >
-          <Text className="text-[11px] font-medium text-neutral-900">
-            1 × 8
-          </Text>
+          <Text className="text-[11px] font-semibold text-white">1×8</Text>
         </Pressable>
+
         <Pressable
-          className="rounded-full bg-white px-2 py-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+          className="flex-row items-center rounded-full bg-neutral-800 px-3 py-1"
           onPress={() => applyPreset(2, 10)}
         >
-          <Text className="text-[11px] font-medium text-neutral-900">
-            2 × 10
-          </Text>
+          <Text className="text-[11px] font-semibold text-white">2×10</Text>
         </Pressable>
+
         <Pressable
-          className="rounded-full bg-white px-2 py-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+          className="flex-row items-center rounded-full bg-neutral-700 px-3 py-1"
           onPress={() => applyPreset(3, 12)}
         >
-          <Text className="text-[11px] font-medium text-neutral-900">
-            3 × 12
-          </Text>
+          <Text className="text-[11px] font-semibold text-white">3×12</Text>
         </Pressable>
-        {formData.sets.length > 0 && (
-          <Pressable
-            className="rounded-full border border-dashed border-neutral-400 px-2 py-0.5"
-            onPress={copyLastSetDown}
-          >
-            <Text className="text-[11px] text-neutral-700">
-              Copy last set ↓
-            </Text>
-          </Pressable>
-        )}
       </View>
 
-      {/* Table header */}
-      <View className="mt-3 flex-row border-b border-neutral-200 pb-1">
-        <Text className="w-8 text-[11px] text-neutral-500">#</Text>
-        <Text className="flex-1 text-[11px] text-neutral-500">Reps</Text>
-        <Text className="flex-1 text-[11px] text-neutral-500">Load</Text>
-        <Text className="flex-1 text-[11px] text-neutral-500">RPE</Text>
-        <Text className="w-8 text-right text-[11px] text-neutral-500">—</Text>
-      </View>
+      {formData.sets.map((s, setIndex) => (
+        <TemplateSetForm
+          key={s.id}
+          formData={s}
+          index={setIndex}
+          setFormData={(next) => {
+            const nextSets = formData.sets.map((curr) =>
+              curr.id === s.id ? next : curr
+            );
+            update({ sets: nextSets });
+          }}
+          onRemove={() => removeSet(s.id)}
+        />
+      ))}
 
-      {/* Sets rows */}
-      {formData.sets.length === 0 ? (
-        <View className="mt-2">
-          <Text className="text-[11px] text-neutral-400">
-            No sets yet. Use presets above or Add set below.
-          </Text>
-        </View>
-      ) : (
-        formData.sets.map((s, setIndex) => (
-          <TemplateSetForm
-            key={s.id}
-            formData={s}
-            index={setIndex}
-            setFormData={(next) => {
-              const nextSets = formData.sets.map((curr) =>
-                curr.id === s.id ? next : curr
-              );
-              update({ sets: nextSets });
-            }}
-            onRemove={() => removeSet(s.id)}
-          />
-        ))
-      )}
-
-      {/* Add set button */}
+      {/* Add set – simple round button */}
       <Pressable
-        className="mt-2 self-start rounded-full border border-dashed border-neutral-400 bg-white px-3 py-1 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+        className="mt-2 h-7 w-7 items-center justify-center self-end rounded-full bg-neutral-900"
         onPress={addSet}
       >
-        <Text className="text-[11px] font-medium text-neutral-800">
-          + Add set
-        </Text>
+        <Text className="text-[14px] text-white">＋</Text>
       </Pressable>
     </View>
   );

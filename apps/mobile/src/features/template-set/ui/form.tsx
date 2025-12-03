@@ -34,49 +34,73 @@ export default function TemplateSetForm({
   };
 
   return (
-    <View className="mt-1 flex-row items-center gap-1">
-      <Text className="w-8 text-[11px] text-neutral-500">{index + 1}</Text>
+    <View className="mt-2 flex-row items-center gap-2">
+      {/* Set index pill */}
+      <View className="h-7 items-center justify-center rounded-full bg-neutral-900 px-2">
+        <Text className="text-[10px] font-semibold text-white">
+          {index + 1}
+        </Text>
+      </View>
 
-      {/* Reps */}
-      <TextInput
-        className="flex-1 rounded border border-neutral-300 px-2 py-1 text-[11px] text-neutral-900"
-        placeholder="8"
-        placeholderTextColor="#9CA3AF"
-        keyboardType="numeric"
-        value={formData.reps}
-        onChangeText={(v) => update({ reps: v })}
-      />
-
-      {/* Load value + unit */}
-      <View className="flex-1 flex-row items-center rounded border border-neutral-300 px-1">
+      {/* REPS pill */}
+      <View className="flex-1 rounded-2xl bg-neutral-50 px-2 py-1">
+        <View className="mb-0.5 flex-row items-center justify-between">
+          <Text className="text-[9px] font-medium text-neutral-500">REPS</Text>
+        </View>
         <TextInput
-          className="flex-1 px-1 py-1 text-[11px] text-neutral-900"
+          className="mt-0.5 text-center text-[11px] text-neutral-900"
+          keyboardType="number-pad"
+          placeholder="8"
+          placeholderTextColor="#9CA3AF"
+          value={formData.reps}
+          onChangeText={(v) => update({ reps: v })}
+        />
+      </View>
+
+      {/* LOAD pill */}
+      <View className="flex-1 rounded-2xl bg-neutral-50 px-2 py-1">
+        <View className="mb-0.5 flex-row items-center justify-between">
+          <Text className="text-[9px] font-medium text-neutral-500">LOAD</Text>
+          <Pressable
+            onPress={cycleUnit}
+            className="rounded-full bg-white px-2 py-[1px]"
+          >
+            <Text className="text-[9px] font-medium text-neutral-700">
+              {formData.loadUnit}
+            </Text>
+          </Pressable>
+        </View>
+        <TextInput
+          className="mt-0.5 text-center text-[11px] text-neutral-900"
+          keyboardType="numeric"
           placeholder="60"
           placeholderTextColor="#9CA3AF"
-          keyboardType="numeric"
           value={formData.loadValue}
           onChangeText={(v) => update({ loadValue: v })}
         />
-        <Pressable className="rounded px-1.5 py-0.5" onPress={cycleUnit}>
-          <Text className="text-[11px] text-neutral-700">
-            {formData.loadUnit}
-          </Text>
-        </Pressable>
       </View>
 
-      {/* RPE */}
-      <TextInput
-        className="flex-1 rounded border border-neutral-300 px-2 py-1 text-[11px] text-neutral-900"
-        placeholder="7.5"
-        placeholderTextColor="#9CA3AF"
-        keyboardType="numeric"
-        value={formData.rpe}
-        onChangeText={(v) => update({ rpe: v })}
-      />
+      {/* RPE pill */}
+      <View className="flex-1 rounded-2xl bg-neutral-50 px-2 py-1">
+        <View className="mb-0.5 flex-row items-center justify-between">
+          <Text className="text-[9px] font-medium text-neutral-500">RPE</Text>
+        </View>
+        <TextInput
+          className="mt-0.5 text-center text-[11px] text-neutral-900"
+          keyboardType="numeric"
+          placeholder="7.5"
+          placeholderTextColor="#9CA3AF"
+          value={formData.rpe}
+          onChangeText={(v) => update({ rpe: v })}
+        />
+      </View>
 
-      {/* Remove */}
-      <Pressable className="w-8 items-end" onPress={onRemove}>
-        <Text className="text-[11px] text-red-500">✕</Text>
+      {/* Remove icon */}
+      <Pressable
+        className="h-7 w-7 items-center justify-center rounded-full bg-red-50"
+        onPress={onRemove}
+      >
+        <Text className="text-[12px] text-red-500">✕</Text>
       </Pressable>
     </View>
   );
