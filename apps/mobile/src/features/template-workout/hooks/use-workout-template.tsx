@@ -8,6 +8,7 @@ type UseWorkoutTemplatesResult = {
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
+  deleteTemplate: (id: string) => Promise<void>;
 };
 
 export function useWorkoutTemplates(): UseWorkoutTemplatesResult {
@@ -37,7 +38,7 @@ export function useWorkoutTemplates(): UseWorkoutTemplatesResult {
       try {
         await load();
       } catch {
-        // already handled above
+        // handled above
       }
       if (cancelled) return;
     })();
@@ -47,5 +48,12 @@ export function useWorkoutTemplates(): UseWorkoutTemplatesResult {
     };
   }, [load]);
 
-  return { templates, isLoading, error, refetch: load };
+  const deleteTemplate = useCallback(async (id: string) => {
+    // 1) delete in storage
+    await workoutTemplateRepository.delete(id);
+    // 2) sync local state
+    setTemplates((prev) => prev.filter((tpl) => tpl.id !== id));
+  }, []);
+
+  return { templates, isLoading, error, refetch: load, deleteTemplate };
 }

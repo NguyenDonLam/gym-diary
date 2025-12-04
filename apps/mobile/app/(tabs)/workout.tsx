@@ -1,7 +1,15 @@
 import React from "react";
-import { SafeAreaView, View, Text, ScrollView, Pressable } from "react-native";
+import {
+  SafeAreaView,
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Alert,
+} from "react-native";
 import { useRouter } from "expo-router";
-import { useWorkoutTemplates } from "@/src/features/template-workout/hooks/useWorkoutTemplate";
+import { Trash2 } from "lucide-react-native";
+import { useWorkoutTemplates } from "@/src/features/template-workout/hooks/use-workout-template";
 import { TemplateColor } from "@/src/features/template-workout/domain/type";
 
 const ROW_BG_MAP: Record<TemplateColor, string> = {
@@ -19,7 +27,7 @@ const ROW_BG_MAP: Record<TemplateColor, string> = {
 export default function Workout() {
   const router = useRouter();
 
-  const { templates } = useWorkoutTemplates();
+  const { templates, deleteTemplate } = useWorkoutTemplates();
 
   const handleStartFromTemplate = (id: string) => {
     console.log("start session from template", id);
@@ -35,6 +43,26 @@ export default function Workout() {
 
   const handleCreateTemplate = () => {
     router.push("/template-workout/new");
+  };
+
+  const handleDeleteTemplate = (id: string, name: string) => {
+    Alert.alert(
+      "Delete template",
+      `Delete "${name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            deleteTemplate(id).catch((err) => {
+              console.error("Failed to delete template", err);
+            });
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   return (
@@ -83,13 +111,25 @@ export default function Workout() {
                     onPress={() => handleStartFromTemplate(tpl.id)}
                     onLongPress={() => handleEditTemplate(tpl.id)}
                   >
-                    <View className="shrink">
-                      <Text className="text-[15px] font-semibold text-neutral-900">
-                        {tpl.name}
-                      </Text>
-                      <Text className="mt-0.5 text-[11px] text-neutral-500">
-                        Tap to start · long-press to edit
-                      </Text>
+                    <View className="flex-row items-center justify-between">
+                      <View className="shrink">
+                        <Text className="text-[15px] font-semibold text-neutral-900">
+                          {tpl.name}
+                        </Text>
+                        <Text className="mt-0.5 text-[11px] text-neutral-500">
+                          Tap to start · long-press to edit
+                        </Text>
+                      </View>
+
+                      <Pressable
+                        onPress={() =>
+                          handleDeleteTemplate(tpl.id, tpl.name ?? "")
+                        }
+                        hitSlop={8}
+                        className="ml-3 h-7 w-7 items-center justify-center rounded-full bg-white/80"
+                      >
+                        <Trash2 width={16} height={16} color="#4B5563" />
+                      </Pressable>
                     </View>
                   </Pressable>
                 );
