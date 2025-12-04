@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 import TemplateExerciseForm from "@/src/features/template-exercise/ui/form";
-import { TemplateWorkoutFormData } from "../domain/type";
+import { TemplateWorkoutFormData, TemplateColor } from "../domain/type";
 import { TemplateExerciseFormData } from "../../template-exercise/domain/type";
 import { TemplateSetFormData } from "../../template-set/domain/type";
 import { generateId } from "@/src/lib/id";
@@ -20,6 +20,48 @@ type TemplateWorkoutFormProps = {
   formData: TemplateWorkoutFormData;
   setFormData: React.Dispatch<React.SetStateAction<TemplateWorkoutFormData>>;
 };
+
+const TEMPLATE_COLOR_OPTIONS: {
+  value: TemplateColor;
+  label: string;
+  tileBg: string;
+  dotBg: string;
+}[] = [
+  {
+    value: "neutral",
+    label: "Neutral",
+    tileBg: "bg-neutral-100",
+    dotBg: "bg-neutral-500",
+  },
+  { value: "red", label: "Red", tileBg: "bg-red-100", dotBg: "bg-red-500" },
+  {
+    value: "orange",
+    label: "Orange",
+    tileBg: "bg-orange-100",
+    dotBg: "bg-orange-500",
+  },
+  {
+    value: "yellow",
+    label: "Yellow",
+    tileBg: "bg-yellow-100",
+    dotBg: "bg-yellow-400",
+  },
+  {
+    value: "green",
+    label: "Green",
+    tileBg: "bg-green-100",
+    dotBg: "bg-green-500",
+  },
+  { value: "teal", label: "Teal", tileBg: "bg-teal-100", dotBg: "bg-teal-500" },
+  { value: "blue", label: "Blue", tileBg: "bg-blue-100", dotBg: "bg-blue-500" },
+  {
+    value: "purple",
+    label: "Purple",
+    tileBg: "bg-purple-100",
+    dotBg: "bg-purple-500",
+  },
+  { value: "pink", label: "Pink", tileBg: "bg-pink-100", dotBg: "bg-pink-500" },
+];
 
 function makeDefaultSets(): TemplateSetFormData[] {
   return Array.from({ length: 3 }).map(() => ({
@@ -35,11 +77,12 @@ export default function TemplateWorkoutForm({
   formData,
   setFormData,
 }: TemplateWorkoutFormProps) {
-  const { name, description, exercises } = formData;
+  const { name, description, exercises, color } = formData;
 
   const { options: exerciseOptions } = useExercises();
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
 
   const setName = (value: string) => {
     setFormData((prev) => ({
@@ -52,6 +95,13 @@ export default function TemplateWorkoutForm({
     setFormData((prev) => ({
       ...prev,
       description: value,
+    }));
+  };
+
+  const setColor = (value: TemplateColor) => {
+    setFormData((prev) => ({
+      ...prev,
+      color: value,
     }));
   };
 
@@ -143,6 +193,9 @@ export default function TemplateWorkoutForm({
     // e.g. router.push("/exercise/new") or open local modal
   };
 
+  const currentColorOption =
+    TEMPLATE_COLOR_OPTIONS.find((opt) => opt.value === color) ??
+    TEMPLATE_COLOR_OPTIONS[0];
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -154,7 +207,7 @@ export default function TemplateWorkoutForm({
         >
           {/* Template meta block */}
           <View className="mb-4 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3">
-            <View className="mb-1 flex-row items-center gap-1">
+            <View className="mb-1 flex-row items-center justify-between">
               <Text className="text-[13px]">🏋️‍♂️</Text>
             </View>
 
@@ -174,6 +227,24 @@ export default function TemplateWorkoutForm({
               multiline
               textAlignVertical="top"
             />
+
+            {/* Colour trigger */}
+            <View className="mt-3">
+              <Text className="mb-1 text-[11px] text-neutral-500">
+                Template colour
+              </Text>
+              <Pressable
+                onPress={() => setColorPickerOpen(true)}
+                className="inline-flex flex-row items-center rounded-full border border-neutral-200 bg-white px-2 py-1"
+              >
+                <View
+                  className={`mr-2 h-3 w-3 rounded-full ${currentColorOption.dotBg}`}
+                />
+                <Text className="text-[11px] text-neutral-800">
+                  {currentColorOption.label}
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
           {/* Exercises header row – add opens multi-select library */}
@@ -310,6 +381,63 @@ export default function TemplateWorkoutForm({
                     </Pressable>
                   );
                 })}
+
+                <View className="h-4" />
+              </ScrollView>
+            </View>
+          </View>
+        )}
+
+        {/* COLOUR PICKER OVERLAY */}
+        {colorPickerOpen && (
+          <View className="absolute inset-0 bg-black/40" style={{ zIndex: 60 }}>
+            <View className="absolute inset-x-8 top-32 bottom-32 rounded-3xl bg-white px-4 py-3">
+              <View className="mb-2 flex-row items-center justify-between">
+                <Text className="text-[13px] text-neutral-900">
+                  Choose template colour
+                </Text>
+                <Pressable
+                  onPress={() => setColorPickerOpen(false)}
+                  className="h-7 w-7 items-center justify-center rounded-full bg-neutral-100"
+                >
+                  <Text className="text-[12px] text-neutral-600">✕</Text>
+                </Pressable>
+              </View>
+
+              <ScrollView className="mt-2" keyboardShouldPersistTaps="handled">
+                <View className="flex-row flex-wrap gap-3">
+                  {TEMPLATE_COLOR_OPTIONS.map((opt) => {
+                    const selected = opt.value === color;
+                    return (
+                      <Pressable
+                        key={opt.value}
+                        onPress={() => {
+                          setColor(opt.value);
+                          setColorPickerOpen(false);
+                        }}
+                        className={`h-16 w-16 items-center justify-center rounded-2xl ${
+                          opt.tileBg
+                        } ${
+                          selected
+                            ? "border-2 border-neutral-900"
+                            : "border border-transparent"
+                        }`}
+                      >
+                        <View
+                          className={`mb-1 h-4 w-4 rounded-full ${opt.dotBg}`}
+                        />
+                        <Text className="text-[11px] text-neutral-900">
+                          {opt.label}
+                        </Text>
+                        {selected && (
+                          <Text className="text-[10px] text-neutral-900 mt-0.5">
+                            ✓
+                          </Text>
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </View>
 
                 <View className="h-4" />
               </ScrollView>

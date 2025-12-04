@@ -23,7 +23,9 @@ export default function TemplateWorkoutCreate() {
   const [formData, setFormData] = useState<TemplateWorkoutFormData>({
     name: "",
     description: "",
+    color: "neutral",
     exercises: [],
+    folderId: null
   });
 
   const [isSaving, setIsSaving] = useState(false);

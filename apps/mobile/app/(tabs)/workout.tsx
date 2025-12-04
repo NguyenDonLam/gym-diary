@@ -2,11 +2,24 @@ import React from "react";
 import { SafeAreaView, View, Text, ScrollView, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { useWorkoutTemplates } from "@/src/features/template-workout/hooks/useWorkoutTemplate";
+import { TemplateColor } from "@/src/features/template-workout/domain/type";
+
+const ROW_BG_MAP: Record<TemplateColor, string> = {
+  neutral: "bg-neutral-50",
+  red: "bg-red-50",
+  orange: "bg-orange-50",
+  yellow: "bg-yellow-50",
+  green: "bg-green-50",
+  teal: "bg-teal-50",
+  blue: "bg-blue-50",
+  purple: "bg-purple-50",
+  pink: "bg-pink-50",
+};
 
 export default function Workout() {
   const router = useRouter();
 
-  const {templates} = useWorkoutTemplates(); 
+  const { templates } = useWorkoutTemplates();
 
   const handleStartFromTemplate = (id: string) => {
     console.log("start session from template", id);
@@ -19,7 +32,6 @@ export default function Workout() {
       params: { id },
     });
   };
-
 
   const handleCreateTemplate = () => {
     router.push("/template-workout/new");
@@ -60,33 +72,28 @@ export default function Workout() {
             showsVerticalScrollIndicator={false}
           >
             {templates.length > 0 ? (
-              templates.map((tpl) => (
-                <Pressable
-                  key={tpl.id}
-                  className="border-b border-neutral-200 py-2.5"
-                  onPress={() => handleStartFromTemplate(tpl.id)}
-                  onLongPress={() => handleEditTemplate(tpl.id)}
-                >
-                  <View className="shrink">
-                    <Text className="text-[15px] font-semibold text-neutral-900">
-                      {tpl.name}
-                    </Text>
-                    {/* <View className="mt-0.5 flex-row flex-wrap">
-                      {tpl.tag ? (
-                        <Text className="mr-2 text-xs text-neutral-600">
-                          {tpl.tag}
-                        </Text>
-                      ) : null}
-                      <Text className="mr-2 text-xs text-neutral-600">
-                        {tpl.duration}
+              templates.map((tpl) => {
+                const rowBgClass =
+                  ROW_BG_MAP[(tpl.color as TemplateColor) ?? "neutral"];
+
+                return (
+                  <Pressable
+                    key={tpl.id}
+                    className={`mb-2 rounded-xl border border-neutral-200 px-3 py-2.5 ${rowBgClass}`}
+                    onPress={() => handleStartFromTemplate(tpl.id)}
+                    onLongPress={() => handleEditTemplate(tpl.id)}
+                  >
+                    <View className="shrink">
+                      <Text className="text-[15px] font-semibold text-neutral-900">
+                        {tpl.name}
                       </Text>
-                    </View> */}
-                    <Text className="mt-0.5 text-[11px] text-neutral-400">
-                      Tap to start · long-press to edit
-                    </Text>
-                  </View>
-                </Pressable>
-              ))
+                      <Text className="mt-0.5 text-[11px] text-neutral-500">
+                        Tap to start · long-press to edit
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })
             ) : (
               <View className="pt-6 items-center">
                 <Text className="text-base font-semibold text-neutral-900">

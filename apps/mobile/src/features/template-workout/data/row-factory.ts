@@ -24,6 +24,8 @@ export class TemplateWorkoutRowFactory {
     return {
       id: row.id,
       name: row.name,
+      color: row.color,
+      folderId: row.folder_id,
       description: row.description,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
@@ -41,6 +43,8 @@ export class TemplateWorkoutRowFactory {
     return {
       id: domain.id,
       name: domain.name,
+      color: domain.color,
+      folder_id: domain.folderId,
       description: domain.description,
       created_at: domain.createdAt.toISOString(),
       updated_at: domain.updatedAt.toISOString(),

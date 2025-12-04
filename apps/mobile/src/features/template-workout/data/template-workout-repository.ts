@@ -34,6 +34,8 @@ class WorkoutTemplateRepository extends BaseRepository<TemplateWorkout> {
     return {
       id: row.id,
       name: row.name,
+      color: row.color,
+      folderId: row.folder_id,
       description: row.description,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
@@ -45,6 +47,8 @@ class WorkoutTemplateRepository extends BaseRepository<TemplateWorkout> {
     return {
       id: entity.id,
       name: entity.name,
+      color: entity.color,
+      folder_id: entity.folderId,
       description: entity.description,
       created_at: entity.createdAt.toISOString(),
       updated_at: entity.updatedAt.toISOString(),
@@ -172,6 +176,7 @@ class WorkoutTemplateRepository extends BaseRepository<TemplateWorkout> {
 
     await this.templateDao.update(entity.id, {
       name: row.name,
+      color: row.color,
       description: row.description,
       updated_at: row.updated_at,
     });

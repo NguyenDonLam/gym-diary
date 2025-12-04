@@ -27,7 +27,9 @@ export class TemplateWorkoutFormFactory {
   static createEmpty(): TemplateWorkoutFormData {
     return {
       name: "",
+      color:"neutral",
       description: "",
+      folderId: null,
       exercises: [],
     };
   }
@@ -79,6 +81,8 @@ export class TemplateWorkoutFormFactory {
     return {
       id: templateId,
       name: form.name.trim(),
+      color: form.color,
+      folderId: form.folderId,
       description: form.description.trim() || null,
       createdAt: now,
       updatedAt: now,
@@ -93,6 +97,8 @@ export class TemplateWorkoutFormFactory {
     return {
       name: domain.name,
       description: domain.description ?? "",
+      color: domain.color,
+      folderId: domain.folderId,
       exercises: domain.exercises.map((ex) => ({
         id: ex.id,
         exerciseId: ex.exerciseId,
