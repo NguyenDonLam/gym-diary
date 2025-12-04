@@ -12,21 +12,20 @@ import { Trash2 } from "lucide-react-native";
 import { useWorkoutTemplates } from "@/src/features/template-workout/hooks/use-workout-template";
 import { TemplateColor } from "@/src/features/template-workout/domain/type";
 
-const ROW_BG_MAP: Record<TemplateColor, string> = {
-  neutral: "bg-neutral-50",
-  red: "bg-red-50",
-  orange: "bg-orange-50",
-  yellow: "bg-yellow-50",
-  green: "bg-green-50",
-  teal: "bg-teal-50",
-  blue: "bg-blue-50",
-  purple: "bg-purple-50",
-  pink: "bg-pink-50",
+const COLOR_STRIP_MAP: Record<TemplateColor, string> = {
+  neutral: "bg-neutral-400",
+  red: "bg-red-500",
+  orange: "bg-orange-500",
+  yellow: "bg-yellow-400",
+  green: "bg-green-500",
+  teal: "bg-teal-500",
+  blue: "bg-blue-500",
+  purple: "bg-purple-500",
+  pink: "bg-pink-500",
 };
 
 export default function Workout() {
   const router = useRouter();
-
   const { templates, deleteTemplate } = useWorkoutTemplates();
 
   const handleStartFromTemplate = (id: string) => {
@@ -34,7 +33,6 @@ export default function Workout() {
   };
 
   const handleEditTemplate = (id: string) => {
-    console.log("edit template", id);
     router.push({
       pathname: "/template-workout/[id]",
       params: { id },
@@ -46,23 +44,18 @@ export default function Workout() {
   };
 
   const handleDeleteTemplate = (id: string, name: string) => {
-    Alert.alert(
-      "Delete template",
-      `Delete "${name}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            deleteTemplate(id).catch((err) => {
-              console.error("Failed to delete template", err);
-            });
-          },
+    Alert.alert("Delete template", `Delete "${name}"?`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          deleteTemplate(id).catch((err) => {
+            console.error("Failed to delete template", err);
+          });
         },
-      ],
-      { cancelable: true }
-    );
+      },
+    ]);
   };
 
   return (
@@ -70,7 +63,9 @@ export default function Workout() {
       <View className="flex-1">
         {/* Header */}
         <View className="px-4 pt-3 pb-2">
-          <Text className="text-lg font-bold">Session templates</Text>
+          <Text className="text-lg font-bold text-neutral-900">
+            Session templates
+          </Text>
           <Text className="mt-1 text-xs text-neutral-700">
             Tap template to start. Long-press to edit.
           </Text>
@@ -79,13 +74,15 @@ export default function Workout() {
           </Text>
         </View>
 
-        {/* Bottom sheet area */}
-        <View className="flex-1 rounded-t-2xl border-t border-neutral-200 bg-white">
-          <View className="flex-row items-center justify-between px-4 pt-2.5 pb-1.5">
-            <Text className="text-base font-semibold">Templates</Text>
+        {/* Content */}
+        <View className="flex-1 bg-white">
+          <View className="flex-row items-center justify-between px-4 pt-2 pb-1">
+            <Text className="text-base font-semibold text-neutral-900">
+              Templates
+            </Text>
 
             <Pressable
-              className="rounded-full border border-neutral-300 px-3 py-1.5"
+              className="rounded-full px-3 py-1.5"
               onPress={handleCreateTemplate}
             >
               <Text className="text-[13px] font-semibold text-neutral-900">
@@ -96,29 +93,38 @@ export default function Workout() {
 
           <ScrollView
             className="flex-1"
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingBottom: 16,
+            }}
             showsVerticalScrollIndicator={false}
           >
             {templates.length > 0 ? (
               templates.map((tpl) => {
-                const rowBgClass =
-                  ROW_BG_MAP[(tpl.color as TemplateColor) ?? "neutral"];
+                const color = (tpl.color as TemplateColor) ?? "neutral";
+                const stripClass = COLOR_STRIP_MAP[color];
 
                 return (
                   <Pressable
                     key={tpl.id}
-                    className={`mb-2 rounded-xl border border-neutral-200 px-3 py-2.5 ${rowBgClass}`}
+                    className="mb-2 rounded-xl bg-neutral-50 px-3 py-2"
                     onPress={() => handleStartFromTemplate(tpl.id)}
                     onLongPress={() => handleEditTemplate(tpl.id)}
                   >
                     <View className="flex-row items-center justify-between">
-                      <View className="shrink">
-                        <Text className="text-[15px] font-semibold text-neutral-900">
-                          {tpl.name}
-                        </Text>
-                        <Text className="mt-0.5 text-[11px] text-neutral-500">
-                          Tap to start · long-press to edit
-                        </Text>
+                      <View className="flex-row items-center flex-1">
+                        {/* colour strip on the left */}
+                        <View
+                          className={`mr-3 h-7 w-1 rounded-full ${stripClass}`}
+                        />
+                        <View className="shrink">
+                          <Text className="text-[15px] font-semibold text-neutral-900">
+                            {tpl.name}
+                          </Text>
+                          <Text className="mt-0.5 text-[11px] text-neutral-500">
+                            Tap to start · long-press to edit
+                          </Text>
+                        </View>
                       </View>
 
                       <Pressable
@@ -126,9 +132,8 @@ export default function Workout() {
                           handleDeleteTemplate(tpl.id, tpl.name ?? "")
                         }
                         hitSlop={8}
-                        className="ml-3 h-7 w-7 items-center justify-center rounded-full bg-white/80"
                       >
-                        <Trash2 width={16} height={16} color="#4B5563" />
+                        <Trash2 width={16} height={16} color="#9CA3AF" />
                       </Pressable>
                     </View>
                   </Pressable>
