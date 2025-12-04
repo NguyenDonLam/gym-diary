@@ -1,5 +1,5 @@
 // src/features/template-workout/ui/form.tsx
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   SafeAreaView,
   View,
@@ -127,6 +127,23 @@ export default function TemplateWorkoutForm({
     setLibraryOpen(false);
   };
 
+  const [librarySearch, setLibrarySearch] = useState("");
+  const filteredExerciseOptions = useMemo(() => {
+    const q = librarySearch.trim().toLowerCase();
+    if (!q) return exerciseOptions;
+    return exerciseOptions.filter((opt) =>
+      String((opt as any).name ?? "")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [exerciseOptions, librarySearch]);
+
+  // TODO: wire to real creation flow (navigate or open a separate form)
+  const handleCreateExercisePress = () => {
+    // e.g. router.push("/exercise/new") or open local modal
+  };
+
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1">
@@ -217,9 +234,29 @@ export default function TemplateWorkoutForm({
                 </View>
               </View>
 
+              {/* Search + create */}
+              <View className="mb-2 flex-row items-center gap-2">
+                <View className="flex-1 flex-row items-center rounded-full bg-neutral-100 px-2">
+                  <Text className="mr-1 text-[11px] text-neutral-400">🔍</Text>
+                  <TextInput
+                    className="flex-1 py-1 text-[12px] text-neutral-900"
+                    placeholder=""
+                    placeholderTextColor="#9CA3AF"
+                    value={librarySearch}
+                    onChangeText={setLibrarySearch}
+                  />
+                </View>
+                <Pressable
+                  onPress={handleCreateExercisePress}
+                  className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900"
+                >
+                  <Text className="text-[13px] text-white">＋</Text>
+                </Pressable>
+              </View>
+
               {/* List */}
               <ScrollView keyboardShouldPersistTaps="handled" className="mt-1">
-                {exerciseOptions.map((opt) => {
+                {filteredExerciseOptions.map((opt) => {
                   const isSelected = selectedIds.has(opt.id);
                   const name = (opt as any).name ?? "";
                   const trimmed = String(name).trim();
