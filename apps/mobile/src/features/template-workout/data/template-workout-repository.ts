@@ -177,6 +177,7 @@ class WorkoutTemplateRepository extends BaseRepository<TemplateWorkout> {
     await this.templateDao.update(entity.id, {
       name: row.name,
       color: row.color,
+      folder_id: entity.folderId,
       description: row.description,
       updated_at: row.updated_at,
     });
