@@ -206,6 +206,16 @@ export default function Workout() {
     router.push("/template-workout/new");
   }, [router]);
 
+  const handleCreateTemplateInFolder = React.useCallback(
+    (folderId: string) => {
+      router.push({
+        pathname: "/template-workout/new",
+        params: { folderId },
+      });
+    },
+    [router]
+  );
+
   const handleDeleteTemplatePress = React.useCallback(
     (id: string, name?: string | null) => {
       Alert.alert("Delete template", `Delete "${name ?? ""}"?`, [
@@ -345,6 +355,9 @@ export default function Workout() {
             onToggleOpen={() => toggleFolderOpen(item.folder.id)}
             onRenameFolder={(name) => handleRenameFolder(item.folder.id, name)}
             onDeleteFolder={() => handleDeleteFolder(item.folder.id)}
+            onCreateTemplateInFolder={() =>
+              handleCreateTemplateInFolder(item.folder.id)
+            }
           />
         );
       }
@@ -406,6 +419,7 @@ export default function Workout() {
       handleRenameFolder,
       handleStartFromTemplate,
       handleDeleteFolder,
+      handleCreateTemplateInFolder,
       openFolderIds,
       toggleFolderOpen,
       toggleUnassignedOpen,

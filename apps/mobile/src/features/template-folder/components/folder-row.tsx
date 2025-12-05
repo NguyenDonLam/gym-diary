@@ -11,6 +11,7 @@ type FolderRowProps = {
   onToggleOpen: () => void;
   onRenameFolder: (newName: string) => Promise<void> | void;
   onDeleteFolder: () => void;
+  onCreateTemplateInFolder: () => void; // create directly in this folder
 };
 
 export default function FolderRow({
@@ -20,6 +21,7 @@ export default function FolderRow({
   onToggleOpen,
   onRenameFolder,
   onDeleteFolder,
+  onCreateTemplateInFolder,
 }: FolderRowProps) {
   const [renaming, setRenaming] = React.useState(false);
   const [renameValue, setRenameValue] = React.useState(folder.name ?? "");
@@ -45,6 +47,10 @@ export default function FolderRow({
 
   const openActions = () => {
     Alert.alert(folder.name || "Folder", undefined, [
+      {
+        text: "New template here",
+        onPress: onCreateTemplateInFolder,
+      },
       { text: "Rename", onPress: () => setRenaming(true) },
       {
         text: "Delete",
