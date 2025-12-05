@@ -8,6 +8,10 @@ import {
   Pressable,
   ScrollView,
 } from "react-native";
+import DraggableFlatList, {
+  DragEndParams,
+} from "react-native-draggable-flatlist";
+
 import TemplateExerciseForm from "@/src/features/template-exercise/ui/form";
 import { TemplateWorkoutFormData, TemplateColor } from "../domain/type";
 import { TemplateExerciseFormData } from "../../template-exercise/domain/type";
@@ -83,6 +87,8 @@ export default function TemplateWorkoutForm({
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
+
+  const [librarySearch, setLibrarySearch] = useState("");
 
   const setName = (value: string) => {
     setFormData((prev) => ({
@@ -177,7 +183,6 @@ export default function TemplateWorkoutForm({
     setLibraryOpen(false);
   };
 
-  const [librarySearch, setLibrarySearch] = useState("");
   const filteredExerciseOptions = useMemo(() => {
     const q = librarySearch.trim().toLowerCase();
     if (!q) return exerciseOptions;
@@ -188,99 +193,117 @@ export default function TemplateWorkoutForm({
     );
   }, [exerciseOptions, librarySearch]);
 
-  // TODO: wire to real creation flow (navigate or open a separate form)
+  // TODO: wire to real creation flow
   const handleCreateExercisePress = () => {
-    // e.g. router.push("/exercise/new") or open local modal
+    // e.g. router.push("/exercise/new")
   };
 
   const currentColorOption =
     TEMPLATE_COLOR_OPTIONS.find((opt) => opt.value === color) ??
     TEMPLATE_COLOR_OPTIONS[0];
 
+  const handleDragEnd = ({ data }: DragEndParams<TemplateExerciseFormData>) => {
+    setFormData((prev) => ({
+      ...prev,
+      exercises: data,
+    }));
+  };
+
+  const renderHeader = () => (
+    <View>
+      {/* Template meta block */}
+      <View className="mb-4 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3">
+        <View className="mb-1 flex-row items-center justify-between">
+          <Text className="text-[13px]">🏋️‍♂️</Text>
+        </View>
+
+        <TextInput
+          className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+          placeholder="Name"
+          placeholderTextColor="#9CA3AF"
+          value={name}
+          onChangeText={setName}
+        />
+        <TextInput
+          className="mt-2 h-16 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
+          placeholder="Notes"
+          placeholderTextColor="#9CA3AF"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          textAlignVertical="top"
+        />
+
+        {/* Colour trigger */}
+        <View className="mt-3">
+          <Text className="mb-1 text-[11px] text-neutral-500">
+            Template colour
+          </Text>
+          <Pressable
+            onPress={() => setColorPickerOpen(true)}
+            className="inline-flex flex-row items-center rounded-full border border-neutral-200 bg-white px-2 py-1"
+          >
+            <View
+              className={`mr-2 h-3 w-3 rounded-full ${currentColorOption.dotBg}`}
+            />
+            <Text className="text-[11px] text-neutral-800">
+              {currentColorOption.label}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Exercises header row – add opens multi-select library */}
+      <View className="mb-2 flex-row items-center justify-between">
+        <View className="h-6 w-6 items-center justify-center rounded-full bg-neutral-100">
+          <Text className="text-[11px] text-neutral-500">●</Text>
+        </View>
+        <Pressable
+          onPress={() => setLibraryOpen(true)}
+          className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900"
+        >
+          <Text className="text-[14px] text-white">＋</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+
+  const renderEmpty = () => (
+    <View className="mt-4 items-center">
+      <View className="h-10 w-10 items-center justify-center rounded-2xl border border-dashed border-neutral-300">
+        <Text className="text-[16px] text-neutral-400">＋</Text>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1">
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
+        <DraggableFlatList
+          data={exercises}
+          keyExtractor={(item) => item.id}
+          onDragEnd={handleDragEnd}
+          activationDistance={8}
           keyboardShouldPersistTaps="handled"
-        >
-          {/* Template meta block */}
-          <View className="mb-4 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3">
-            <View className="mb-1 flex-row items-center justify-between">
-              <Text className="text-[13px]">🏋️‍♂️</Text>
-            </View>
-
-            <TextInput
-              className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
-              placeholder="Name"
-              placeholderTextColor="#9CA3AF"
-              value={name}
-              onChangeText={setName}
-            />
-            <TextInput
-              className="mt-2 h-16 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900"
-              placeholder="Notes"
-              placeholderTextColor="#9CA3AF"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              textAlignVertical="top"
-            />
-
-            {/* Colour trigger */}
-            <View className="mt-3">
-              <Text className="mb-1 text-[11px] text-neutral-500">
-                Template colour
-              </Text>
-              <Pressable
-                onPress={() => setColorPickerOpen(true)}
-                className="inline-flex flex-row items-center rounded-full border border-neutral-200 bg-white px-2 py-1"
-              >
-                <View
-                  className={`mr-2 h-3 w-3 rounded-full ${currentColorOption.dotBg}`}
-                />
-                <Text className="text-[11px] text-neutral-800">
-                  {currentColorOption.label}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Exercises header row – add opens multi-select library */}
-          <View className="mb-2 flex-row items-center justify-between">
-            <View className="h-6 w-6 items-center justify-center rounded-full bg-neutral-100">
-              <Text className="text-[11px] text-neutral-500">●</Text>
-            </View>
-            <Pressable
-              onPress={() => setLibraryOpen(true)}
-              className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900"
-            >
-              <Text className="text-[14px] text-white">＋</Text>
-            </Pressable>
-          </View>
-
-          {/* Exercises list */}
-          {exercises.length === 0 ? (
-            <View className="mt-4 items-center">
-              <View className="h-10 w-10 items-center justify-center rounded-2xl border border-dashed border-neutral-300">
-                <Text className="text-[16px] text-neutral-400">＋</Text>
-              </View>
-            </View>
-          ) : (
-            exercises.map((ex, index) => (
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            paddingBottom: 24,
+          }}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={renderEmpty}
+          renderItem={({ item, index, drag, isActive }) => (
+            <View className={isActive ? "opacity-80" : ""}>
               <TemplateExerciseForm
-                key={ex.id}
-                formData={ex}
+                formData={item}
                 index={index}
-                setFormData={(next) => updateExercise(ex.id, () => next)}
-                onRemove={() => removeExercise(ex.id)}
+                setFormData={(next) => updateExercise(item.id, () => next)}
+                onRemove={() => removeExercise(item.id)}
+                onDrag={drag}
               />
-            ))
+            </View>
           )}
-
-          <View className="h-6" />
-        </ScrollView>
+        />
 
         {/* LIBRARY OVERLAY – multi-select */}
         {libraryOpen && (
@@ -430,7 +453,7 @@ export default function TemplateWorkoutForm({
                           {opt.label}
                         </Text>
                         {selected && (
-                          <Text className="text-[10px] text-neutral-900 mt-0.5">
+                          <Text className="mt-0.5 text-[10px] text-neutral-900">
                             ✓
                           </Text>
                         )}

@@ -12,6 +12,7 @@ type TemplateExerciseFormProps = {
   index: number;
   setFormData: (next: TemplateExerciseFormData) => void;
   onRemove: () => void;
+  onDrag?: () => void; // drag handle
 };
 
 // TODO: wire this to your real repository.
@@ -24,6 +25,7 @@ export default function TemplateExerciseForm({
   index,
   setFormData,
   onRemove,
+  onDrag,
 }: TemplateExerciseFormProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
@@ -146,11 +148,24 @@ export default function TemplateExerciseForm({
         elevation: pickerOpen ? 20 : 0,
       }}
     >
-      {/* Header: index + name, icon remove */}
-      <View className="mb-2 flex-row justify-end">
+      {/* Header: compact row with wider handle + remove */}
+      <View className="mb-2 flex-row items-center justify-between">
+        {onDrag ? (
+          <Pressable
+            onLongPress={onDrag}
+            delayLongPress={120}
+            hitSlop={8}
+            className="mr-2 h-7 px-3 flex-row items-center justify-center rounded-full bg-neutral-100"
+          >
+            <Text className="text-[16px] text-neutral-400">☰</Text>
+          </Pressable>
+        ) : (
+          <View className="mr-2 h-7 w-7" />
+        )}
+
         <Pressable
           onPress={onRemove}
-          className="h-6 w-6 items-center justify-center rounded-full bg-red-50"
+          className="h-7 w-7 items-center justify-center rounded-full bg-red-50"
         >
           <Text className="text-[12px] text-red-500">✕</Text>
         </Pressable>
@@ -331,7 +346,6 @@ export default function TemplateExerciseForm({
         />
       ))}
 
-      {/* Add set – simple round button */}
       <Pressable
         className="mt-2 h-7 w-7 items-center justify-center self-end rounded-full bg-neutral-900"
         onPress={addSet}
