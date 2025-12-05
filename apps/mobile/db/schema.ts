@@ -25,7 +25,7 @@ export const exercises = sqliteTable("exercises", {
 export const workoutTemplates = sqliteTable("workout_templates", {
   id: text("id").primaryKey(), // UUID
   name: text("name").notNull(),
-  collectionId: text("folder_id").references(() => templateCollections.id, {
+  collectionId: text("folder_id").references(() => templateFolders.id, {
     onDelete: "set null",
   }),
   color: text("color").notNull().default("neutral"),
@@ -132,7 +132,7 @@ export const sessionSets = sqliteTable("session_sets", {
 });
 
 // collections/folders for workout templates
-export const templateCollections = sqliteTable("template_folders", {
+export const templateFolders = sqliteTable("template_folders", {
   id: text("id").primaryKey(), // UUID
   name: text("name").notNull(), // user label
   sortIndex: integer("sort_index").notNull().default(0),
