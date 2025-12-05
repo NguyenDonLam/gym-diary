@@ -299,17 +299,23 @@ export default function TemplateWorkoutForm({
           }}
           ListHeaderComponent={renderHeader}
           ListEmptyComponent={renderEmpty}
-          renderItem={({ item, index, drag, isActive }) => (
-            <View className={isActive ? "opacity-80" : ""}>
-              <TemplateExerciseForm
-                formData={item}
-                index={index}
-                setFormData={(next) => updateExercise(item.id, () => next)}
-                onRemove={() => removeExercise(item.id)}
-                onDrag={drag}
-              />
-            </View>
-          )}
+          renderItem={({ item, drag, isActive }) => {
+            const exerciseIndex = exercises.findIndex(
+              (ex) => ex.id === item.id
+            );
+
+            return (
+              <View className={isActive ? "opacity-80" : ""}>
+                <TemplateExerciseForm
+                  formData={item}
+                  index={exerciseIndex >= 0 ? exerciseIndex : 0}
+                  setFormData={(next) => updateExercise(item.id, () => next)}
+                  onRemove={() => removeExercise(item.id)}
+                  onDrag={drag}
+                />
+              </View>
+            );
+          }}
         />
 
         {/* LIBRARY OVERLAY – multi-select */}
