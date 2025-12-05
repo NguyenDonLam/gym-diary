@@ -21,7 +21,10 @@ import DraggableFlatList, {
 } from "react-native-draggable-flatlist";
 
 import { useWorkoutTemplates } from "@/src/features/template-workout/hooks/use-workout-template";
-import { TemplateColor, TemplateWorkout } from "@/src/features/template-workout/domain/type";
+import {
+  TemplateColor,
+  TemplateWorkout,
+} from "@/src/features/template-workout/domain/type";
 import { templateFolderRepository } from "@/src/features/template-folder/data/repository";
 import type { TemplateFolder } from "@/src/features/template-folder/domain/types";
 import FolderRow from "@/src/features/template-folder/components/folder-row";
@@ -202,8 +205,6 @@ export default function Workout() {
       return Array.from(next);
     });
   }, [folders]);
-
-  
 
   const rows = useMemo(
     () => buildRows(layoutTemplates, folders, unassignedOpen, openFolderIds),
@@ -431,58 +432,61 @@ export default function Workout() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <View className="px-4 pt-3 pb-2">
-        <Text className="text-lg font-bold text-neutral-900">
-          Session templates
-        </Text>
-        <Text className="mt-1 text-xs text-neutral-700">
-          Tap to start. Long-press to edit. Drag handle to move.
-        </Text>
-        <Text className="mt-0.5 text-xs text-neutral-500">
-          Total: {templates.length}
-        </Text>
-
-        <View className="mt-2 flex-row justify-between">
-          <Pressable
-            className="rounded-full px-3 py-1.5 bg-neutral-900"
-            onPress={handleCreateTemplate}
-          >
-            <Text className="text-[13px] font-semibold text-white">
-              New template
-            </Text>
-          </Pressable>
-
-          <Pressable
-            className="rounded-full px-3 py-1.5 bg-neutral-100"
-            onPress={handleCreateFolder}
-          >
-            <Text className="text-[13px] font-semibold text-neutral-900">
-              New folder
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-
       <DraggableFlatList
         data={rows}
         keyExtractor={(item) => item.key}
         renderItem={renderRow}
         onDragEnd={handleDragEnd}
         activationDistance={8}
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 16,
+          paddingTop: 12,
           paddingBottom: 16,
         }}
-        showsVerticalScrollIndicator={false}
-      />
+        ListHeaderComponent={
+          <View className="mb-2 px-0">
+            <Text className="text-lg font-bold text-neutral-900">
+              Session templates
+            </Text>
+            <Text className="mt-1 text-xs text-neutral-700">
+              Tap to start. Long-press to edit. Drag handle to move.
+            </Text>
+            <Text className="mt-0.5 text-xs text-neutral-500">
+              Total: {templates.length}
+            </Text>
 
-      {foldersError && (
-        <View className="px-4 pb-2">
-          <Text className="text-[10px] text-red-500">
-            Failed to load folders
-          </Text>
-        </View>
-      )}
+            <View className="mt-2 flex-row justify-between">
+              <Pressable
+                className="rounded-full px-3 py-1.5 bg-neutral-900"
+                onPress={handleCreateTemplate}
+              >
+                <Text className="text-[13px] font-semibold text-white">
+                  New template
+                </Text>
+              </Pressable>
+
+              <Pressable
+                className="rounded-full px-3 py-1.5 bg-neutral-100"
+                onPress={handleCreateFolder}
+              >
+                <Text className="text-[13px] font-semibold text-neutral-900">
+                  New folder
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        }
+        ListFooterComponent={
+          foldersError ? (
+            <View className="mt-1">
+              <Text className="text-[10px] text-red-500">
+                Failed to load folders
+              </Text>
+            </View>
+          ) : null
+        }
+      />
     </SafeAreaView>
   );
 }
