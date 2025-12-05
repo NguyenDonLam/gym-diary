@@ -45,6 +45,25 @@ export default function Workout() {
   const [creatingFolder, setCreatingFolder] = React.useState(false);
   const [newFolderName, setNewFolderName] = React.useState("");
 
+  const moveFolder = React.useCallback(
+    (id: string, direction: "up" | "down") => {
+      setFolders((prev) => {
+        const index = prev.findIndex((f) => f.id === id);
+        if (index === -1) return prev;
+
+        const targetIndex = direction === "up" ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= prev.length) return prev;
+
+        const next = [...prev];
+        const [item] = next.splice(index, 1);
+        next.splice(targetIndex, 0, item);
+        return next;
+      });
+    },
+    []
+  );
+
+
   const isOpen = React.useCallback(
     (key: string) => openSections.includes(key),
     [openSections]
@@ -284,8 +303,14 @@ export default function Workout() {
               templates.
             </Text>
           ) : (
-            folders.map((folder) => (
-              <FolderRow key={folder.id} folder={folder} />
+            folders.map((folder, idx) => (
+              <FolderRow
+                key={folder.id}
+                folder={folder}
+                index={idx}
+                total={folders.length}
+                onMove={moveFolder}
+              />
             ))
           )}
 

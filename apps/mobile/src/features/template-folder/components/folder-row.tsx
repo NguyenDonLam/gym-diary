@@ -37,9 +37,17 @@ type TemplateWithFolder = {
 
 type FolderRowProps = {
   folder: TemplateFolder;
+  index: number;
+  total: number;
+  onMove: (id: string, direction: "up" | "down") => void;
 };
 
-export default function FolderRow({ folder }: FolderRowProps) {
+export default function FolderRow({
+  folder,
+  index,
+  total,
+  onMove,
+}: FolderRowProps) {
   const router = useRouter();
   const { templates, deleteTemplate } = useWorkoutTemplates();
 
@@ -61,6 +69,8 @@ export default function FolderRow({ folder }: FolderRowProps) {
   );
 
   const count = templatesInFolder.length;
+  const canMoveUp = index > 0;
+  const canMoveDown = index < total - 1;
 
   const toggleOpen = () => {
     setOpen((prev) => !prev);
@@ -103,8 +113,6 @@ export default function FolderRow({ folder }: FolderRowProps) {
           style: "destructive",
           onPress: async () => {
             try {
-              // You need corresponding methods on the repository:
-              // await templateFolderRepository.delete(folder.id);
               await templateFolderRepository.delete(folder.id);
             } catch (err) {
               console.error("Failed to delete folder", err);
@@ -124,7 +132,6 @@ export default function FolderRow({ folder }: FolderRowProps) {
     }
 
     try {
-        // TODO: use proper method
     //   await templateFolderRepository.rename(folder.id, next);
     } catch (err) {
       console.error("Failed to rename folder", err);
@@ -134,11 +141,33 @@ export default function FolderRow({ folder }: FolderRowProps) {
   };
 
   const handleFolderActions = () => {
-    Alert.alert(folder.name || "Folder", undefined, [
+    const actions: any[] = [
       { text: "Rename", onPress: () => setRenaming(true) },
-      { text: "Delete", style: "destructive", onPress: handleDeleteFolder },
-      { text: "Cancel", style: "cancel" },
-    ]);
+    ];
+
+    if (canMoveUp) {
+      actions.push({
+        text: "Move up",
+        onPress: () => onMove(folder.id, "up"),
+      });
+    }
+
+    if (canMoveDown) {
+      actions.push({
+        text: "Move down",
+        onPress: () => onMove(folder.id, "down"),
+      });
+    }
+
+    actions.push({
+      text: "Delete",
+      style: "destructive",
+      onPress: handleDeleteFolder,
+    });
+
+    actions.push({ text: "Cancel", style: "cancel" });
+
+    Alert.alert(folder.name || "Folder", undefined, actions);
   };
 
   const renderTemplateItem = (tpl: any) => {
