@@ -12,8 +12,9 @@ import { TemplateSetDao } from "../../template-set/data/template-set-dao";
 import { TemplateSetRow } from "../../template-set/data/type";
 
 import { BaseRepository } from "@/src/lib/base-repository";
+import { db } from "@/db";
 
-export class WorkoutTemplateRepository extends BaseRepository<TemplateWorkout> {
+class WorkoutTemplateRepository extends BaseRepository<TemplateWorkout> {
   constructor(
     private readonly templateDao: WorkoutTemplateDao,
     private readonly exerciseDao: TemplateExerciseDao,
@@ -33,6 +34,8 @@ export class WorkoutTemplateRepository extends BaseRepository<TemplateWorkout> {
     return {
       id: row.id,
       name: row.name,
+      color: row.color,
+      folderId: row.folder_id,
       description: row.description,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
@@ -44,6 +47,8 @@ export class WorkoutTemplateRepository extends BaseRepository<TemplateWorkout> {
     return {
       id: entity.id,
       name: entity.name,
+      color: entity.color,
+      folder_id: entity.folderId,
       description: entity.description,
       created_at: entity.createdAt.toISOString(),
       updated_at: entity.updatedAt.toISOString(),
@@ -136,7 +141,14 @@ export class WorkoutTemplateRepository extends BaseRepository<TemplateWorkout> {
 
   protected async insert(entity: TemplateWorkout): Promise<TemplateWorkout> {
     const row = this._toRow(entity);
-    await this.templateDao.insert(row);
+    try {
+      console.log("[WorkoutTemplateRepository] inserting template", row);
+      await this.templateDao.insert(row);
+      console.log("[WorkoutTemplateRepository] template inserted");
+    } catch (e) {
+      console.error("[WorkoutTemplateRepository] template insert FAILED", e);
+      throw e;
+    }
 
     for (const ex of entity.exercises) {
       const exRow: TemplateExerciseRow = {
@@ -164,6 +176,8 @@ export class WorkoutTemplateRepository extends BaseRepository<TemplateWorkout> {
 
     await this.templateDao.update(entity.id, {
       name: row.name,
+      color: row.color,
+      folder_id: entity.folderId,
       description: row.description,
       updated_at: row.updated_at,
     });
@@ -199,3 +213,16 @@ export class WorkoutTemplateRepository extends BaseRepository<TemplateWorkout> {
     await this.templateDao.delete(id);
   }
 }
+
+const sqlite = db.$client; // <-- raw SQLiteDatabase from expo-sqlite
+
+
+const templateDao = new WorkoutTemplateDao(sqlite);
+const templateExerciseDao = new TemplateExerciseDao(sqlite);
+const templateSetDao = new TemplateSetDao(sqlite);
+
+export const workoutTemplateRepository = new WorkoutTemplateRepository(
+  templateDao,
+  templateExerciseDao,
+  templateSetDao
+);

@@ -12,7 +12,6 @@ export type TemplateExercise = {
 export type TemplateExerciseFormData = {
   id: string; // local UUID for the form
   exerciseId: string | null; // canonical exercise id if selected
-  name: string; // label (from list or custom)
   isCustom: boolean; // true if using custom name
   sets: TemplateSetFormData[];
 };

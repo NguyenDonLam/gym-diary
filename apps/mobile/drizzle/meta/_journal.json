@@ -8,6 +8,13 @@
       "when": 1764565909121,
       "tag": "0000_cooing_omega_flight",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1764825415782,
+      "tag": "0001_illegal_lockjaw",
+      "breakpoints": true
     }
   ]
 }

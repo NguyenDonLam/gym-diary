@@ -1,4 +1,4 @@
-export type LoadUnit = "kg" | "lb" | "band" | "bodyweight" | "none";
+export type LoadUnit = "kg" | "lb" | "band" | "time" | "custom";
 
 export type TemplateSet = {
   id: string; // UUID
