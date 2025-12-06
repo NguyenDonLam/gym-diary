@@ -7,6 +7,29 @@ Workout tracking platform with:
 - API server
 - Shared types/schemas
 
+## Screenshots
+
+### Mobile — Home
+
+<p align="center">
+  <img src="./docs/images/home-screen.png" alt="Home screen" width="260" />
+  <img src="./docs/images/home-screen-2.png" alt="Home screen (stats)" width="260" />
+</p>
+
+### Mobile — Template management
+
+<p align="center">
+  <img src="./docs/images/template-screen.png" alt="Template list" width="260" />
+  <img src="./docs/images/template-screen-drag.png" alt="Template drag-and-drop" width="260" />
+</p>
+
+### Mobile — Exercise library
+
+<p align="center">
+  <img src="./docs/images/exercise-library-select.png" alt="Template list" width="260" />
+  <img src="./docs/images/create-new-exercise.png" alt="Template drag-and-drop" width="260" />
+</p>
+
 ## Repo layout
 ```
 repo/
@@ -21,6 +44,7 @@ repo/
   scripts/
   docs/
 ```
+
 ## Prerequisites
 
 - Node.js (LTS)
@@ -33,31 +57,37 @@ repo/
 From repo root:
 
 pnpm:
+```
 pnpm install
+```
 
 npm:
+```
 npm install
+```
 
 ## Run: API (NestJS)
 ```
 cd apps/api
 npm run start:dev
 
-Build:
+# Build:
 npm run build
 npm run start:prod
 ```
+
 ## Run: Mobile (React Native)
 ```
 cd apps/mobile
 npx expo start
 
-Android:
+# Android:
 npx react-native run-android
 
-iOS (macOS only):
+# iOS (macOS only):
 npx react-native run-ios
 ```
+
 ## Local API access from mobile devices
 
 A phone cannot reach http://localhost:<port> on your computer.

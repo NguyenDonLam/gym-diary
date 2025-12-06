@@ -15,11 +15,6 @@ type TemplateExerciseFormProps = {
   onDrag?: () => void; // drag handle
 };
 
-// TODO: wire this to your real repository.
-async function createExercise(name: string): Promise<Exercise> {
-  throw new Error("createExercise(name: string) is not implemented yet.");
-}
-
 export default function TemplateExerciseForm({
   formData,
   index,
@@ -29,9 +24,6 @@ export default function TemplateExerciseForm({
 }: TemplateExerciseFormProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
-  const [creatingNew, setCreatingNew] = useState(false);
-  const [newExerciseName, setNewExerciseName] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
 
   const { options: exerciseOptions } = useExercises();
 
@@ -61,6 +53,7 @@ export default function TemplateExerciseForm({
         rpe: "",
       },
     ];
+    console.log(JSON.stringify(formData.sets))
     update({ sets: nextSets });
   };
 
@@ -100,38 +93,9 @@ export default function TemplateExerciseForm({
     });
     setPickerOpen(false);
     setPickerSearch("");
-    setCreatingNew(false);
-    setNewExerciseName("");
   };
 
-  const startCreateNew = () => {
-    setCreatingNew(true);
-    setNewExerciseName(pickerSearch.trim());
-  };
-
-  const cancelCreateNew = () => {
-    setCreatingNew(false);
-    setNewExerciseName("");
-  };
-
-  const handleCreateNew = async () => {
-    const name = newExerciseName.trim();
-    if (!name) return;
-
-    try {
-      setIsCreating(true);
-      const created = await createExercise(name);
-      update({ exerciseId: created.id });
-      setPickerOpen(false);
-      setPickerSearch("");
-      setNewExerciseName("");
-      setCreatingNew(false);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const selectorLabel = selectedExercise?.name ?? "Select";
+  const selectorLabel = selectedExercise?.name ?? "Select exercise";
 
   const getInitial = (opt: Exercise) => {
     const trimmed = (opt.name ?? "").trim();
@@ -148,7 +112,7 @@ export default function TemplateExerciseForm({
         elevation: pickerOpen ? 20 : 0,
       }}
     >
-      {/* Header: compact row with wider handle + remove */}
+      {/* Header: compact row with handle + remove */}
       <View className="mb-2 flex-row items-center justify-between">
         {onDrag ? (
           <Pressable
@@ -192,18 +156,17 @@ export default function TemplateExerciseForm({
 
         {pickerOpen && (
           <View
-            className="mt-2 rounded-xl border border-neutral-200 bg-neutral-50"
+            className="mt-2 rounded-xl border border-neutral-200 bg-white"
             style={{
               zIndex: 30,
               elevation: 30,
             }}
           >
             {/* Search */}
-            <View className="flex-row items-center border-b border-neutral-200 px-2 py-1.5">
-              <Text className="mr-1 text-[11px] text-neutral-500">🔍</Text>
+            <View className="border-b border-neutral-100 px-3 py-2">
               <TextInput
-                className="flex-1 rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-1.5 text-xs text-neutral-900"
-                placeholder=""
+                className="text-xs text-neutral-900"
+                placeholder="Search exercises"
                 placeholderTextColor="#9CA3AF"
                 value={pickerSearch}
                 onChangeText={setPickerSearch}
@@ -213,92 +176,46 @@ export default function TemplateExerciseForm({
             {/* List */}
             <View className="max-h-72">
               {matches.length === 0 ? (
-                <View className="px-3 py-3" />
+                <View className="px-3 py-3">
+                  <Text className="text-[11px] text-neutral-500">
+                    No exercises found
+                  </Text>
+                </View>
               ) : (
                 <ScrollView
                   keyboardShouldPersistTaps="handled"
                   nestedScrollEnabled
-                  className="mt-1"
                 >
                   {matches.map((opt) => {
                     const isSelected = opt.id === formData.exerciseId;
-                    const initial = getInitial(opt);
 
                     return (
                       <Pressable
                         key={opt.id}
-                        className={`mx-2 mb-1 flex-row items-center rounded-xl px-2 py-1.5 ${
-                          isSelected ? "bg-neutral-900" : "bg-transparent"
+                        className={`flex-row items-center justify-between px-3 py-2 ${
+                          isSelected ? "bg-neutral-900" : "bg-white"
                         }`}
                         onPress={() => selectExerciseOption(opt)}
                       >
-                        <View
-                          className={`mr-2 h-7 w-7 items-center justify-center rounded-xl ${
-                            isSelected ? "bg-neutral-800" : "bg-neutral-100"
+                        <Text
+                          className={`flex-1 text-[12px] ${
+                            isSelected
+                              ? "font-medium text-white"
+                              : "text-neutral-900"
                           }`}
+                          numberOfLines={1}
                         >
-                          <Text
-                            className={`text-[11px] font-semibold ${
-                              isSelected ? "text-white" : "text-neutral-700"
-                            }`}
-                          >
-                            {initial}
-                          </Text>
-                        </View>
+                          {opt.name}
+                        </Text>
 
-                        <View className="flex-1">
-                          <Text
-                            className={`text-[12px] ${
-                              isSelected
-                                ? "font-semibold text-white"
-                                : "text-neutral-900"
-                            }`}
-                            numberOfLines={1}
-                          >
-                            {opt.name}
-                          </Text>
-                        </View>
+                        {isSelected && (
+                          <View className="ml-2 h-4 w-4 rounded-full border border-white" />
+                        )}
                       </Pressable>
                     );
                   })}
                   <View className="h-2" />
                 </ScrollView>
-              )}
-            </View>
-
-            {/* Create new – icons only */}
-            <View className="border-t border-neutral-200 px-2 py-2">
-              {!creatingNew ? (
-                <Pressable
-                  onPress={startCreateNew}
-                  className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900"
-                >
-                  <Text className="text-[13px] text-white">＋</Text>
-                </Pressable>
-              ) : (
-                <View className="flex-row items-center gap-2">
-                  <TextInput
-                    className="flex-1 rounded-lg border border-neutral-300 bg-neutral-50 px-2 py-1.5 text-xs text-neutral-900"
-                    placeholder=""
-                    placeholderTextColor="#9CA3AF"
-                    value={newExerciseName}
-                    onChangeText={setNewExerciseName}
-                  />
-                  <Pressable
-                    onPress={cancelCreateNew}
-                    disabled={isCreating}
-                    className="h-7 w-7 items-center justify-center rounded-full bg-neutral-200"
-                  >
-                    <Text className="text-[12px] text-neutral-600">✕</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={handleCreateNew}
-                    disabled={isCreating || !newExerciseName.trim()}
-                    className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900"
-                  >
-                    <Text className="text-[12px] text-white">✓</Text>
-                  </Pressable>
-                </View>
               )}
             </View>
           </View>
