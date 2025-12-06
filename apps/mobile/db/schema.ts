@@ -68,7 +68,7 @@ export const templateSets = sqliteTable("template_sets", {
   orderIndex: integer("order_index").notNull(),
   targetReps: integer("target_reps"),
   loadUnit: text("load_unit", {
-    enum: ["kg", "lb", "band", "bodyweight", "none"],
+    enum: ["kg" , "lb" , "band" , "time" , "custom"],
   }).notNull(),
   loadValue: text("load_value"),
   targetRpe: real("target_rpe"),
@@ -143,7 +143,7 @@ export const sessionSets = sqliteTable("session_sets", {
   orderIndex: integer("order_index").notNull(),
   reps: integer("reps"),
   loadUnit: text("load_unit", {
-    enum: ["kg", "lb", "band", "bodyweight", "none"],
+    enum: ["kg", "lb", "band", "time", "custom"],
   }).notNull(),
   loadValue: text("load_value"),
   rpe: real("rpe"),
