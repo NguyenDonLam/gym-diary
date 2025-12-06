@@ -262,17 +262,18 @@ export default function Workout() {
     folder: TemplateFolder,
     newName: string
   ) => {
-    const updated: TemplateFolder = {
-      ...folder,
-      name: newName,
-    };
+    const updated: TemplateFolder = { ...folder, name: newName };
 
     try {
-      await templateFolderRepository.save(updated);
+      const saved = await templateFolderRepository.save(updated);
+
+      // sync React state
+      setFolders((prev) => prev.map((f) => (f.id === saved.id ? saved : f)));
     } catch (err) {
       console.error("Failed to update folder", err);
     }
   };
+
 
   const handleDeleteFolder = async (folderId: string) => {
     try {
