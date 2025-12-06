@@ -23,6 +23,13 @@ Workout tracking platform with:
   <img src="./docs/images/template-screen-drag.png" alt="Template drag-and-drop" width="260" />
 </p>
 
+### Mobile — Exercise library
+
+<p align="center">
+  <img src="./docs/images/exercise-library-select.png" alt="Template list" width="260" />
+  <img src="./docs/images/create-new-exercise.png" alt="Template drag-and-drop" width="260" />
+</p>
+
 ## Repo layout
 ```
 repo/

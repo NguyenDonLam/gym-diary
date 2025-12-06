@@ -53,6 +53,7 @@ export default function TemplateExerciseForm({
         rpe: "",
       },
     ];
+    console.log(JSON.stringify(formData.sets))
     update({ sets: nextSets });
   };
 
