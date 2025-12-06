@@ -15,6 +15,13 @@
       "when": 1764825415782,
       "tag": "0001_illegal_lockjaw",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1764998258638,
+      "tag": "0002_parallel_hardball",
+      "breakpoints": true
     }
   ]
 }

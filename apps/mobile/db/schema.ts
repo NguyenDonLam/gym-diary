@@ -25,7 +25,7 @@ export const exercises = sqliteTable("exercises", {
 export const workoutTemplates = sqliteTable("workout_templates", {
   id: text("id").primaryKey(), // UUID
   name: text("name").notNull(),
-  collectionId: text("folder_id").references(() => templateFolders.id, {
+  folderId: text("folder_id").references(() => templateFolders.id, {
     onDelete: "set null",
   }),
   color: text("color").notNull().default("neutral"),
@@ -41,12 +41,15 @@ export const templateExercises = sqliteTable("template_exercises", {
   id: text("id").primaryKey(), // UUID
   workoutTemplateId: text("workout_template_id")
     .notNull()
-    .references(() => workoutTemplates.id),
+    .references(() => workoutTemplates.id, {
+      // delete template -> delete its template_exercises
+      onDelete: "cascade",
+    }),
   exerciseId: text("exercise_id")
     .notNull()
     .references(() => exercises.id),
   orderIndex: integer("order_index").notNull(),
-  notes: text("notes"),
+  note: text("note"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
@@ -58,7 +61,10 @@ export const templateSets = sqliteTable("template_sets", {
   id: text("id").primaryKey(), // UUID
   templateExerciseId: text("template_exercise_id")
     .notNull()
-    .references(() => templateExercises.id),
+    .references(() => templateExercises.id, {
+      // delete template_exercise -> delete its template_sets
+      onDelete: "cascade",
+    }),
   orderIndex: integer("order_index").notNull(),
   targetReps: integer("target_reps"),
   loadUnit: text("load_unit", {
@@ -66,7 +72,7 @@ export const templateSets = sqliteTable("template_sets", {
   }).notNull(),
   loadValue: text("load_value"),
   targetRpe: real("target_rpe"),
-  notes: text("notes"),
+  note: text("note"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
@@ -79,7 +85,8 @@ export const workoutSessions = sqliteTable("workout_sessions", {
   startedAt: text("started_at").notNull(),
   endedAt: text("ended_at"),
   sourceTemplateId: text("source_template_id").references(
-    () => workoutTemplates.id
+    () => workoutTemplates.id,
+    { onDelete: "set null" }
   ),
   note: text("note"),
   createdAt: text("created_at").notNull(),
@@ -93,15 +100,25 @@ export const sessionExercises = sqliteTable("session_exercises", {
   id: text("id").primaryKey(),
   workoutSessionId: text("workout_session_id")
     .notNull()
-    .references(() => workoutSessions.id),
+    .references(() => workoutSessions.id, {
+      // delete session -> delete its session_exercises
+      onDelete: "cascade",
+    }),
 
-  exerciseId: text("exercise_id")
-    .notNull()
-    .references(() => exercises.id),
+  // link to library exercise, but nullable so old sessions survive library deletes
+  exerciseId: text("exercise_id").references(() => exercises.id, {
+    // delete exercise from library -> set this FK to null, keep row
+    onDelete: "set null",
+  }),
 
+  // optional link back to template exercise
   templateExerciseId: text("template_exercise_id").references(
-    () => templateExercises.id
+    () => templateExercises.id,
+    { onDelete: "set null" }
   ),
+
+  // snapshot name used for display so sessions still show correctly
+  exerciseName: text("exercise_name"),
 
   orderIndex: integer("order_index").notNull(),
   note: text("note"),
@@ -116,8 +133,13 @@ export const sessionSets = sqliteTable("session_sets", {
   id: text("id").primaryKey(), // UUID
   sessionExerciseId: text("session_exercise_id")
     .notNull()
-    .references(() => sessionExercises.id),
-  templateSetId: text("template_set_id").references(() => templateSets.id),
+    .references(() => sessionExercises.id, {
+      // delete session_exercise -> delete its sets
+      onDelete: "cascade",
+    }),
+  templateSetId: text("template_set_id").references(() => templateSets.id, {
+    onDelete: "set null",
+  }),
   orderIndex: integer("order_index").notNull(),
   reps: integer("reps"),
   loadUnit: text("load_unit", {
