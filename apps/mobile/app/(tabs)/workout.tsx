@@ -223,8 +223,12 @@ export default function Workout() {
   };
 
   const handleStartFromTemplate = (id: string) => {
-    console.log("start session from template", id);
+    router.push({
+      pathname: "/session-workout/[id]",
+      params: { id },
+    });
   };
+
 
   const handleEditTemplate = (id: string) => {
     router.push({
