@@ -156,14 +156,10 @@ function applyDragResult(
 export default function Workout() {
   const router = useRouter();
   const {
-    templates,
-    deleteTemplate,
-    loading: templatesLoading,
-  } = useWorkoutPrograms() as {
-    templates: WorkoutProgram[];
-    deleteTemplate: (id: string) => Promise<void>;
-    loading?: boolean;
-  };
+    programs,
+    deleteProgram,
+    isLoading,
+  } = useWorkoutPrograms();
 
   const [folders, setFolders] = useState<TemplateFolder[]>([]);
   const [foldersLoading, setFoldersLoading] = useState(true);
@@ -176,8 +172,8 @@ export default function Workout() {
 
   // keep layout in sync with source templates (initial + external changes)
   useEffect(() => {
-    setLayoutTemplates(templates);
-  }, [templates]);
+    setLayoutTemplates(programs);
+  }, [programs]);
 
   // folders
   useEffect(() => {
@@ -214,12 +210,12 @@ export default function Workout() {
   );
 
   const handleCreateTemplate = () => {
-    router.push("/template-workout/new");
+    router.push("/program-workout/new");
   };
 
   const handleCreateTemplateInFolder = (folderId: string) => {
     router.push({
-      pathname: "/template-workout/new",
+      pathname: "/program-workout/new",
       params: { folderId },
     });
   };
@@ -243,7 +239,7 @@ export default function Workout() {
 
   const handleEditTemplate = (id: string) => {
     router.push({
-      pathname: "/template-workout/[id]",
+      pathname: "/program-workout/[id]",
       params: { id },
     });
   };
@@ -255,7 +251,7 @@ export default function Workout() {
         text: "Delete",
         style: "destructive",
         onPress: () => {
-          deleteTemplate(id).catch((err) => {
+          deleteProgram(id).catch((err) => {
             console.error("Failed to delete template", err);
           });
         },
@@ -438,7 +434,7 @@ export default function Workout() {
     );
   };
 
-  if (templatesLoading || foldersLoading) {
+  if (isLoading || foldersLoading) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-white">
         <ActivityIndicator size="large" />
@@ -469,7 +465,7 @@ export default function Workout() {
               Tap to start. Long-press to edit. Drag handle to move.
             </Text>
             <Text className="mt-0.5 text-xs text-neutral-500">
-              Total: {templates.length}
+              Total: {programs.length}
             </Text>
 
             <View className="mt-2 flex-row justify-between">

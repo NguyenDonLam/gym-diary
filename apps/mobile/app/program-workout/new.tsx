@@ -9,21 +9,11 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
-  WorkoutProgram,
   WorkoutProgramFormData,
 } from "@/src/features/program-workout/domain/type";
 import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
-import {
-  SetProgram,
-  SetProgramFormData,
-} from "@/src/features/program-set/domain/type";
-import {
-  TemplateExercise,
-  TemplateExerciseFormData,
-} from "@/src/features/template-exercise/domain/type";
-import { Exercise } from "@packages/exercise";
-import { workoutTemplateRepository } from "@/src/features/program-workout/data/workout-program-repository";
 import { WorkoutProgramFormFactory } from "@/src/features/program-workout/domain/form-factory";
+import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
 export default function TemplateWorkoutCreate() {
   const router = useRouter();
 
@@ -50,7 +40,7 @@ export default function TemplateWorkoutCreate() {
     try {
       const template = await WorkoutProgramFormFactory.toDomain(formData);
       console.log("start saving", JSON.stringify(template, null, 2));
-      await workoutTemplateRepository.save(template);
+      await workoutProgramRepository.save(template);
 
       router.replace("/workout");
     } finally {

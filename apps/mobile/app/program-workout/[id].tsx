@@ -16,8 +16,8 @@ import {
   WorkoutProgramFormData,
 } from "@/src/features/program-workout/domain/type";
 import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
-import { workoutTemplateRepository } from "@/src/features/program-workout/data/workout-program-repository";
 import { WorkoutProgramFormFactory } from "@/src/features/program-workout/domain/form-factory";
+import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
 
 export default function TemplateWorkoutEditScreen() {
   const router = useRouter();
@@ -47,7 +47,7 @@ export default function TemplateWorkoutEditScreen() {
         setLoadError(null);
 
         const template: WorkoutProgram | null =
-          await workoutTemplateRepository.get(id);
+          await workoutProgramRepository.get(id);
 
         if (!template) {
           if (!cancelled) {
@@ -99,7 +99,7 @@ export default function TemplateWorkoutEditScreen() {
       // ensure we keep the existing id when saving
       template.id = id;
 
-      await workoutTemplateRepository.save(template);
+      await workoutProgramRepository.save(template);
 
       router.replace("/workout");
     } finally {

@@ -4,15 +4,15 @@ import { WorkoutProgram } from "../domain/type";
 import { workoutProgramRepository } from "../data/workout-program-repository";
 
 type UseWorkoutTemplatesResult = {
-  templates: WorkoutProgram[];
+  programs: WorkoutProgram[];
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
-  deleteTemplate: (id: string) => Promise<void>;
+  deleteProgram: (id: string) => Promise<void>;
 };
 
 export function useWorkoutPrograms(): UseWorkoutTemplatesResult {
-  const [templates, setTemplates] = useState<WorkoutProgram[]>([]);
+  const [programs, setPrograms] = useState<WorkoutProgram[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -22,10 +22,10 @@ export function useWorkoutPrograms(): UseWorkoutTemplatesResult {
 
     try {
       const data = await workoutProgramRepository.getAll();
-      setTemplates(data);
+      setPrograms(data);
     } catch (e) {
       setError(e instanceof Error ? e : new Error("Failed to load templates"));
-      setTemplates([]);
+      setPrograms([]);
     } finally {
       setIsLoading(false);
     }
@@ -48,12 +48,12 @@ export function useWorkoutPrograms(): UseWorkoutTemplatesResult {
     };
   }, [load]);
 
-  const deleteTemplate = useCallback(async (id: string) => {
+  const deleteProgram = useCallback(async (id: string) => {
     // 1) delete in storage
     await workoutProgramRepository.delete(id);
     // 2) sync local state
-    setTemplates((prev) => prev.filter((tpl) => tpl.id !== id));
+    setPrograms((prev) => prev.filter((tpl) => tpl.id !== id));
   }, []);
 
-  return { templates, isLoading, error, refetch: load, deleteTemplate };
+  return { programs, isLoading, error, refetch: load, deleteProgram };
 }

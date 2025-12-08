@@ -39,15 +39,15 @@ export default function RootLayout() {
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen
-              name="template-workout"
+              name="program-workout"
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="template-workout/new"
+              name="program-workout/new"
               options={{ headerShown: false }}
             />
             <Stack.Screen
-              name="template-workout/[id]"
+              name="program-workout/[id]"
               options={{ headerShown: false }}
             />
           </Stack>

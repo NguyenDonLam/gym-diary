@@ -12,6 +12,43 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
   }
 
   async get(id: string): Promise<WorkoutProgram | null> {
+    console.log("fetching");
+
+    try {
+      const program = await db.query.workoutPrograms.findFirst({
+        where: (wp, { eq }) => eq(wp.id, id),
+        with: {
+          exercises: {
+            with: {
+              sets: true,
+            },
+            orderBy: (ex, { asc }) => [asc(ex.orderIndex)],
+          },
+        },
+      });
+
+      console.log("fetched");
+
+      if (!program) return null;
+
+      return WorkoutProgramRowFactory.fromQuery(program);
+    } catch (error) {
+      console.error("WorkoutProgramRepository.get error:", error);
+      throw error;
+    }
+  }
+
+  async getAll(): Promise<WorkoutProgram[]> {
+    const rows = await db
+      .select()
+      .from(workoutPrograms)
+      .orderBy(asc(workoutPrograms.createdAt));
+
+    return rows.map((row) => WorkoutProgramRowFactory.toDomain(row, []));
+  }
+
+  // full aggregate for editing / starting sessions
+  async getWithChildren(id: string): Promise<WorkoutProgram | null> {
     const program = await db.query.workoutPrograms.findFirst({
       where: (wp) => eq(wp.id, id),
       with: {
@@ -27,22 +64,6 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
     if (!program) return null;
 
     return WorkoutProgramRowFactory.fromQuery(program);
-  }
-
-  async getAll(): Promise<WorkoutProgram[]> {
-    const programs = await db.query.workoutPrograms.findMany({
-      with: {
-        exercises: {
-          with: {
-            sets: true,
-          },
-          orderBy: (ex: typeof exercisePrograms) => [asc(ex.orderIndex)],
-        },
-      },
-      orderBy: (wp) => [asc(wp.createdAt)],
-    });
-
-    return programs.map((p) => WorkoutProgramRowFactory.fromQuery(p));
   }
 
   protected async insert(
