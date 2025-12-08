@@ -16,7 +16,7 @@ import { ListChecks } from "lucide-react-native";
 import TemplateExerciseForm from "@/src/features/template-exercise/ui/form";
 import { WorkoutProgramFormData, ProgramColor } from "../domain/type";
 import { TemplateExerciseFormData } from "../../template-exercise/domain/type";
-import { TemplateSetFormData } from "../../template-set/domain/type";
+import { SetProgramFormData } from "../../program-set/domain/type";
 import { generateId } from "@/src/lib/id";
 import { useExercises } from "../../exercise/hooks/use-exercises";
 import { Exercise } from "@packages/exercise";
@@ -70,7 +70,7 @@ const TEMPLATE_COLOR_OPTIONS: {
   { value: "pink", label: "Pink", tileBg: "bg-pink-100", dotBg: "bg-pink-500" },
 ];
 
-function makeDefaultSets(): TemplateSetFormData[] {
+function makeDefaultSets(): SetProgramFormData[] {
   return Array.from({ length: 3 }).map(() => ({
     id: generateId(),
     reps: "8",

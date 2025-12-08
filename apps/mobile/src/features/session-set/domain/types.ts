@@ -1,12 +1,11 @@
-import { LoadUnit, TemplateSet } from "../../template-set/domain/type";
-
+import { LoadUnit, SetProgram } from "../../program-set/domain/type";
 
 export type SessionSet = {
   id: string;
 
   sessionExerciseId: string;
   templateSetId: string | null;
-  templateSet?: TemplateSet;
+  templateSet?: SetProgram;
 
   orderIndex: number;
 

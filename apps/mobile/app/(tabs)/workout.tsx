@@ -28,9 +28,9 @@ import {
 import { templateFolderRepository } from "@/src/features/template-folder/data/repository";
 import type { TemplateFolder } from "@/src/features/template-folder/domain/types";
 import FolderRow from "@/src/features/template-folder/components/folder-row";
-import { workoutTemplateRepository } from "@/src/features/program-workout/data/workout-program-repository";
 import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
 
 const COLOR_STRIP_MAP: Record<ProgramColor, string> = {
   neutral: "bg-neutral-400",
@@ -335,7 +335,7 @@ export default function Workout() {
             await Promise.all(
               changed.map((tpl) =>
                 // adapt cast/object shape to your actual Template type if needed
-                workoutTemplateRepository.save(tpl)
+                workoutProgramRepository.save(tpl)
               )
             );
           } catch (err) {

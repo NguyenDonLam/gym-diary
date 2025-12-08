@@ -1,12 +1,11 @@
-// src/features/template-set/ui/form.tsx
 import React from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { TemplateSetFormData, LoadUnit } from "../domain/type";
+import { SetProgramFormData, LoadUnit } from "../domain/type";
 
-type TemplateSetFormProps = {
-  formData: TemplateSetFormData;
+type SetProgramFormProps = {
+  formData: SetProgramFormData;
   index: number;
-  setFormData: (next: TemplateSetFormData) => void;
+  setFormData: (next: SetProgramFormData) => void;
   onRemove: () => void;
 };
 
@@ -47,13 +46,13 @@ const BAND_OPTIONS = [
   },
 ];
 
-export default function TemplateSetForm({
+export default function SetProgramForm({
   formData,
   index,
   setFormData,
   onRemove,
-}: TemplateSetFormProps) {
-  const update = (patch: Partial<TemplateSetFormData>) => {
+}: SetProgramFormProps) {
+  const update = (patch: Partial<SetProgramFormData>) => {
     setFormData({ ...formData, ...patch });
   };
 

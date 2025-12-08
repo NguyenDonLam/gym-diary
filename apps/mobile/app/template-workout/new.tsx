@@ -14,9 +14,9 @@ import {
 } from "@/src/features/program-workout/domain/type";
 import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
 import {
-  TemplateSet,
-  TemplateSetFormData,
-} from "@/src/features/template-set/domain/type";
+  SetProgram,
+  SetProgramFormData,
+} from "@/src/features/program-set/domain/type";
 import {
   TemplateExercise,
   TemplateExerciseFormData,

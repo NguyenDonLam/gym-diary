@@ -1,8 +1,8 @@
 export type LoadUnit = "kg" | "lb" | "band" | "time" | "custom";
 
-export type TemplateSet = {
+export type SetProgram = {
   id: string; // UUID
-  templateExerciseId: string;
+  exerciseProgramId: string;
   orderIndex: number; // 1, 2, 3, …
   targetReps: number | null;
   loadUnit: LoadUnit;
@@ -13,7 +13,7 @@ export type TemplateSet = {
   updatedAt: Date;
 };
 
-export type TemplateSetFormData = {
+export type SetProgramFormData = {
   id: string; // local UUID for the form
   reps: string; // raw text input
   loadUnit: LoadUnit;

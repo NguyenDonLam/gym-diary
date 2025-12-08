@@ -8,9 +8,9 @@ import {
   TemplateExerciseFormData,
 } from "@/src/features/template-exercise/domain/type";
 import {
-  TemplateSet,
-  TemplateSetFormData,
-} from "@/src/features/template-set/domain/type";
+  SetProgram,
+  SetProgramFormData,
+} from "@/src/features/program-set/domain/type";
 import { generateId } from "@/src/lib/id";
 
 function parseNumberOrNull(v: string): number | null {
@@ -54,8 +54,8 @@ export class WorkoutProgramFormFactory {
 
       const templateExerciseId = ex.id || generateId();
 
-      const sets: TemplateSet[] = ex.sets.map(
-        (s: TemplateSetFormData, setIndex: number) => ({
+      const sets: SetProgram[] = ex.sets.map(
+        (s: SetProgramFormData, setIndex: number) => ({
           id: s.id || generateId(),
           templateExerciseId,
           orderIndex: setIndex,

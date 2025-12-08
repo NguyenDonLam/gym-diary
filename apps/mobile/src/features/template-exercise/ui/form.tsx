@@ -2,10 +2,10 @@
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View, ScrollView } from "react-native";
 import { TemplateExerciseFormData } from "../domain/type";
-import { TemplateSetFormData } from "../../template-set/domain/type";
+import { SetProgramFormData } from "../../program-set/domain/type";
 import { Exercise } from "../../../../../../packages/exercise/type";
 import { useExercises } from "../../exercise/hooks/use-exercises";
-import TemplateSetForm from "@/src/features/template-set/ui/form";
+import SetProgramForm from "@/src/features/program-set/ui/form";
 
 type TemplateExerciseFormProps = {
   formData: TemplateExerciseFormData;
@@ -43,7 +43,7 @@ export default function TemplateExerciseForm({
   // sets
 
   const addSet = () => {
-    const nextSets: TemplateSetFormData[] = [
+    const nextSets: SetProgramFormData[] = [
       ...formData.sets,
       {
         id: Math.random().toString(36).slice(2),
@@ -58,7 +58,7 @@ export default function TemplateExerciseForm({
   };
 
   const applyPreset = (count: number, reps: number) => {
-    const nextSets: TemplateSetFormData[] = Array.from({ length: count }).map(
+    const nextSets: SetProgramFormData[] = Array.from({ length: count }).map(
       () => ({
         id: Math.random().toString(36).slice(2),
         reps: String(reps),
@@ -249,7 +249,7 @@ export default function TemplateExerciseForm({
       )}
 
       {formData.sets.map((s, setIndex) => (
-        <TemplateSetForm
+        <SetProgramForm
           key={s.id}
           formData={s}
           index={setIndex}

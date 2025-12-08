@@ -4,7 +4,7 @@ import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { sessionSets } from "@/db/schema";
 
 import type { SessionSet } from "@/src/features/session-set/domain/types";
-import type { TemplateSet } from "@/src/features/template-set/domain/type";
+import type { SetProgram } from "@/src/features/program-set/domain/type";
 import { SessionSetRow } from "./types";
 
 /**
@@ -21,7 +21,7 @@ export class SessionSetRowFactory {
    * templateSet should be mapped by its own factory and passed in here
    * as a domain object when you actually join it.
    */
-  static toDomain(row: SessionSetRow, templateSet?: TemplateSet): SessionSet {
+  static toDomain(row: SessionSetRow, templateSet?: SetProgram): SessionSet {
     return {
       id: row.id,
 
@@ -77,7 +77,7 @@ export class SessionSetRowFactory {
     return this.fromDomain(domain);
   }
 
-  static fromRow(row: SessionSetRow, templateSet?: TemplateSet): SessionSet {
+  static fromRow(row: SessionSetRow, templateSet?: SetProgram): SessionSet {
     return this.toDomain(row, templateSet);
   }
 }
