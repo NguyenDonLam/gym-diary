@@ -19,13 +19,10 @@ export const exercises = sqliteTable("exercises", {
   updatedAt: text("updated_at").notNull(),
 });
 
-/**
- * workout_templates
- */
-export const workoutTemplates = sqliteTable("workout_templates", {
+export const workoutPrograms = sqliteTable("program_workouts", {
   id: text("id").primaryKey(), // UUID
   name: text("name").notNull(),
-  folderId: text("folder_id").references(() => templateFolders.id, {
+  folderId: text("folder_id").references(() => programFolders.id, {
     onDelete: "set null",
   }),
   color: text("color").notNull().default("neutral"),
@@ -34,15 +31,11 @@ export const workoutTemplates = sqliteTable("workout_templates", {
   updatedAt: text("updated_at").notNull(),
 });
 
-/**
- * template_exercises
- */
-export const templateExercises = sqliteTable("template_exercises", {
-  id: text("id").primaryKey(), // UUID
-  workoutTemplateId: text("workout_template_id")
+export const exercisePrograms = sqliteTable("program_exercise", {
+  id: text("id").primaryKey(),
+  workoutProgramId: text("workout_program_id")
     .notNull()
-    .references(() => workoutTemplates.id, {
-      // delete template -> delete its template_exercises
+    .references(() => workoutPrograms.id, {
       onDelete: "cascade",
     }),
   exerciseId: text("exercise_id")
@@ -54,22 +47,20 @@ export const templateExercises = sqliteTable("template_exercises", {
   updatedAt: text("updated_at").notNull(),
 });
 
-/**
- * template_sets
- */
-export const templateSets = sqliteTable("template_sets", {
+export const setPrograms = sqliteTable("program_sets", {
   id: text("id").primaryKey(), // UUID
-  templateExerciseId: text("template_exercise_id")
+  exerciseProgramId: text("program_exercise_id")
     .notNull()
-    .references(() => templateExercises.id, {
-      // delete template_exercise -> delete its template_sets
+    .references(() => exercisePrograms.id, {
       onDelete: "cascade",
     }),
   orderIndex: integer("order_index").notNull(),
   targetReps: integer("target_reps"),
   loadUnit: text("load_unit", {
-    enum: ["kg" , "lb" , "band" , "time" , "custom"],
-  }).notNull(),
+    enum: ["kg", "lb", "band", "time", "custom"],
+  })
+    .notNull()
+    .default("custom"),
   loadValue: text("load_value"),
   targetRpe: real("target_rpe"),
   note: text("note"),
@@ -84,8 +75,8 @@ export const workoutSessions = sqliteTable("workout_sessions", {
   id: text("id").primaryKey(), // UUID
   startedAt: text("started_at").notNull(),
   endedAt: text("ended_at"),
-  sourceTemplateId: text("source_template_id").references(
-    () => workoutTemplates.id,
+  sourceProgramId: text("source_program_id").references(
+    () => workoutPrograms.id,
     { onDelete: "set null" }
   ),
   note: text("note"),
@@ -110,10 +101,8 @@ export const sessionExercises = sqliteTable("session_exercises", {
     // delete exercise from library -> set this FK to null, keep row
     onDelete: "set null",
   }),
-
-  // optional link back to template exercise
-  templateExerciseId: text("template_exercise_id").references(
-    () => templateExercises.id,
+  exerciseProgramId: text("exercise_program_id").references(
+    () => exercisePrograms.id,
     { onDelete: "set null" }
   ),
 
@@ -137,14 +126,16 @@ export const sessionSets = sqliteTable("session_sets", {
       // delete session_exercise -> delete its sets
       onDelete: "cascade",
     }),
-  templateSetId: text("template_set_id").references(() => templateSets.id, {
+  setProgramId: text("set_program_id").references(() => setPrograms.id, {
     onDelete: "set null",
   }),
   orderIndex: integer("order_index").notNull(),
   reps: integer("reps"),
   loadUnit: text("load_unit", {
     enum: ["kg", "lb", "band", "time", "custom"],
-  }).notNull(),
+  })
+    .notNull()
+    .default("custom"),
   loadValue: text("load_value"),
   rpe: real("rpe"),
   isWarmup: integer("is_warmup", { mode: "boolean" }).notNull().default(false),
@@ -153,8 +144,8 @@ export const sessionSets = sqliteTable("session_sets", {
   updatedAt: text("updated_at").notNull(),
 });
 
-// collections/folders for workout templates
-export const templateFolders = sqliteTable("template_folders", {
+// collections/folders for workout programs
+export const programFolders = sqliteTable("program_folders", {
   id: text("id").primaryKey(), // UUID
   name: text("name").notNull(), // user label
   sortIndex: integer("sort_index").notNull().default(0),

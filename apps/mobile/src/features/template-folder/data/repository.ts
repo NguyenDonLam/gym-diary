@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { BaseRepository } from "@/src/lib/base-repository";
 import { db } from "@/db";
-import { templateFolders } from "@/db/schema";
+import { programFolders } from "@/db/schema";
 import {
   TemplateFolderRowFactory,
   type TemplateFolderRow,
@@ -17,8 +17,8 @@ export class TemplateFolderRepository extends BaseRepository<TemplateFolder> {
   async get(id: string): Promise<TemplateFolder | null> {
     const rows: TemplateFolderRow[] = await db
       .select()
-      .from(templateFolders)
-      .where(eq(templateFolders.id, id))
+      .from(programFolders)
+      .where(eq(programFolders.id, id))
       .limit(1);
 
     const row = rows[0];
@@ -30,8 +30,8 @@ export class TemplateFolderRepository extends BaseRepository<TemplateFolder> {
   async getAll(): Promise<TemplateFolder[]> {
     const rows: TemplateFolderRow[] = await db
       .select()
-      .from(templateFolders)
-      .orderBy(templateFolders.sortIndex, templateFolders.createdAt);
+      .from(programFolders)
+      .orderBy(programFolders.sortIndex, programFolders.createdAt);
 
     return rows.map((row) => TemplateFolderRowFactory.toDomain(row));
   }
@@ -47,7 +47,7 @@ export class TemplateFolderRepository extends BaseRepository<TemplateFolder> {
 
     const row: NewTemplateFolderRow = TemplateFolderRowFactory.toRow(withId);
 
-    await db.insert(templateFolders).values(row);
+    await db.insert(programFolders).values(row);
 
     return withId;
   }
@@ -64,15 +64,15 @@ export class TemplateFolderRepository extends BaseRepository<TemplateFolder> {
     );
 
     await db
-      .update(templateFolders)
+      .update(programFolders)
       .set(row)
-      .where(eq(templateFolders.id, entity.id));
+      .where(eq(programFolders.id, entity.id));
 
     return entity as TemplateFolder;
   }
 
   async delete(id: string): Promise<void> {
-    await db.delete(templateFolders).where(eq(templateFolders.id, id));
+    await db.delete(programFolders).where(eq(programFolders.id, id));
   }
 
   /**
@@ -80,7 +80,7 @@ export class TemplateFolderRepository extends BaseRepository<TemplateFolder> {
    */
   async create(name: string, sortIndex?: number): Promise<TemplateFolder> {
     const row = TemplateFolderRowFactory.create({ name, sortIndex });
-    await db.insert(templateFolders).values(row);
+    await db.insert(programFolders).values(row);
 
     // `row` already has Date fields because of Drizzle timestamp_ms
     return TemplateFolderRowFactory.toDomain(row as TemplateFolderRow);
