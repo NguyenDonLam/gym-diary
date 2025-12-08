@@ -6,6 +6,8 @@ export type ExerciseProgram = {
   orderIndex: number; // 1, 2, 3, ...
   note: string | null;
   sets: SetProgram[];
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type ExerciseProgramFormData = {

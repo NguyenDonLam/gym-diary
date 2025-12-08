@@ -29,18 +29,11 @@ type WorkoutProgramQueryResult = WorkoutProgramRow & {
   })[];
 };
 
-/**
- * Factory responsible ONLY for mapping between:
- *   - DB row shapes (WorkoutProgramRow + related rows)
- *   - Domain aggregate (WorkoutProgram)
- *
- * It does not know about forms or UI.
- */
 export class WorkoutProgramRowFactory {
-  /**
-   * DB row + already-mapped exercises -> domain aggregate.
-   * Use this if you load/mapped exercises elsewhere.
-   */
+  // ------------------------
+  // Existing methods
+  // ------------------------
+
   static toDomain(
     row: WorkoutProgramRow,
     exercises: ExerciseProgram[]
@@ -57,10 +50,6 @@ export class WorkoutProgramRowFactory {
     };
   }
 
-  /**
-   * Domain aggregate -> DB row for program_workouts table.
-   * Exercises are NOT handled here; they are persisted via their own factories.
-   */
   static fromDomain(domain: WorkoutProgram): WorkoutProgramRow {
     return {
       id: domain.id,
@@ -84,16 +73,14 @@ export class WorkoutProgramRowFactory {
     return this.toDomain(row, exercises);
   }
 
-  /**
-   * Map a full Drizzle query result (program + exercises + sets)
-   * into the WorkoutProgram domain aggregate.
-   */
   static fromQuery(result: WorkoutProgramQueryResult): WorkoutProgram {
     const exercises: ExerciseProgram[] = (result.exercises ?? []).map((ex) => ({
       id: ex.id,
       exerciseId: ex.exerciseId,
       orderIndex: ex.orderIndex,
       note: ex.note,
+      createdAt: new Date(ex.createdAt),
+      updatedAt: new Date(ex.updatedAt),
       sets: (ex.sets ?? []).map((s) => ({
         id: s.id,
         exerciseProgramId: ex.id,
@@ -118,5 +105,66 @@ export class WorkoutProgramRowFactory {
       updatedAt: new Date(result.updatedAt),
       exercises,
     };
+  }
+
+  /**
+   * Map domain aggregate -> raw insert/update rows for:
+   *   - program_exercises
+   *   - program_sets
+   *
+   * No ID or timestamp generation here: caller must ensure
+   * ids / createdAt / updatedAt are already set on the domain objects.
+   */
+  static toChildRows(domain: WorkoutProgram): {
+    exerciseProgramRows: (typeof exercisePrograms.$inferInsert)[];
+    setProgramRows: (typeof setPrograms.$inferInsert)[];
+  } {
+    const exerciseProgramRows: (typeof exercisePrograms.$inferInsert)[] = [];
+    const setProgramRows: (typeof setPrograms.$inferInsert)[] = [];
+
+    for (const ex of domain.exercises) {
+      if (!ex.id) {
+        throw new Error("ExerciseProgram.id must be set before persisting");
+      }
+
+      const exerciseRow: ExerciseProgramRow = {
+        id: ex.id,
+        workoutProgramId: domain.id,
+        exerciseId: ex.exerciseId,
+        orderIndex: ex.orderIndex,
+        note: ex.note ?? null,
+        // Fill these from your domain model; do not invent values here.
+        createdAt: ex.createdAt.toISOString(),
+        updatedAt: ex.updatedAt.toISOString(),
+      };
+
+      exerciseProgramRows.push(exerciseRow);
+
+      for (const set of ex.sets) {
+        if (!set.id) {
+          throw new Error("SetProgram.id must be set before persisting");
+        }
+
+        const setRow: SetProgramRow = {
+          id: set.id,
+          exerciseProgramId: ex.id,
+          orderIndex: set.orderIndex,
+          targetReps: set.targetReps,
+          loadUnit: set.loadUnit,
+          loadValue:
+            set.loadValue === null || set.loadValue === undefined
+              ? null
+              : String(set.loadValue),
+          targetRpe: set.targetRpe,
+          note: set.note ?? null,
+          createdAt: set.createdAt.toISOString(),
+          updatedAt: set.updatedAt.toISOString(),
+        };
+
+        setProgramRows.push(setRow);
+      }
+    }
+
+    return { exerciseProgramRows, setProgramRows };
   }
 }

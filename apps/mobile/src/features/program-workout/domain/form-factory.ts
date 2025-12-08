@@ -73,6 +73,8 @@ export class WorkoutProgramFormFactory {
         orderIndex: exIndex,
         note: null,
         sets,
+        createdAt: now,
+        updatedAt: now,
       });
     }
 
