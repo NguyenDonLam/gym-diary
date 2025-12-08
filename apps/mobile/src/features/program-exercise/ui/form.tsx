@@ -1,33 +1,38 @@
-// src/features/template-exercise/ui/form.tsx
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View, ScrollView } from "react-native";
-import { TemplateExerciseFormData } from "../domain/type";
+import { ExerciseProgramFormData } from "../domain/type";
 import { SetProgramFormData } from "../../program-set/domain/type";
-import { Exercise } from "../../../../../../packages/exercise/type";
 import { useExercises } from "../../exercise/hooks/use-exercises";
 import SetProgramForm from "@/src/features/program-set/ui/form";
+import { Exercise } from "@packages/exercise";
 
-type TemplateExerciseFormProps = {
-  formData: TemplateExerciseFormData;
+type ExerciseProgramFormProps = {
+  formData: ExerciseProgramFormData;
   index: number;
-  setFormData: (next: TemplateExerciseFormData) => void;
+  setFormData: (next: ExerciseProgramFormData) => void;
   onRemove: () => void;
   onDrag?: () => void; // drag handle
 };
 
-export default function TemplateExerciseForm({
+
+// TODO: wire this to your real repository.
+async function createExercise(name: string): Promise<Exercise> {
+  throw new Error("createExercise(name: string) is not implemented yet.");
+}
+
+export default function ExerciseProgramForm({
   formData,
   index,
   setFormData,
   onRemove,
   onDrag,
-}: TemplateExerciseFormProps) {
+}: ExerciseProgramFormProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch, setPickerSearch] = useState("");
 
   const { options: exerciseOptions } = useExercises();
 
-  const update = (patch: Partial<TemplateExerciseFormData>) => {
+  const update = (patch: Partial<ExerciseProgramFormData>) => {
     setFormData({ ...formData, ...patch });
   };
 

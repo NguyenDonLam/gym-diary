@@ -1,14 +1,14 @@
 import { SetProgram, SetProgramFormData } from "../../program-set/domain/type";
 
-export type TemplateExercise = {
+export type ExerciseProgram = {
   id: string;
   exerciseId: string;
   orderIndex: number; // 1, 2, 3, ...
-  notes: string | null;
+  note: string | null;
   sets: SetProgram[];
 };
 
-export type TemplateExerciseFormData = {
+export type ExerciseProgramFormData = {
   id: string; // local UUID for the form
   exerciseId: string | null; // canonical exercise id if selected
   isCustom: boolean; // true if using custom name

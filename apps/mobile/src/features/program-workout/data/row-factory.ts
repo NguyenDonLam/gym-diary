@@ -5,10 +5,11 @@ import {
   ProgramColor,
   WorkoutProgram,
 } from "@/src/features/program-workout/domain/type";
-import { TemplateExercise } from "@/src/features/template-exercise/domain/type";
 import { WorkoutProgramRow } from "./type";
 
 import { exercisePrograms, setPrograms } from "@/db/schema";
+import { ExerciseProgram } from "../../program-exercise/domain/type";
+import { LoadUnit, SetProgram } from "../../program-set/domain/type";
 
 /**
  * Drizzle row types for relations
@@ -42,7 +43,7 @@ export class WorkoutProgramRowFactory {
    */
   static toDomain(
     row: WorkoutProgramRow,
-    exercises: TemplateExercise[]
+    exercises: ExerciseProgram[]
   ): WorkoutProgram {
     return {
       id: row.id,
@@ -78,7 +79,7 @@ export class WorkoutProgramRowFactory {
 
   static fromRow(
     row: WorkoutProgramRow,
-    exercises: TemplateExercise[]
+    exercises: ExerciseProgram[]
   ): WorkoutProgram {
     return this.toDomain(row, exercises);
   }
@@ -88,27 +89,24 @@ export class WorkoutProgramRowFactory {
    * into the WorkoutProgram domain aggregate.
    */
   static fromQuery(result: WorkoutProgramQueryResult): WorkoutProgram {
-    const exercises: TemplateExercise[] = (result.exercises ?? []).map(
-      (ex) => ({
-        id: ex.id,
-        exerciseId: ex.exerciseId,
-        orderIndex: ex.orderIndex,
-        notes: ex.note,
-        sets: (ex.sets ?? []).map((s) => ({
-          id: s.id,
-          // domain still uses "templateExerciseId" for the parent link
-          templateExerciseId: ex.id,
-          orderIndex: s.orderIndex,
-          targetReps: s.targetReps,
-          loadUnit: s.loadUnit, // cast if your domain uses a narrower union
-          loadValue: s.loadValue,
-          targetRpe: s.targetRpe,
-          notes: s.note,
-          createdAt: new Date(s.createdAt),
-          updatedAt: new Date(s.updatedAt),
-        })),
-      })
-    );
+    const exercises: ExerciseProgram[] = (result.exercises ?? []).map((ex) => ({
+      id: ex.id,
+      exerciseId: ex.exerciseId,
+      orderIndex: ex.orderIndex,
+      note: ex.note,
+      sets: (ex.sets ?? []).map((s) => ({
+        id: s.id,
+        exerciseProgramId: ex.id,
+        orderIndex: s.orderIndex,
+        targetReps: s.targetReps,
+        loadUnit: s.loadUnit as LoadUnit,
+        loadValue: s.loadValue,
+        targetRpe: s.targetRpe,
+        note: s.note,
+        createdAt: new Date(s.createdAt),
+        updatedAt: new Date(s.updatedAt),
+      })),
+    }));
 
     return {
       id: result.id,

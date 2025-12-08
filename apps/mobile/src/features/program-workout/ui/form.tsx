@@ -13,15 +13,15 @@ import DraggableFlatList, {
 } from "react-native-draggable-flatlist";
 import { ListChecks } from "lucide-react-native";
 
-import TemplateExerciseForm from "@/src/features/template-exercise/ui/form";
 import { WorkoutProgramFormData, ProgramColor } from "../domain/type";
-import { TemplateExerciseFormData } from "../../template-exercise/domain/type";
 import { SetProgramFormData } from "../../program-set/domain/type";
 import { generateId } from "@/src/lib/id";
 import { useExercises } from "../../exercise/hooks/use-exercises";
 import { Exercise } from "@packages/exercise";
-import { exerciseRepository } from "../../exercise/data/exercise-repository";
+import { ExerciseProgramFormData } from "../../program-exercise/domain/type";
+import ExerciseProgramForm from "../../program-exercise/ui/form";
 import { exerciseFactory } from "../../exercise/domain/factory";
+import { exerciseRepository } from "../../exercise/data/exercise-repository";
 
 type TemplateWorkoutFormProps = {
   formData: WorkoutProgramFormData;
@@ -127,7 +127,7 @@ export default function WorkoutProgramForm({
           .filter((id): id is string => !!id)
       );
 
-      const nextExercises: TemplateExerciseFormData[] = [...prev.exercises];
+      const nextExercises: ExerciseProgramFormData[] = [...prev.exercises];
 
       for (const ex of selected) {
         if (existingIds.has(ex.id)) continue;
@@ -151,7 +151,7 @@ export default function WorkoutProgramForm({
 
   const updateExercise = (
     exerciseId: string,
-    updater: (prev: TemplateExerciseFormData) => TemplateExerciseFormData
+    updater: (prev: ExerciseProgramFormData) => ExerciseProgramFormData
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -245,7 +245,7 @@ export default function WorkoutProgramForm({
     TEMPLATE_COLOR_OPTIONS.find((opt) => opt.value === color) ??
     TEMPLATE_COLOR_OPTIONS[0];
 
-  const handleDragEnd = ({ data }: DragEndParams<TemplateExerciseFormData>) => {
+  const handleDragEnd = ({ data }: DragEndParams<ExerciseProgramFormData>) => {
     setFormData((prev) => ({
       ...prev,
       exercises: data,
@@ -350,7 +350,7 @@ export default function WorkoutProgramForm({
 
             return (
               <View className={isActive ? "opacity-80" : ""}>
-                <TemplateExerciseForm
+                <ExerciseProgramForm
                   formData={item}
                   index={exerciseIndex >= 0 ? exerciseIndex : 0}
                   setFormData={(next) => updateExercise(item.id, () => next)}

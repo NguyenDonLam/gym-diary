@@ -8,7 +8,7 @@ export type SetProgram = {
   loadUnit: LoadUnit;
   loadValue: number | string | null;
   targetRpe: number | null;
-  notes: string | null;
+  note: string | null;
   createdAt: Date;
   updatedAt: Date;
 };

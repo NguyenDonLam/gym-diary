@@ -1,7 +1,5 @@
-import {
-  TemplateExercise,
-  TemplateExerciseFormData,
-} from "../../template-exercise/domain/type";
+import { ExerciseProgram, ExerciseProgramFormData } from "../../program-exercise/domain/type";
+
 
 export type ProgramColor =
   | "neutral"
@@ -22,7 +20,7 @@ export type WorkoutProgram = {
   color: ProgramColor;
   createdAt: Date;
   updatedAt: Date;
-  exercises: TemplateExercise[];
+  exercises: ExerciseProgram[];
 };
 
 export type WorkoutProgramFormData = {
@@ -30,5 +28,5 @@ export type WorkoutProgramFormData = {
   description: string;
   folderId: string | null;
   color: ProgramColor;
-  exercises: TemplateExerciseFormData[];
+  exercises: ExerciseProgramFormData[];
 };
