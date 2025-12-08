@@ -254,9 +254,7 @@ export default function WorkoutProgramForm({
 
   const renderHeader = () => (
     <View>
-      {/* Template meta block – tighter, with icon header and inline colour */}
       <View className="mb-3 rounded-2xl border border-neutral-200 bg-white px-3 py-3">
-        {/* Row: icon + label + colour pill */}
         <View className="mb-2 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <View className="mr-2 h-7 w-7 items-center justify-center rounded-full bg-neutral-100">
@@ -280,7 +278,6 @@ export default function WorkoutProgramForm({
           </Pressable>
         </View>
 
-        {/* Name input */}
         <TextInput
           className="mt-1 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900"
           placeholder="Session name"
@@ -289,7 +286,6 @@ export default function WorkoutProgramForm({
           onChangeText={setName}
         />
 
-        {/* Notes – compact textarea */}
         <TextInput
           className="mt-2 min-h-[56px] max-h-24 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-[12px] text-neutral-900"
           placeholder="Optional notes, focus or cues"
@@ -301,7 +297,6 @@ export default function WorkoutProgramForm({
         />
       </View>
 
-      {/* Exercises header row – add opens multi-select library */}
       <View className="mb-2 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <View className="mr-2 h-6 w-6 items-center justify-center rounded-full bg-neutral-100">
@@ -329,7 +324,9 @@ export default function WorkoutProgramForm({
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1">
+      <View className="flex-1 px-4 pt-3 pb-6">
+        {renderHeader()}
+
         <DraggableFlatList
           data={exercises}
           keyExtractor={(item) => item.id}
@@ -337,11 +334,9 @@ export default function WorkoutProgramForm({
           activationDistance={8}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingVertical: 12,
+            paddingTop: 8,
             paddingBottom: 24,
           }}
-          ListHeaderComponent={renderHeader}
           ListEmptyComponent={renderEmpty}
           renderItem={({ item, drag, isActive }) => {
             const exerciseIndex = exercises.findIndex(
@@ -362,7 +357,6 @@ export default function WorkoutProgramForm({
           }}
         />
 
-        {/* LIBRARY OVERLAY – multi-select */}
         {libraryOpen && (
           <View className="absolute inset-0 bg-black/25" style={{ zIndex: 50 }}>
             <View className="absolute inset-x-4 top-24 bottom-24 rounded-3xl bg-white px-4 py-4">
