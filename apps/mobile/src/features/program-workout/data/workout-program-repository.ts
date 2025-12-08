@@ -13,6 +13,7 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
 
   async get(id: string): Promise<WorkoutProgram | null> {
     try {
+      console.log("[WorkoutProgramRepository.get] id =", id);
       const program = await db.query.workoutPrograms.findFirst({
         where: (wp, { eq }) => eq(wp.id, id),
         with: {
@@ -25,7 +26,7 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
         },
       });
 
-      // console.log("fetched", JSON.stringify(program, null, 2));
+      console.log("fetched", JSON.stringify(program, null, 2));
 
       if (!program) return null;
 

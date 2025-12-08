@@ -1,6 +1,5 @@
+import { ExerciseProgram } from "../../program-exercise/domain/type";
 import { SessionSet } from "../../session-set/domain/types";
-import { TemplateExercise } from "../../template-exercise/domain/type";
-
 export type SessionExercise = {
   id: string;
 
@@ -8,7 +7,7 @@ export type SessionExercise = {
 
   exerciseId: string | null;
   templateExerciseId: string | null;
-  templateExercise?: TemplateExercise;
+  templateExercise?: ExerciseProgram;
 
   // snapshot name for history
   exerciseName: string | null;

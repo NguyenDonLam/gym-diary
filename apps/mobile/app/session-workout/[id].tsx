@@ -1,6 +1,6 @@
 // apps/mobile/app/session-workout/[id].tsx
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   SafeAreaView,
   View,
@@ -19,28 +19,10 @@ import {
 } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-type SetRow = {
-  id: string;
-  index: number;
-
-  // current session
-  reps: string;
-  weight: string;
-  rpe: string;
-
-  // last session snapshot
-  prevReps?: string | null;
-  prevWeight?: string | null;
-  prevRpe?: string | null;
-};
-
-type ExerciseRow = {
-  id: string;
-  name: string;
-  note?: string;
-  isOpen: boolean;
-  sets: SetRow[];
-};
+import { SessionExercise } from "@/src/features/session-exercise/domain/types";
+import { SessionSet } from "@/src/features/session-set/domain/types";
+import { generateId } from "@/src/lib/id";
+import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
 
 function getExerciseCardColors(completedCount: number, totalSets: number) {
   if (totalSets <= 0) {
@@ -80,28 +62,65 @@ function getExerciseCardColors(completedCount: number, totalSets: number) {
   };
 }
 
-// TODO: Wire this to your real session data source (SQLite / repository / API / store)
-// It must synchronously return an array of ExerciseRow for the given sessionId.
-// If you need async DB, load into a store first and read that store here.
+// UI view-model type: domain + local UI flag
+type SessionExerciseView = SessionExercise & {
+  isOpen?: boolean;
+};
+
+// Load a stored session from DB and project into view-model
 async function getInitialExercisesFromSession(
   sessionId: string
-): Promise<ExerciseRow[]> {
+): Promise<SessionExerciseView[]> {
   try {
     await AsyncStorage.setItem("ongoing", sessionId);
   } catch (e) {
-    console.log(e);
+    console.log("[session] failed to store ongoing id", e);
   }
-  return [];
+
+  const session = await sessionWorkoutRepository.get(sessionId);
+  console.log("[session] loaded session", sessionId, session);
+
+  if (!session || !session.exercises) return [];
+
+  // just copy domain exercises, add local UI flag
+  return session.exercises.map((ex) => ({
+    ...ex,
+    isOpen: true,
+  }));
 }
 
 export default function SessionWorkoutPage() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
 
-  // No hardcoded demo data; initial state comes from your real session model via helper above.
-  const [exercises, setExercises] = useState<ExerciseRow[]>(async () =>
-    await getInitialExercisesFromSession(id)
-  );
+  const [exercises, setExercises] = useState<SessionExerciseView[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const rawId = params.id;
+    const sessionId = Array.isArray(rawId) ? rawId[0] : rawId;
+
+    if (!sessionId) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const rows = await getInitialExercisesFromSession(sessionId);
+        if (cancelled) return;
+        setExercises(rows);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [params.id]);
 
   const toggleExerciseOpen = (exerciseId: string) => {
     setExercises((prev) =>
@@ -114,20 +133,32 @@ export default function SessionWorkoutPage() {
   const updateSetField = (
     exerciseId: string,
     setId: string,
-    field: keyof Pick<SetRow, "reps" | "weight" | "rpe">,
+    field: keyof Pick<SessionSet, "reps" | "loadValue" | "rpe">,
     value: string
   ) => {
     setExercises((prev) =>
-      prev.map((ex) =>
-        ex.id !== exerciseId
-          ? ex
-          : {
-              ...ex,
-              sets: ex.sets.map((s) =>
-                s.id === setId ? { ...s, [field]: value } : s
-              ),
-            }
-      )
+      prev.map((ex) => {
+        if (ex.id !== exerciseId) return ex;
+
+        const nextSets = (ex.sets ?? []).map((s) => {
+          if (s.id !== setId) return s;
+
+          if (field === "reps") {
+            const num = value.trim() === "" ? null : Number(value);
+            return { ...s, reps: Number.isNaN(num) ? null : num };
+          }
+
+          if (field === "rpe") {
+            const num = value.trim() === "" ? null : Number(value);
+            return { ...s, rpe: Number.isNaN(num) ? null : num };
+          }
+
+          // loadValue
+          return { ...s, loadValue: value.trim() === "" ? null : value };
+        });
+
+        return { ...ex, sets: nextSets };
+      })
     );
   };
 
@@ -135,24 +166,42 @@ export default function SessionWorkoutPage() {
     setExercises((prev) =>
       prev.map((ex) => {
         if (ex.id !== exerciseId) return ex;
-        const nextIndex = ex.sets.length + 1;
+
+        const currentSets = ex.sets ?? [];
+        const nextOrderIndex = currentSets.length;
+        const now = new Date();
+
+        const newSet: SessionSet = {
+          id: generateId(),
+          sessionExerciseId: ex.id,
+          templateSetId: null,
+          templateSet: undefined,
+
+          orderIndex: nextOrderIndex,
+
+          reps: null,
+          loadUnit: currentSets[0]?.loadUnit ?? "kg",
+          loadValue: null,
+          rpe: null,
+
+          isWarmup: false,
+          note: null,
+
+          createdAt: now,
+          updatedAt: now,
+        };
+
         return {
           ...ex,
           isOpen: true,
-          sets: [
-            ...ex.sets,
-            {
-              id: `${exerciseId}-s${nextIndex}`,
-              index: nextIndex,
-              reps: "",
-              weight: "",
-              rpe: "",
-            },
-          ],
+          sets: [...currentSets, newSet],
         };
       })
     );
   };
+
+  const rawId = params.id;
+  const sessionId = Array.isArray(rawId) ? rawId[0] : rawId;
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -168,7 +217,7 @@ export default function SessionWorkoutPage() {
             className="text-base font-semibold text-neutral-900"
             numberOfLines={1}
           >
-            {id ?? "New session"}
+            {sessionId ?? "Session"}
           </Text>
         </View>
 
@@ -186,14 +235,36 @@ export default function SessionWorkoutPage() {
           paddingBottom: 24,
         }}
       >
+        {loading && exercises.length === 0 && (
+          <Text className="text-center text-[12px] text-neutral-500">
+            Loading…
+          </Text>
+        )}
+
+        {!loading && exercises.length === 0 && (
+          <Text className="mt-4 text-center text-[12px] text-neutral-500">
+            No exercises in this session.
+          </Text>
+        )}
+
         {exercises.map((ex) => {
           const sets = ex.sets ?? [];
-          const isSetDone = (s: SetRow) =>
-            !!(s.reps.trim() && s.weight.trim() && s.rpe.trim());
+          const isSetDone = (s: SessionSet) =>
+            s.reps !== null &&
+            s.reps > 0 &&
+            s.loadValue !== null &&
+            s.loadValue.trim() !== "" &&
+            s.rpe !== null;
 
           const completedCount = sets.filter(isSetDone).length;
           const totalSets = sets.length;
           const colors = getExerciseCardColors(completedCount, totalSets);
+
+          const exerciseLabel =
+            ex.exerciseName ??
+            ex.exerciseId ??
+            ex.templateExerciseId ??
+            "Exercise";
 
           return (
             <View
@@ -217,7 +288,7 @@ export default function SessionWorkoutPage() {
                       className="text-sm font-semibold text-neutral-900"
                       numberOfLines={1}
                     >
-                      {ex.name}
+                      {exerciseLabel}
                     </Text>
 
                     <View className="mt-0.5 flex-row items-center">
@@ -245,20 +316,24 @@ export default function SessionWorkoutPage() {
                   ) : null}
 
                   <View>
-                    {sets.map((set) => {
+                    {sets.map((set, idx) => {
                       const done = isSetDone(set);
+                      const tpl = set.templateSet;
 
-                      const prevRepsNum = set.prevReps
-                        ? Number(set.prevReps)
-                        : null;
-                      const currentRepsNum = set.reps ? Number(set.reps) : null;
+                      const prevRepsNum =
+                        tpl && tpl.targetReps != null ? tpl.targetReps : null;
+                      const prevWeightStr = tpl?.loadValue ?? "";
+                      const prevRpeNum =
+                        tpl && tpl.targetRpe != null ? tpl.targetRpe : null;
+
+                      const currentRepsNum = set.reps ?? 0;
 
                       let clamped = 0;
                       let barClass = "bg-neutral-300";
                       let goalLabel: string | null = null;
 
                       if (prevRepsNum && prevRepsNum > 0) {
-                        const goal = prevRepsNum + 1; // last + 1
+                        const goal = prevRepsNum + 1;
                         const current = currentRepsNum ?? 0;
                         let ratio = current / goal;
                         if (!isFinite(ratio) || ratio < 0) ratio = 0;
@@ -267,24 +342,42 @@ export default function SessionWorkoutPage() {
                         if (current === 0) {
                           barClass = "bg-neutral-300";
                         } else if (current < prevRepsNum) {
-                          barClass = "bg-amber-400"; // under last
+                          barClass = "bg-amber-400";
                         } else if (current === prevRepsNum) {
-                          barClass = "bg-sky-500"; // matched last
+                          barClass = "bg-sky-500";
                         } else if (current >= goal) {
-                          barClass = "bg-emerald-500"; // hit or beat goal
+                          barClass = "bg-emerald-500";
                         } else {
-                          barClass = "bg-emerald-400"; // between last and goal
+                          barClass = "bg-emerald-400";
                         }
 
                         goalLabel = `${goal} reps`;
                       }
+
+                      const repsValue =
+                        set.reps === null ? "" : String(set.reps);
+                      const loadValue = set.loadValue ?? "";
+                      const rpeValue = set.rpe === null ? "" : String(set.rpe);
+
+                      const repsPlaceholder =
+                        prevRepsNum && prevRepsNum > 0
+                          ? String(prevRepsNum)
+                          : "Reps";
+                      const weightPlaceholder =
+                        prevWeightStr && prevWeightStr.length > 0
+                          ? prevWeightStr
+                          : "Weight";
+                      const rpePlaceholder =
+                        prevRpeNum && prevRpeNum > 0
+                          ? String(prevRpeNum)
+                          : "RPE";
 
                       return (
                         <View
                           key={set.id}
                           className="mb-1.5 rounded-xl bg-white px-3 py-1.5"
                         >
-                          {/* top row: indicator + set label + small last chip */}
+                          {/* top row: indicator + set label + last chip */}
                           <View className="flex-row items-center justify-between">
                             <View className="flex-row items-center">
                               <View className="mr-2">
@@ -304,14 +397,14 @@ export default function SessionWorkoutPage() {
                               </View>
 
                               <Text className="text-[11px] text-neutral-500">
-                                Set {set.index}
+                                Set {idx + 1}
                               </Text>
                             </View>
 
-                            {set.prevReps && (
+                            {prevRepsNum && (
                               <View className="flex-row items-center rounded-full bg-neutral-100 px-2 py-0.5">
                                 <Text className="text-[10px] text-neutral-600 mr-1">
-                                  {set.prevReps}
+                                  {prevRepsNum}
                                 </Text>
                                 <Text className="text-[9px] text-neutral-400">
                                   last
@@ -325,9 +418,9 @@ export default function SessionWorkoutPage() {
                             <TextInput
                               className="mx-1 flex-1 rounded-lg border border-neutral-200 px-2 py-1 text-[12px] text-neutral-900"
                               keyboardType="numeric"
-                              placeholder={set.prevReps ? set.prevReps : "Reps"}
+                              placeholder={repsPlaceholder}
                               placeholderTextColor="#9CA3AF"
-                              value={set.reps}
+                              value={repsValue}
                               onChangeText={(text) =>
                                 updateSetField(ex.id, set.id, "reps", text)
                               }
@@ -336,22 +429,20 @@ export default function SessionWorkoutPage() {
                             <TextInput
                               className="mx-1 flex-1 rounded-lg border border-neutral-200 px-2 py-1 text-[12px] text-neutral-900"
                               keyboardType="numeric"
-                              placeholder={
-                                set.prevWeight ? set.prevWeight : "Weight"
-                              }
+                              placeholder={weightPlaceholder}
                               placeholderTextColor="#9CA3AF"
-                              value={set.weight}
+                              value={loadValue}
                               onChangeText={(text) =>
-                                updateSetField(ex.id, set.id, "weight", text)
+                                updateSetField(ex.id, set.id, "loadValue", text)
                               }
                             />
 
                             <TextInput
                               className="ml-1 w-14 rounded-lg border border-neutral-200 px-2 py-1 text-[12px] text-neutral-900"
                               keyboardType="numeric"
-                              placeholder={set.prevRpe ? set.prevRpe : "RPE"}
+                              placeholder={rpePlaceholder}
                               placeholderTextColor="#9CA3AF"
-                              value={set.rpe}
+                              value={rpeValue}
                               onChangeText={(text) =>
                                 updateSetField(ex.id, set.id, "rpe", text)
                               }

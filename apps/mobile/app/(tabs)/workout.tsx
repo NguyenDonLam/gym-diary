@@ -222,7 +222,13 @@ export default function Workout() {
 
   async function handleStartFromTemplate(template: WorkoutProgram) {
     // create session from template
-    const session = await sessionWorkoutRepository.createFromTemplate(template);
+    const fullProgram = await workoutProgramRepository.get(template.id);
+    if (!fullProgram) {
+      console.log("error when fetching full program");
+      return
+    }
+    const session =
+      await sessionWorkoutRepository.createFromTemplate(fullProgram);
 
     // persist ongoing session id
     try {
