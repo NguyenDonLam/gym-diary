@@ -10,6 +10,8 @@ import {
   SessionWorkoutRowFactory,
 } from "./row-factory";
 import { SessionWorkoutRow } from "./types";
+import { TemplateWorkout } from "../../template-workout/domain/type";
+import { SessionWorkoutFactory } from "../domain/factory";
 
 export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
   async get(id: string): Promise<SessionWorkout | null> {
@@ -67,6 +69,11 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
 
   async delete(id: string): Promise<void> {
     await db.delete(workoutSessions).where(eq(workoutSessions.id, id));
+  }
+
+  async createFromTemplate(template: TemplateWorkout): Promise<SessionWorkout> {
+    const session = SessionWorkoutFactory.fromTemplate(template);
+    return this.insert(session);
   }
 }
 

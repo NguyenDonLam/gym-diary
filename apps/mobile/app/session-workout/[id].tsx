@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Circle,
 } from "lucide-react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type SetRow = {
   id: string;
@@ -79,68 +80,28 @@ function getExerciseCardColors(completedCount: number, totalSets: number) {
   };
 }
 
+// TODO: Wire this to your real session data source (SQLite / repository / API / store)
+// It must synchronously return an array of ExerciseRow for the given sessionId.
+// If you need async DB, load into a store first and read that store here.
+async function getInitialExercisesFromSession(
+  sessionId: string
+): Promise<ExerciseRow[]> {
+  try {
+    await AsyncStorage.setItem("ongoing", sessionId);
+  } catch (e) {
+    console.log(e);
+  }
+  return [];
+}
+
 export default function SessionWorkoutPage() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  // prev* are sample values; wire them from DB/service later
-  const [exercises, setExercises] = useState<ExerciseRow[]>([
-    {
-      id: "ex1",
-      name: "Bench press",
-      note: "Example exercise. Wire to real session data later.",
-      isOpen: true,
-      sets: [
-        {
-          id: "ex1s1",
-          index: 1,
-          reps: "",
-          weight: "",
-          rpe: "",
-          prevReps: "8",
-          prevWeight: "60",
-          prevRpe: "8",
-        },
-        {
-          id: "ex1s2",
-          index: 2,
-          reps: "",
-          weight: "",
-          rpe: "",
-          prevReps: "8",
-          prevWeight: "60",
-          prevRpe: "8",
-        },
-      ],
-    },
-    {
-      id: "ex2",
-      name: "Squat",
-      isOpen: false,
-      sets: [
-        {
-          id: "ex2s1",
-          index: 1,
-          reps: "",
-          weight: "",
-          rpe: "",
-          prevReps: "5",
-          prevWeight: "100",
-          prevRpe: "7",
-        },
-        {
-          id: "ex2s2",
-          index: 2,
-          reps: "",
-          weight: "",
-          rpe: "",
-          prevReps: "5",
-          prevWeight: "100",
-          prevRpe: "7",
-        },
-      ],
-    },
-  ]);
+  // No hardcoded demo data; initial state comes from your real session model via helper above.
+  const [exercises, setExercises] = useState<ExerciseRow[]>(async () =>
+    await getInitialExercisesFromSession(id)
+  );
 
   const toggleExerciseOpen = (exerciseId: string) => {
     setExercises((prev) =>

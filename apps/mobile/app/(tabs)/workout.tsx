@@ -29,6 +29,9 @@ import { templateFolderRepository } from "@/src/features/template-folder/data/re
 import type { TemplateFolder } from "@/src/features/template-folder/domain/types";
 import FolderRow from "@/src/features/template-folder/components/folder-row";
 import { workoutTemplateRepository } from "@/src/features/template-workout/data/template-workout-repository";
+import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 
 const COLOR_STRIP_MAP: Record<TemplateColor, string> = {
   neutral: "bg-neutral-400",
@@ -222,12 +225,22 @@ export default function Workout() {
     });
   };
 
-  const handleStartFromTemplate = (id: string) => {
+  async function handleStartFromTemplate(template: TemplateWorkout) {
+    // create session from template
+    const session = await sessionWorkoutRepository.createFromTemplate(template);
+
+    // persist ongoing session id
+    try {
+      await AsyncStorage.setItem("ongoing_session_id", session.id);
+    } catch (e) {
+      console.log("Failed to store ongoing session id", e);
+    }
+    // navigate
     router.push({
       pathname: "/session-workout/[id]",
-      params: { id },
+      params: { id: session.id },
     });
-  };
+  }
 
 
   const handleEditTemplate = (id: string) => {
@@ -389,7 +402,7 @@ export default function Workout() {
         className={`mb-2 rounded-xl bg-neutral-50 px-3 py-2 ${
           inFolder ? "ml-4" : ""
         } ${isActive ? "opacity-80" : ""}`}
-        onPress={() => handleStartFromTemplate(tpl.id)}
+        onPress={() => handleStartFromTemplate(tpl)}
         onLongPress={() => handleEditTemplate(tpl.id)}
       >
         <View className="flex-row items-center justify-between">
