@@ -6,11 +6,9 @@ import { workoutSessions } from "@/db/schema";
 import { db } from "@/db";
 import { generateId } from "@/src/lib/id";
 import { SessionWorkout } from "../domain/types";
-import {
-  SessionWorkoutRowFactory,
-} from "./row-factory";
+import { SessionWorkoutRowFactory } from "./row-factory";
 import { SessionWorkoutRow } from "./types";
-import { TemplateWorkout } from "../../template-workout/domain/type";
+import { WorkoutProgram } from "../../program-workout/domain/type";
 import { SessionWorkoutFactory } from "../domain/factory";
 
 export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
@@ -71,7 +69,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
     await db.delete(workoutSessions).where(eq(workoutSessions.id, id));
   }
 
-  async createFromTemplate(template: TemplateWorkout): Promise<SessionWorkout> {
+  async createFromTemplate(template: WorkoutProgram): Promise<SessionWorkout> {
     const session = SessionWorkoutFactory.fromTemplate(template);
     return this.insert(session);
   }

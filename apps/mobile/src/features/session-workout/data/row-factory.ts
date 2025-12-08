@@ -3,7 +3,7 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { workoutSessions } from "@/db/schema";
 
-import type { TemplateWorkout } from "@/src/features/template-workout/domain/type";
+import type { WorkoutProgram } from "@/src/features/program-workout/domain/type";
 import type { SessionExercise } from "@/src/features/session-exercise/domain/types";
 import { SessionWorkout } from "../domain/types";
 import { SessionWorkoutRow } from "./types";
@@ -25,7 +25,7 @@ export class SessionWorkoutRowFactory {
   static toDomain(
     row: SessionWorkoutRow,
     exercises: SessionExercise[] = [],
-    sourceTemplate?: TemplateWorkout
+    sourceTemplate?: WorkoutProgram
   ): SessionWorkout {
     return {
       id: row.id,
@@ -74,7 +74,7 @@ export class SessionWorkoutRowFactory {
   static fromRow(
     row: SessionWorkoutRow,
     exercises: SessionExercise[] = [],
-    sourceTemplate?: TemplateWorkout
+    sourceTemplate?: WorkoutProgram
   ): SessionWorkout {
     return this.toDomain(row, exercises, sourceTemplate);
   }

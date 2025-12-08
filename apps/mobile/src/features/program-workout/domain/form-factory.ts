@@ -1,8 +1,8 @@
 // features/template-workout/ui/form-factory.ts
 import {
-  TemplateWorkout,
-  TemplateWorkoutFormData,
-} from "@/src/features/template-workout/domain/type";
+  WorkoutProgram,
+  WorkoutProgramFormData,
+} from "@/src/features/program-workout/domain/type";
 import {
   TemplateExercise,
   TemplateExerciseFormData,
@@ -20,14 +20,14 @@ function parseNumberOrNull(v: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export class TemplateWorkoutFormFactory {
+export class WorkoutProgramFormFactory {
   // ------------------------------------------------------------
   // createEmpty
   // ------------------------------------------------------------
-  static createEmpty(): TemplateWorkoutFormData {
+  static createEmpty(): WorkoutProgramFormData {
     return {
       name: "",
-      color:"neutral",
+      color: "neutral",
       description: "",
       folderId: null,
       exercises: [],
@@ -37,7 +37,7 @@ export class TemplateWorkoutFormFactory {
   // ------------------------------------------------------------
   // toDomain (form → domain)
   // ------------------------------------------------------------
-  static toDomain(form: TemplateWorkoutFormData): TemplateWorkout {
+  static toDomain(form: WorkoutProgramFormData): WorkoutProgram {
     const templateId = generateId();
     const now = new Date();
 
@@ -93,7 +93,7 @@ export class TemplateWorkoutFormFactory {
   // ------------------------------------------------------------
   // fromDomain (domain → form)
   // ------------------------------------------------------------
-  static fromDomain(domain: TemplateWorkout): TemplateWorkoutFormData {
+  static fromDomain(domain: WorkoutProgram): WorkoutProgramFormData {
     return {
       name: domain.name,
       description: domain.description ?? "",
@@ -117,7 +117,7 @@ export class TemplateWorkoutFormFactory {
   // ------------------------------------------------------------
   // toForm (alias)
   // ------------------------------------------------------------
-  static toForm(domain: TemplateWorkout): TemplateWorkoutFormData {
+  static toForm(domain: WorkoutProgram): WorkoutProgramFormData {
     return this.fromDomain(domain);
   }
 }

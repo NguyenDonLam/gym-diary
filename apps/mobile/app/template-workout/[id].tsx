@@ -12,19 +12,19 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import {
-  TemplateWorkout,
-  TemplateWorkoutFormData,
-} from "@/src/features/template-workout/domain/type";
-import TemplateWorkoutForm from "@/src/features/template-workout/ui/form";
-import { workoutTemplateRepository } from "@/src/features/template-workout/data/template-workout-repository";
-import { TemplateWorkoutFormFactory } from "@/src/features/template-workout/domain/form-factory";
+  WorkoutProgram,
+  WorkoutProgramFormData,
+} from "@/src/features/program-workout/domain/type";
+import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
+import { workoutTemplateRepository } from "@/src/features/program-workout/data/workout-program-repository";
+import { WorkoutProgramFormFactory } from "@/src/features/program-workout/domain/form-factory";
 
 export default function TemplateWorkoutEditScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const [formData, setFormData] = useState<TemplateWorkoutFormData>(
-    TemplateWorkoutFormFactory.createEmpty()
+  const [formData, setFormData] = useState<WorkoutProgramFormData>(
+    WorkoutProgramFormFactory.createEmpty()
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +46,7 @@ export default function TemplateWorkoutEditScreen() {
         setIsLoading(true);
         setLoadError(null);
 
-        const template: TemplateWorkout | null =
+        const template: WorkoutProgram | null =
           await workoutTemplateRepository.get(id);
 
         if (!template) {
@@ -57,7 +57,7 @@ export default function TemplateWorkoutEditScreen() {
         }
 
         if (!cancelled) {
-          const form = TemplateWorkoutFormFactory.fromDomain(template);
+          const form = WorkoutProgramFormFactory.fromDomain(template);
           setFormData(form);
           setHasLoadedTemplate(true);
         }
@@ -95,7 +95,7 @@ export default function TemplateWorkoutEditScreen() {
 
     setIsSaving(true);
     try {
-      const template = TemplateWorkoutFormFactory.toDomain(formData);
+      const template = WorkoutProgramFormFactory.toDomain(formData);
       // ensure we keep the existing id when saving
       template.id = id;
 
@@ -111,7 +111,6 @@ export default function TemplateWorkoutEditScreen() {
   if (isLoading || !hasLoadedTemplate) {
     return (
       <SafeAreaView className="flex-1 bg-white">
-        
         <View className="flex-row items-center justify-between border-b border-neutral-200 px-4 py-3">
           <Pressable onPress={handleCancel} disabled={isSaving}>
             <Text className="text-sm text-neutral-500">Cancel</Text>
@@ -175,7 +174,7 @@ export default function TemplateWorkoutEditScreen() {
         </View>
 
         {/* Form body */}
-        <TemplateWorkoutForm formData={formData} setFormData={setFormData} />
+        <WorkoutProgramForm formData={formData} setFormData={setFormData} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

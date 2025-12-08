@@ -1,7 +1,7 @@
 // src/features/session-workout/domain/session-workout-factory.ts
 
 import { SessionWorkout } from "./types";
-import { TemplateWorkout } from "@/src/features/template-workout/domain/type";
+import { WorkoutProgram } from "@/src/features/program-workout/domain/type";
 import { generateId } from "@/src/lib/id";
 
 /**
@@ -13,7 +13,7 @@ export class SessionWorkoutFactory {
    * Create a new session originating from a TemplateWorkout.
    * Does NOT create SessionExercise or SessionSet — that is a separate step.
    */
-  static fromTemplate(template: TemplateWorkout): SessionWorkout {
+  static fromTemplate(template: WorkoutProgram): SessionWorkout {
     const now = new Date();
 
     return {

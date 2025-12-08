@@ -14,7 +14,7 @@ import DraggableFlatList, {
 import { ListChecks } from "lucide-react-native";
 
 import TemplateExerciseForm from "@/src/features/template-exercise/ui/form";
-import { TemplateWorkoutFormData, TemplateColor } from "../domain/type";
+import { WorkoutProgramFormData, ProgramColor } from "../domain/type";
 import { TemplateExerciseFormData } from "../../template-exercise/domain/type";
 import { TemplateSetFormData } from "../../template-set/domain/type";
 import { generateId } from "@/src/lib/id";
@@ -24,12 +24,12 @@ import { exerciseRepository } from "../../exercise/data/exercise-repository";
 import { exerciseFactory } from "../../exercise/domain/factory";
 
 type TemplateWorkoutFormProps = {
-  formData: TemplateWorkoutFormData;
-  setFormData: React.Dispatch<React.SetStateAction<TemplateWorkoutFormData>>;
+  formData: WorkoutProgramFormData;
+  setFormData: React.Dispatch<React.SetStateAction<WorkoutProgramFormData>>;
 };
 
 const TEMPLATE_COLOR_OPTIONS: {
-  value: TemplateColor;
+  value: ProgramColor;
   label: string;
   tileBg: string;
   dotBg: string;
@@ -70,7 +70,17 @@ const TEMPLATE_COLOR_OPTIONS: {
   { value: "pink", label: "Pink", tileBg: "bg-pink-100", dotBg: "bg-pink-500" },
 ];
 
-export default function TemplateWorkoutForm({
+function makeDefaultSets(): TemplateSetFormData[] {
+  return Array.from({ length: 3 }).map(() => ({
+    id: generateId(),
+    reps: "8",
+    loadValue: "",
+    loadUnit: "kg",
+    rpe: "",
+  }));
+}
+
+export default function WorkoutProgramForm({
   formData,
   setFormData,
 }: TemplateWorkoutFormProps) {
@@ -100,7 +110,7 @@ export default function TemplateWorkoutForm({
     }));
   };
 
-  const setColor = (value: TemplateColor) => {
+  const setColor = (value: ProgramColor) => {
     setFormData((prev) => ({
       ...prev,
       color: value,

@@ -20,20 +20,19 @@ import DraggableFlatList, {
   DragEndParams,
 } from "react-native-draggable-flatlist";
 
-import { useWorkoutTemplates } from "@/src/features/template-workout/hooks/use-workout-template";
+import { useWorkoutPrograms } from "@/src/features/program-workout/hooks/use-workout-programs";
 import {
-  TemplateColor,
-  TemplateWorkout,
-} from "@/src/features/template-workout/domain/type";
+  ProgramColor,
+  WorkoutProgram,
+} from "@/src/features/program-workout/domain/type";
 import { templateFolderRepository } from "@/src/features/template-folder/data/repository";
 import type { TemplateFolder } from "@/src/features/template-folder/domain/types";
 import FolderRow from "@/src/features/template-folder/components/folder-row";
-import { workoutTemplateRepository } from "@/src/features/template-workout/data/template-workout-repository";
+import { workoutTemplateRepository } from "@/src/features/program-workout/data/workout-program-repository";
 import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-
-const COLOR_STRIP_MAP: Record<TemplateColor, string> = {
+const COLOR_STRIP_MAP: Record<ProgramColor, string> = {
   neutral: "bg-neutral-400",
   red: "bg-red-500",
   orange: "bg-orange-500",
@@ -53,15 +52,15 @@ type Row =
       folder: TemplateFolder;
       templateCount: number;
     }
-  | { key: string; type: "template"; template: TemplateWorkout };
+  | { key: string; type: "template"; template: WorkoutProgram };
 
 function groupTemplates(
-  templates: TemplateWorkout[],
+  templates: WorkoutProgram[],
   folders: TemplateFolder[]
 ) {
   const knownFolderIds = new Set(folders.map((f) => f.id));
-  const byFolder: Record<string, TemplateWorkout[]> = {};
-  const unassigned: TemplateWorkout[] = [];
+  const byFolder: Record<string, WorkoutProgram[]> = {};
+  const unassigned: WorkoutProgram[] = [];
 
   for (const tpl of templates) {
     const folderId = tpl.folderId ?? null;
@@ -77,7 +76,7 @@ function groupTemplates(
 }
 
 function buildRows(
-  templates: TemplateWorkout[],
+  templates: WorkoutProgram[],
   folders: TemplateFolder[],
   unassignedOpen: boolean,
   openFolderIds: string[]
@@ -130,10 +129,10 @@ function buildRows(
 
 function applyDragResult(
   data: Row[],
-  prevTemplates: TemplateWorkout[]
-): TemplateWorkout[] {
+  prevTemplates: WorkoutProgram[]
+): WorkoutProgram[] {
   let currentFolderId: string | null = null;
-  const moved: TemplateWorkout[] = [];
+  const moved: WorkoutProgram[] = [];
   const visibleIds = new Set<string>();
 
   for (const row of data) {
@@ -160,8 +159,8 @@ export default function Workout() {
     templates,
     deleteTemplate,
     loading: templatesLoading,
-  } = useWorkoutTemplates() as {
-    templates: TemplateWorkout[];
+  } = useWorkoutPrograms() as {
+    templates: WorkoutProgram[];
     deleteTemplate: (id: string) => Promise<void>;
     loading?: boolean;
   };
@@ -170,7 +169,7 @@ export default function Workout() {
   const [foldersLoading, setFoldersLoading] = useState(true);
   const [foldersError, setFoldersError] = useState<Error | null>(null);
 
-  const [layoutTemplates, setLayoutTemplates] = useState<TemplateWorkout[]>([]);
+  const [layoutTemplates, setLayoutTemplates] = useState<WorkoutProgram[]>([]);
 
   const [unassignedOpen, setUnassignedOpen] = useState(true);
   const [openFolderIds, setOpenFolderIds] = useState<string[]>([]);
@@ -225,7 +224,7 @@ export default function Workout() {
     });
   };
 
-  async function handleStartFromTemplate(template: TemplateWorkout) {
+  async function handleStartFromTemplate(template: WorkoutProgram) {
     // create session from template
     const session = await sessionWorkoutRepository.createFromTemplate(template);
 
@@ -241,7 +240,6 @@ export default function Workout() {
       params: { id: session.id },
     });
   }
-
 
   const handleEditTemplate = (id: string) => {
     router.push({
@@ -393,7 +391,7 @@ export default function Workout() {
     }
 
     const tpl = item.template;
-    const color = (tpl.color as TemplateColor) ?? "neutral";
+    const color = (tpl.color as ProgramColor) ?? "neutral";
     const stripClass = COLOR_STRIP_MAP[color];
     const inFolder = !!tpl.folderId;
 

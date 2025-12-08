@@ -3,7 +3,7 @@ import {
   TemplateExerciseFormData,
 } from "../../template-exercise/domain/type";
 
-export type TemplateColor =
+export type ProgramColor =
   | "neutral"
   | "red"
   | "orange"
@@ -14,21 +14,21 @@ export type TemplateColor =
   | "purple"
   | "pink";
 
-export type TemplateWorkout = {
+export type WorkoutProgram = {
   id: string;
   name: string;
   description: string | null;
   folderId: string | null;
-  color: TemplateColor;
+  color: ProgramColor;
   createdAt: Date;
   updatedAt: Date;
   exercises: TemplateExercise[];
 };
 
-export type TemplateWorkoutFormData = {
+export type WorkoutProgramFormData = {
   name: string;
   description: string;
   folderId: string | null;
-  color: TemplateColor;
+  color: ProgramColor;
   exercises: TemplateExerciseFormData[];
 };

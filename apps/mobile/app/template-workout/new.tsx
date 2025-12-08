@@ -1,11 +1,18 @@
 import React, { useState } from "react";
-import { SafeAreaView, View, Text, Pressable, KeyboardAvoidingView, Platform } from "react-native";
+import {
+  SafeAreaView,
+  View,
+  Text,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { useRouter } from "expo-router";
 import {
-  TemplateWorkout,
-  TemplateWorkoutFormData,
-} from "@/src/features/template-workout/domain/type";
-import TemplateWorkoutForm from "@/src/features/template-workout/ui/form";
+  WorkoutProgram,
+  WorkoutProgramFormData,
+} from "@/src/features/program-workout/domain/type";
+import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
 import {
   TemplateSet,
   TemplateSetFormData,
@@ -15,17 +22,17 @@ import {
   TemplateExerciseFormData,
 } from "@/src/features/template-exercise/domain/type";
 import { Exercise } from "@packages/exercise";
-import { workoutTemplateRepository } from "@/src/features/template-workout/data/template-workout-repository";
-import { TemplateWorkoutFormFactory } from "@/src/features/template-workout/domain/form-factory";
+import { workoutTemplateRepository } from "@/src/features/program-workout/data/workout-program-repository";
+import { WorkoutProgramFormFactory } from "@/src/features/program-workout/domain/form-factory";
 export default function TemplateWorkoutCreate() {
   const router = useRouter();
 
-  const [formData, setFormData] = useState<TemplateWorkoutFormData>({
+  const [formData, setFormData] = useState<WorkoutProgramFormData>({
     name: "",
     description: "",
     color: "neutral",
     exercises: [],
-    folderId: null
+    folderId: null,
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -41,7 +48,7 @@ export default function TemplateWorkoutCreate() {
     if (!canSave) return;
     setIsSaving(true);
     try {
-      const template = await TemplateWorkoutFormFactory.toDomain(formData);
+      const template = await WorkoutProgramFormFactory.toDomain(formData);
       console.log("start saving", JSON.stringify(template, null, 2));
       await workoutTemplateRepository.save(template);
 
@@ -86,7 +93,7 @@ export default function TemplateWorkoutCreate() {
         </View>
 
         {/* Form body */}
-        <TemplateWorkoutForm formData={formData} setFormData={setFormData} />
+        <WorkoutProgramForm formData={formData} setFormData={setFormData} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

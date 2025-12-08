@@ -1,7 +1,7 @@
 // src/features/session-workout/domain/type.ts
 
 import { SessionExercise } from "../../session-exercise/domain/types";
-import { TemplateWorkout } from "../../template-workout/domain/type";
+import { WorkoutProgram } from "../../program-workout/domain/type";
 
 export type SessionWorkout = {
   id: string;
@@ -10,7 +10,7 @@ export type SessionWorkout = {
   endedAt: Date | null;
 
   sourceTemplateId: string | null;
-  sourceTemplate?: TemplateWorkout;
+  sourceTemplate?: WorkoutProgram;
 
   note: string | null;
 

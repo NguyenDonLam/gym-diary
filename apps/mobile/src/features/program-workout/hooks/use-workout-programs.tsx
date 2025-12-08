@@ -1,18 +1,18 @@
 // src/features/workoutTemplate/hooks/use-workout-templates.ts
 import { useEffect, useState, useCallback } from "react";
-import { TemplateWorkout } from "../domain/type";
-import { workoutTemplateRepository } from "../data/template-workout-repository";
+import { WorkoutProgram } from "../domain/type";
+import { workoutProgramRepository } from "../data/workout-program-repository";
 
 type UseWorkoutTemplatesResult = {
-  templates: TemplateWorkout[];
+  templates: WorkoutProgram[];
   isLoading: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
   deleteTemplate: (id: string) => Promise<void>;
 };
 
-export function useWorkoutTemplates(): UseWorkoutTemplatesResult {
-  const [templates, setTemplates] = useState<TemplateWorkout[]>([]);
+export function useWorkoutPrograms(): UseWorkoutTemplatesResult {
+  const [templates, setTemplates] = useState<WorkoutProgram[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -21,7 +21,7 @@ export function useWorkoutTemplates(): UseWorkoutTemplatesResult {
     setError(null);
 
     try {
-      const data = await workoutTemplateRepository.getAll();
+      const data = await workoutProgramRepository.getAll();
       setTemplates(data);
     } catch (e) {
       setError(e instanceof Error ? e : new Error("Failed to load templates"));
@@ -50,7 +50,7 @@ export function useWorkoutTemplates(): UseWorkoutTemplatesResult {
 
   const deleteTemplate = useCallback(async (id: string) => {
     // 1) delete in storage
-    await workoutTemplateRepository.delete(id);
+    await workoutProgramRepository.delete(id);
     // 2) sync local state
     setTemplates((prev) => prev.filter((tpl) => tpl.id !== id));
   }, []);
