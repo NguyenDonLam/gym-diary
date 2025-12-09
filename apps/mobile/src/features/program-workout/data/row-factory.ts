@@ -10,6 +10,7 @@ import { WorkoutProgramRow } from "./type";
 import { exercisePrograms, setPrograms } from "@/db/schema";
 import { ExerciseProgram } from "../../program-exercise/domain/type";
 import { LoadUnit, SetProgram } from "../../program-set/domain/type";
+import { ExerciseRow } from "../../exercise/data/types";
 
 /**
  * Drizzle row types for relations
@@ -25,6 +26,7 @@ type SetProgramRow = InferSelectModel<typeof setPrograms>;
  */
 type WorkoutProgramQueryResult = WorkoutProgramRow & {
   exercises: (ExerciseProgramRow & {
+    exercise: ExerciseRow;
     sets: SetProgramRow[];
   })[];
 };
@@ -77,6 +79,7 @@ export class WorkoutProgramRowFactory {
     const exercises: ExerciseProgram[] = (result.exercises ?? []).map((ex) => ({
       id: ex.id,
       exerciseId: ex.exerciseId,
+      exercise: ex.exercise,
       orderIndex: ex.orderIndex,
       note: ex.note,
       createdAt: new Date(ex.createdAt),

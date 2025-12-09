@@ -64,7 +64,7 @@ export class SessionWorkoutFactory {
           templateExercise: tplEx,
 
           // if you have a denormalised name on the template, snapshot it here
-          exerciseName: null,
+          exerciseName: tplEx.exercise?.name ?? "Unnamed Exercise",
 
           orderIndex: tplEx.orderIndex ?? exIndex,
 

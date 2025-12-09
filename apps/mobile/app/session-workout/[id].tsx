@@ -260,11 +260,7 @@ export default function SessionWorkoutPage() {
           const totalSets = sets.length;
           const colors = getExerciseCardColors(completedCount, totalSets);
 
-          const exerciseLabel =
-            ex.exerciseName ??
-            ex.exerciseId ??
-            ex.templateExerciseId ??
-            "Exercise";
+          const exerciseLabel = ex.exerciseName;
 
           return (
             <View

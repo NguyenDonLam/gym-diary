@@ -126,7 +126,7 @@ export class SessionWorkoutRowFactory {
       startedAt: domain.startedAt.toISOString(),
       endedAt: domain.endedAt ? domain.endedAt.toISOString() : null,
 
-      sourceTemplateId: domain.sourceTemplateId,
+      sourceProgramId: domain.sourceTemplateId,
 
       note: domain.note,
 

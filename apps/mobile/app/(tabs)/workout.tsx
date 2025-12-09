@@ -227,6 +227,7 @@ export default function Workout() {
       console.log("error when fetching full program");
       return
     }
+    console.log(JSON.stringify(fullProgram, null, 2))
     const session =
       await sessionWorkoutRepository.createFromTemplate(fullProgram);
 
