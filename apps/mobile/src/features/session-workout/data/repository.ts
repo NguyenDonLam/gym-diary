@@ -48,7 +48,6 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
 
     const { workout, exercises, sets } =
       SessionWorkoutRowFactory.toRowTree(withId);
-    console.log(exercises)
 
     await db.transaction(async (tx) => {
       await tx.insert(workoutSessions).values(workout);

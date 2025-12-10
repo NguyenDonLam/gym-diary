@@ -139,14 +139,6 @@ export class SessionWorkoutRowFactory {
     return this.fromDomain(domain);
   }
 
-  static fromRow(
-    row: SessionWorkoutRow,
-    exercises: SessionExercise[] = [],
-    sourceTemplate?: WorkoutProgram
-  ): SessionWorkout {
-    return this.toDomain(row, exercises, sourceTemplate);
-  }
-
   static toRowTree(domain: SessionWorkout): {
     workout: SessionWorkoutRow;
     exercises: SessionExerciseRow[];
