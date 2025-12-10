@@ -1,7 +1,9 @@
-import { Stack } from "expo-router";
+// app/_layout.tsx
+
 import "../global.css";
-import { Suspense, useEffect } from "react";
-import { ActivityIndicator } from "react-native";
+import React, { Suspense, useEffect } from "react";
+import { ActivityIndicator, View, SafeAreaView } from "react-native";
+import { Stack } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import migrations from "../drizzle/migrations";
@@ -11,13 +13,11 @@ import { DATABASE_NAME, db, expoDb } from "@/db";
 import "react-native-get-random-values";
 
 import "react-native-gesture-handler";
-
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-
-
+import { CurrentSessionBanner } from "@/src/hooks/current-session-banner";
 export default function RootLayout() {
   useDrizzleStudio(expoDb);
-  const { success, error } = useMigrations(db, migrations);
+  const { success } = useMigrations(db, migrations);
 
   useEffect(() => {
     if (!success) return;
@@ -36,21 +36,27 @@ export default function RootLayout() {
           options={{ enableChangeListener: true }}
           useSuspense
         >
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="program-workout"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="program-workout/new"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="program-workout/[id]"
-              options={{ headerShown: false }}
-            />
-          </Stack>
+          <SafeAreaView style={{ flex: 1 }}>
+            <View style={{ flex: 1 }}>
+              <CurrentSessionBanner dbReady={success} />
+
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="program-workout"
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="program-workout/new"
+                  options={{ headerShown: false }}
+                />
+                <Stack.Screen
+                  name="program-workout/[id]"
+                  options={{ headerShown: false }}
+                />
+              </Stack>
+            </View>
+          </SafeAreaView>
         </SQLiteProvider>
       </Suspense>
     </GestureHandlerRootView>
