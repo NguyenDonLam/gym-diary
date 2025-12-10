@@ -1,8 +1,9 @@
 // src/features/session-workout/components/current-session-banner.tsx
 
 import React, { useEffect, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 
 import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
 import { useSessionTimer } from "@/src/features/program-workout/hooks/use-session-timer";
@@ -12,6 +13,8 @@ type Props = {
 };
 
 export function CurrentSessionBanner({ dbReady }: Props) {
+  const router = useRouter();
+
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionStartMs, setSessionStartMs] = useState<number | null>(null);
 
@@ -75,8 +78,19 @@ export function CurrentSessionBanner({ dbReady }: Props) {
 
   const shortId = sessionId.length > 6 ? sessionId.slice(0, 6) : sessionId;
 
+  const handlePress = () => {
+    router.push({
+      pathname: "/session-workout/[id]",
+      params: { id: sessionId },
+    });
+  };
+
   return (
-    <View className="mx-4 mb-2 mt-1 rounded-2xl bg-slate-100 px-3 py-2 shadow-sm shadow-black/10 dark:bg-slate-900 dark:shadow-black/40">
+    <Pressable
+      onPress={handlePress}
+      className="mx-4 mb-2 mt-1 rounded-2xl bg-slate-100 px-3 py-2 shadow-sm shadow-black/10 dark:bg-slate-900 dark:shadow-black/40"
+      hitSlop={8}
+    >
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center">
           <View className="mr-2 h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
@@ -99,6 +113,6 @@ export function CurrentSessionBanner({ dbReady }: Props) {
           </Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }

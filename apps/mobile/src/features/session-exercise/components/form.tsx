@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Circle,
 } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 
 import { SessionExercise } from "@/src/features/session-exercise/domain/types";
 import { SessionSet } from "@/src/features/session-set/domain/types";
@@ -30,10 +31,10 @@ function getExerciseCardColors(
 ): StatusColors {
   if (totalSets <= 0) {
     return {
-      containerBg: "bg-neutral-50",
-      containerBorder: "border-neutral-200",
-      statusText: "text-neutral-500",
-      statusPillBg: "bg-neutral-100",
+      containerBg: "bg-neutral-50 dark:bg-neutral-900",
+      containerBorder: "border-neutral-200 dark:border-neutral-800",
+      statusText: "text-neutral-500 dark:text-neutral-400",
+      statusPillBg: "bg-neutral-100 dark:bg-neutral-800",
     };
   }
 
@@ -41,27 +42,27 @@ function getExerciseCardColors(
 
   if (ratio === 0) {
     return {
-      containerBg: "bg-red-50",
-      containerBorder: "border-red-400",
-      statusText: "text-red-700",
-      statusPillBg: "bg-red-100",
+      containerBg: "bg-red-50 dark:bg-red-950",
+      containerBorder: "border-red-400 dark:border-red-500",
+      statusText: "text-red-700 dark:text-red-300",
+      statusPillBg: "bg-red-100 dark:bg-red-900",
     };
   }
 
   if (ratio < 1) {
     return {
-      containerBg: "bg-amber-50",
-      containerBorder: "border-amber-300",
-      statusText: "text-amber-700",
-      statusPillBg: "bg-amber-100",
+      containerBg: "bg-amber-50 dark:bg-amber-950",
+      containerBorder: "border-amber-300 dark:border-amber-500",
+      statusText: "text-amber-700 dark:text-amber-300",
+      statusPillBg: "bg-amber-100 dark:bg-amber-900",
     };
   }
 
   return {
-    containerBg: "bg-emerald-50",
-    containerBorder: "border-emerald-400",
-    statusText: "text-emerald-700",
-    statusPillBg: "bg-emerald-100",
+    containerBg: "bg-emerald-50 dark:bg-emerald-950",
+    containerBorder: "border-emerald-400 dark:border-emerald-500",
+    statusText: "text-emerald-700 dark:text-emerald-300",
+    statusPillBg: "bg-emerald-100 dark:bg-emerald-900",
   };
 }
 
@@ -72,6 +73,10 @@ type Props = {
 };
 
 export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
+  const { colorScheme } = useColorScheme();
+  const chevronColor = colorScheme === "dark" ? "#E5E7EB" : "#4B5563";
+  const circleIdleColor = colorScheme === "dark" ? "#6B7280" : "#9CA3AF";
+
   const sets = value.sets ?? [];
 
   const isSetDone = (s: SessionSet) =>
@@ -166,14 +171,14 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
       >
         <View className="flex-row items-center flex-1">
           {value.isOpen ? (
-            <ChevronDown width={16} height={16} color="#4B5563" />
+            <ChevronDown width={16} height={16} color={chevronColor} />
           ) : (
-            <ChevronRight width={16} height={16} color="#4B5563" />
+            <ChevronRight width={16} height={16} color={chevronColor} />
           )}
 
           <View className="ml-2 flex-1">
             <Text
-              className="text-sm font-semibold text-neutral-900"
+              className="text-sm font-semibold text-neutral-900 dark:text-neutral-50"
               numberOfLines={1}
             >
               {exerciseLabel}
@@ -196,9 +201,9 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
 
       {/* Collapsible content */}
       {value.isOpen && (
-        <View className="border-t border-neutral-200 px-3 pt-2 pb-2">
+        <View className="border-t border-neutral-200 dark:border-neutral-800 px-3 pt-2 pb-2">
           {value.note ? (
-            <Text className="mb-2 text-[11px] text-neutral-500">
+            <Text className="mb-2 text-[11px] text-neutral-500 dark:text-neutral-400">
               {value.note}
             </Text>
           ) : null}
@@ -223,7 +228,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
               const currentRepsNum = set.reps ?? 0;
 
               let clamped = 0;
-              let barClass = "bg-neutral-300";
+              let barClass = "bg-neutral-300 dark:bg-neutral-700";
               let goalLabel: string | null = null;
 
               if (prevRepsNum && prevRepsNum > 0) {
@@ -234,15 +239,15 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
                 clamped = Math.max(0, Math.min(ratio, 1));
 
                 if (current === 0) {
-                  barClass = "bg-neutral-300";
+                  barClass = "bg-neutral-300 dark:bg-neutral-700";
                 } else if (current < prevRepsNum) {
-                  barClass = "bg-amber-400";
+                  barClass = "bg-amber-400 dark:bg-amber-500";
                 } else if (current === prevRepsNum) {
-                  barClass = "bg-sky-500";
+                  barClass = "bg-sky-500 dark:bg-sky-500";
                 } else if (current >= goal) {
-                  barClass = "bg-emerald-500";
+                  barClass = "bg-emerald-500 dark:bg-emerald-500";
                 } else {
-                  barClass = "bg-emerald-400";
+                  barClass = "bg-emerald-400 dark:bg-emerald-500";
                 }
 
                 goalLabel = `${goal} reps`;
@@ -264,7 +269,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
               return (
                 <View
                   key={set.id}
-                  className="mb-1.5 rounded-xl bg-white px-3 py-1.5"
+                  className="mb-1.5 rounded-xl bg-white dark:bg-neutral-900 px-3 py-1.5"
                 >
                   {/* top row: indicator + set label + last chip */}
                   <View className="flex-row items-center justify-between">
@@ -277,21 +282,25 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
                             color="#16A34A"
                           />
                         ) : (
-                          <Circle width={18} height={18} color="#9CA3AF" />
+                          <Circle
+                            width={18}
+                            height={18}
+                            color={circleIdleColor}
+                          />
                         )}
                       </View>
 
-                      <Text className="text-[11px] text-neutral-500">
+                      <Text className="text-[11px] text-neutral-500 dark:text-neutral-400">
                         Set {idx + 1}
                       </Text>
                     </View>
 
                     {prevRepsNum && (
-                      <View className="flex-row items-center rounded-full bg-neutral-100 px-2 py-0.5">
-                        <Text className="text-[10px] text-neutral-600 mr-1">
+                      <View className="flex-row items-center rounded-full bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5">
+                        <Text className="text-[10px] text-neutral-600 dark:text-neutral-300 mr-1">
                           {prevRepsNum}
                         </Text>
-                        <Text className="text-[9px] text-neutral-400">
+                        <Text className="text-[9px] text-neutral-400 dark:text-neutral-500">
                           last
                         </Text>
                       </View>
@@ -301,7 +310,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
                   {/* inputs row */}
                   <View className="mt-1 flex-row items-center">
                     <TextInput
-                      className="mx-1 flex-1 rounded-lg border border-neutral-200 px-2 py-1 text-[12px] text-neutral-900"
+                      className="mx-1 flex-1 rounded-lg border border-neutral-200 dark:border-neutral-700 px-2 py-1 text-[12px] text-neutral-900 dark:text-neutral-50 bg-white dark:bg-neutral-900"
                       keyboardType="numeric"
                       placeholder={repsPlaceholder}
                       placeholderTextColor="#9CA3AF"
@@ -313,7 +322,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
                     />
 
                     <TextInput
-                      className="mx-1 flex-1 rounded-lg border border-neutral-200 px-2 py-1 text-[12px] text-neutral-900"
+                      className="mx-1 flex-1 rounded-lg border border-neutral-200 dark:border-neutral-700 px-2 py-1 text-[12px] text-neutral-900 dark:text-neutral-50 bg-white dark:bg-neutral-900"
                       keyboardType="numeric"
                       placeholder={weightPlaceholder.toString()}
                       placeholderTextColor="#9CA3AF"
@@ -325,7 +334,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
                     />
 
                     <TextInput
-                      className="ml-1 w-14 rounded-lg border border-neutral-200 px-2 py-1 text-[12px] text-neutral-900"
+                      className="ml-1 w-14 rounded-lg border border-neutral-200 dark:border-neutral-700 px-2 py-1 text-[12px] text-neutral-900 dark:text-neutral-50 bg-white dark:bg-neutral-900"
                       keyboardType="numeric"
                       placeholder={rpePlaceholder}
                       placeholderTextColor="#9CA3AF"
@@ -340,7 +349,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
                   {/* reps meter + explicit goal label */}
                   {prevRepsNum && prevRepsNum > 0 && (
                     <View className="mt-1 flex-row items-center">
-                      <View className="flex-1 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+                      <View className="flex-1 h-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
                         <View
                           className={`h-full ${barClass}`}
                           style={{
@@ -349,7 +358,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
                         />
                       </View>
                       {goalLabel && (
-                        <Text className="ml-2 text-[10px] text-neutral-500">
+                        <Text className="ml-2 text-[10px] text-neutral-500 dark:text-neutral-400">
                           goal {goalLabel}
                         </Text>
                       )}
@@ -362,9 +371,11 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
 
           <Pressable
             onPress={addSet}
-            className="mt-2 self-start rounded-full border border-dashed border-neutral-300 px-3 py-1"
+            className="mt-2 self-start rounded-full border border-dashed border-neutral-300 dark:border-neutral-600 px-3 py-1"
           >
-            <Text className="text-[11px] text-neutral-600">+ Add set</Text>
+            <Text className="text-[11px] text-neutral-600 dark:text-neutral-300">
+              + Add set
+            </Text>
           </Pressable>
         </View>
       )}

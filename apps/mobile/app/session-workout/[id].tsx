@@ -18,6 +18,8 @@ import {
   Circle,
 } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useColorScheme } from "nativewind";
+
 import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
 import {
   SessionExerciseCard,
@@ -48,6 +50,8 @@ async function getInitialExercisesFromSession(
 export default function SessionWorkoutPage() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const { colorScheme } = useColorScheme();
+  const iconColor = colorScheme === "dark" ? "#F9FAFB" : "#111827";
 
   const [exercises, setExercises] = useState<SessionExerciseView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,31 +86,35 @@ export default function SessionWorkoutPage() {
   const sessionId = Array.isArray(rawId) ? rawId[0] : rawId;
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-950">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-3 pb-2 border-b border-neutral-200">
+      <View className="flex-row items-center justify-between px-4 pt-3 pb-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
         <Pressable onPress={() => router.back()} hitSlop={10} className="mr-2">
-          <ChevronLeft width={20} height={20} color="#111827" />
+          <ChevronLeft width={20} height={20} color={iconColor} />
         </Pressable>
 
         <View className="flex-1 mr-2">
-          <Text className="text-[11px] text-neutral-500">Session</Text>
+          <Text className="text-[11px] text-neutral-500 dark:text-neutral-400">
+            Session
+          </Text>
           <Text
-            className="text-base font-semibold text-neutral-900"
+            className="text-base font-semibold text-neutral-900 dark:text-neutral-50"
             numberOfLines={1}
           >
             {sessionId ?? "Session"}
           </Text>
         </View>
 
-        <Pressable className="rounded-full bg-neutral-900 px-3 py-1.5">
-          <Text className="text-[12px] font-semibold text-white">Finish</Text>
+        <Pressable className="rounded-full bg-neutral-900 dark:bg-neutral-100 px-3 py-1.5">
+          <Text className="text-[12px] font-semibold text-white dark:text-neutral-900">
+            Finish
+          </Text>
         </Pressable>
       </View>
 
       {/* Body */}
       <ScrollView
-        className="flex-1"
+        className="flex-1 bg-white dark:bg-neutral-950"
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 12,
@@ -114,13 +122,13 @@ export default function SessionWorkoutPage() {
         }}
       >
         {loading && exercises.length === 0 && (
-          <Text className="text-center text-[12px] text-neutral-500">
+          <Text className="text-center text-[12px] text-neutral-500 dark:text-neutral-400">
             Loading…
           </Text>
         )}
 
         {!loading && exercises.length === 0 && (
-          <Text className="mt-4 text-center text-[12px] text-neutral-500">
+          <Text className="mt-4 text-center text-[12px] text-neutral-500 dark:text-neutral-400">
             No exercises in this session.
           </Text>
         )}

@@ -84,6 +84,10 @@ export default function RootLayout() {
                     name="program-workout/[id]"
                     options={{ headerShown: false }}
                   />
+                  <Stack.Screen
+                    name="session-workout/[id]"
+                    options={{ headerShown: false }}
+                  />
                 </Stack>
               </View>
             </SafeAreaView>
