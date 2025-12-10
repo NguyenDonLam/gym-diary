@@ -155,11 +155,7 @@ function applyDragResult(
 
 export default function Workout() {
   const router = useRouter();
-  const {
-    programs,
-    deleteProgram,
-    isLoading,
-  } = useWorkoutPrograms();
+  const { programs, deleteProgram, isLoading } = useWorkoutPrograms();
 
   const [folders, setFolders] = useState<TemplateFolder[]>([]);
   const [foldersLoading, setFoldersLoading] = useState(true);
@@ -221,22 +217,20 @@ export default function Workout() {
   };
 
   async function handleStartFromTemplate(template: WorkoutProgram) {
-    // create session from template
     const fullProgram = await workoutProgramRepository.get(template.id);
     if (!fullProgram) {
       console.log("error when fetching full program");
-      return
+      return;
     }
     const session =
       await sessionWorkoutRepository.createFromTemplate(fullProgram);
 
-    // persist ongoing session id
     try {
       await AsyncStorage.setItem("ongoing_session_id", session.id);
     } catch (e) {
       console.log("Failed to store ongoing session id", e);
     }
-    // navigate
+
     router.push({
       pathname: "/session-workout/[id]",
       params: { id: session.id },
@@ -323,7 +317,6 @@ export default function Workout() {
     setLayoutTemplates((prev) => {
       const next = applyDragResult(data, prev);
 
-      // persist only folderId changes
       const prevById = new Map(prev.map((t) => [t.id, t]));
       const changed = next.filter((t) => {
         const prevTpl = prevById.get(t.id);
@@ -331,14 +324,10 @@ export default function Workout() {
       });
 
       if (changed.length > 0) {
-        // fire-and-forget; handle errors inside
         (async () => {
           try {
             await Promise.all(
-              changed.map((tpl) =>
-                // adapt cast/object shape to your actual Template type if needed
-                workoutProgramRepository.save(tpl)
-              )
+              changed.map((tpl) => workoutProgramRepository.save(tpl))
             );
           } catch (err) {
             console.error("Failed to persist template layout", err);
@@ -357,11 +346,11 @@ export default function Workout() {
           onPress={toggleUnassignedOpen}
           className="mt-2 mb-1 flex-row items-center justify-between"
         >
-          <Text className="text-[12px] font-semibold text-neutral-700">
+          <Text className="text-[12px] font-semibold text-neutral-700 dark:text-neutral-200">
             No folder
           </Text>
           <View className="flex-row items-center">
-            <Text className="mr-1 text-[11px] text-neutral-500">
+            <Text className="mr-1 text-[11px] text-neutral-500 dark:text-neutral-400">
               {item.templateCount} template
               {item.templateCount === 1 ? "" : "s"}
             </Text>
@@ -399,7 +388,7 @@ export default function Workout() {
 
     return (
       <Pressable
-        className={`mb-2 rounded-xl bg-neutral-50 px-3 py-2 ${
+        className={`mb-2 rounded-xl bg-neutral-50 px-3 py-2 dark:bg-slate-900 ${
           inFolder ? "ml-4" : ""
         } ${isActive ? "opacity-80" : ""}`}
         onPress={() => handleStartFromTemplate(tpl)}
@@ -420,10 +409,10 @@ export default function Workout() {
             <View className={`mr-3 h-7 w-1 rounded-full ${stripClass}`} />
 
             <View className="shrink">
-              <Text className="text-[15px] font-semibold text-neutral-900">
+              <Text className="text-[15px] font-semibold text-neutral-900 dark:text-slate-50">
                 {tpl.name}
               </Text>
-              <Text className="mt-0.5 text-[11px] text-neutral-500">
+              <Text className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
                 Tap to start · long-press to edit
               </Text>
             </View>
@@ -442,14 +431,14 @@ export default function Workout() {
 
   if (isLoading || foldersLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-white">
+      <SafeAreaView className="flex-1 items-center justify-center bg-white dark:bg-slate-950">
         <ActivityIndicator size="large" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
       <DraggableFlatList
         data={rows}
         keyExtractor={(item) => item.key}
@@ -464,31 +453,31 @@ export default function Workout() {
         }}
         ListHeaderComponent={
           <View className="mb-2 px-0">
-            <Text className="text-lg font-bold text-neutral-900">
+            <Text className="text-lg font-bold text-neutral-900 dark:text-slate-50">
               Session templates
             </Text>
-            <Text className="mt-1 text-xs text-neutral-700">
+            <Text className="mt-1 text-xs text-neutral-700 dark:text-neutral-300">
               Tap to start. Long-press to edit. Drag handle to move.
             </Text>
-            <Text className="mt-0.5 text-xs text-neutral-500">
+            <Text className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
               Total: {programs.length}
             </Text>
 
             <View className="mt-2 flex-row justify-between">
               <Pressable
-                className="rounded-full px-3 py-1.5 bg-neutral-900"
+                className="rounded-full px-3 py-1.5 bg-neutral-900 dark:bg-slate-50"
                 onPress={handleCreateTemplate}
               >
-                <Text className="text-[13px] font-semibold text-white">
+                <Text className="text-[13px] font-semibold text-white dark:text-slate-900">
                   New template
                 </Text>
               </Pressable>
 
               <Pressable
-                className="rounded-full px-3 py-1.5 bg-neutral-100"
+                className="rounded-full px-3 py-1.5 bg-neutral-100 dark:bg-slate-800"
                 onPress={handleCreateFolder}
               >
-                <Text className="text-[13px] font-semibold text-neutral-900">
+                <Text className="text-[13px] font-semibold text-neutral-900 dark:text-slate-50">
                   New folder
                 </Text>
               </Pressable>
@@ -498,7 +487,7 @@ export default function Workout() {
         ListFooterComponent={
           foldersError ? (
             <View className="mt-1">
-              <Text className="text-[10px] text-red-500">
+              <Text className="text-[10px] text-red-500 dark:text-red-400">
                 Failed to load folders
               </Text>
             </View>
