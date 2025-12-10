@@ -35,7 +35,6 @@ async function getInitialExercisesFromSession(
   }
 
   const session = await sessionWorkoutRepository.get(sessionId);
-  console.log("[session] loaded session", sessionId, session);
 
   if (!session || !session.exercises) return [];
 
