@@ -16,23 +16,55 @@ type Props = {
   onFinish?: (sessionId: string) => void;
 };
 
+const COLLAPSED_OFFSET = -16; // less hidden so bigger tap area
+const EXPANDED_OFFSET = 0;
+const HIDDEN_OFFSET = -80;
+const AUTO_COMPACT_MS = 3000;
+
 export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
   const router = useRouter();
   const { ongoing, clearOngoing } = useOngoingSession();
 
-  // keep a local copy so we can animate out even after ongoing === null
   const [current, setCurrent] = useState<typeof ongoing>(null);
   const [sessionStartMs, setSessionStartMs] = useState<number | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  const translateY = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(1)).current;
+  const translateY = useRef(new Animated.Value(HIDDEN_OFFSET)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const autoCompactTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { label: timerLabel } = useSessionTimer(sessionStartMs);
+
+  const animateTo = (y: number, fadeTo?: number) => {
+    const anims: Animated.CompositeAnimation[] = [
+      Animated.timing(translateY, {
+        toValue: y,
+        duration: 160,
+        useNativeDriver: true,
+      }),
+    ];
+    if (fadeTo != null) {
+      anims.push(
+        Animated.timing(opacity, {
+          toValue: fadeTo,
+          duration: 160,
+          useNativeDriver: true,
+        })
+      );
+    }
+    Animated.parallel(anims).start();
+  };
+
+  const clearAutoCompactTimer = () => {
+    if (autoCompactTimer.current) {
+      clearTimeout(autoCompactTimer.current);
+      autoCompactTimer.current = null;
+    }
+  };
 
   useEffect(() => {
     if (!dbReady) return;
 
-    // new / updated ongoing session -> snap into place
     if (ongoing) {
       const ms = new Date(ongoing.startedAt).getTime();
       if (Number.isNaN(ms)) {
@@ -41,40 +73,73 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
         return;
       }
 
-      // reset animation state for showing
-      translateY.setValue(0);
-      opacity.setValue(1);
+      clearAutoCompactTimer();
 
       setCurrent(ongoing);
       setSessionStartMs(ms);
+      setIsExpanded(true);
+
+      translateY.setValue(EXPANDED_OFFSET);
+      opacity.setValue(1);
+
+      autoCompactTimer.current = setTimeout(() => {
+        setIsExpanded(false);
+        animateTo(COLLAPSED_OFFSET);
+      }, AUTO_COMPACT_MS);
+
       return;
     }
 
-    // ongoing turned null, but we still have a current banner -> animate out
     if (!ongoing && current) {
+      clearAutoCompactTimer();
       Animated.parallel([
         Animated.timing(translateY, {
-          toValue: -16, // slide up a bit
-          duration: 180,
+          toValue: HIDDEN_OFFSET,
+          duration: 160,
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
           toValue: 0,
-          duration: 180,
+          duration: 160,
           useNativeDriver: true,
         }),
       ]).start(() => {
         setCurrent(null);
         setSessionStartMs(null);
+        setIsExpanded(false);
       });
     }
-  }, [dbReady, ongoing, current, opacity, translateY]);
+
+    return () => {
+      clearAutoCompactTimer();
+    };
+  }, [dbReady, ongoing, current, translateY, opacity]);
 
   if (!current || !sessionStartMs) return null;
 
   const { id: sessionId, name } = current;
 
-  const handlePress = () => {
+  const handleToggleExpand = () => {
+    clearAutoCompactTimer();
+
+    const nextExpanded = !isExpanded;
+    setIsExpanded(nextExpanded);
+    animateTo(nextExpanded ? EXPANDED_OFFSET : COLLAPSED_OFFSET);
+
+    if (nextExpanded) {
+      autoCompactTimer.current = setTimeout(() => {
+        setIsExpanded(false);
+        animateTo(COLLAPSED_OFFSET);
+      }, AUTO_COMPACT_MS);
+    }
+  };
+
+  const handleTapBanner = () => {
+    if (!isExpanded) {
+      handleToggleExpand();
+      return;
+    }
+
     router.push({
       pathname: "/session-workout/[id]",
       params: { id: sessionId },
@@ -92,17 +157,31 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
     try {
       const endedAt = new Date().toISOString();
 
-      await db
-        .update(workoutSessions)
-        .set({
-          endedAt,
-          status: "completed",
-          updatedAt: endedAt,
-        })
-        .where(eq(workoutSessions.id, sessionId));
+      clearAutoCompactTimer();
 
-      // this triggers the "animate out" branch above
-      await clearOngoing();
+      Animated.parallel([
+        Animated.timing(translateY, {
+          toValue: HIDDEN_OFFSET,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 160,
+          useNativeDriver: true,
+        }),
+      ]).start(async () => {
+        await db
+          .update(workoutSessions)
+          .set({
+            endedAt,
+            status: "completed",
+            updatedAt: endedAt,
+          })
+          .where(eq(workoutSessions.id, sessionId));
+
+        await clearOngoing();
+      });
     } catch (e) {
       console.warn("[session-timer] failed to finish session", e);
     }
@@ -111,53 +190,77 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
   return (
     <Animated.View
       style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: 0,
+        zIndex: 20,
         transform: [{ translateY }],
         opacity,
       }}
-      className="mx-4 mb-2 mt-1 flex-row items-stretch gap-x-2"
+      pointerEvents="box-none"
     >
-      {/* 4/5 width: banner */}
-      <Pressable
-        onPress={handlePress}
-        hitSlop={8}
-        style={{ flex: 4 }}
-        className="rounded-2xl bg-slate-100 px-3 py-2 shadow-sm shadow-black/10 dark:bg-slate-900 dark:shadow-black/40"
-      >
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center">
-            <View className="mr-2 h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-            <View>
-              <Text className="text-[11px] font-medium text-slate-900 dark:text-slate-50">
-                {name ?? "Session in progress"}
-              </Text>
+      <View className="pt-1 px-4 pb-2" pointerEvents="auto">
+        <View className="flex-row items-stretch gap-x-2">
+          {/* banner */}
+          <Pressable
+            onPress={handleTapBanner}
+            hitSlop={16}
+            style={{ flex: 4 }}
+            className={`rounded-2xl bg-slate-100 shadow-sm shadow-black/10 dark:bg-slate-900 dark:shadow-black/40 ${
+              isExpanded ? "px-3 py-2" : "px-3 py-1.5"
+            }`}
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1 mr-2">
+                <View className="mr-1.5 h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+                <Text
+                  numberOfLines={1}
+                  className="flex-1 text-[11px] font-medium text-slate-900 dark:text-slate-50"
+                >
+                  {name ?? "Session in progress"}
+                </Text>
+              </View>
+
+              <View className="items-end">
+                {isExpanded ? (
+                  <>
+                    <Text className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Tap to open (auto-hide).
+                    </Text>
+                    <Text className="font-mono text-[13px] font-semibold text-slate-900 dark:text-slate-50">
+                      {timerLabel}
+                    </Text>
+                  </>
+                ) : (
+                  <Text className="font-mono text-[11px] font-semibold text-slate-900 dark:text-slate-50">
+                    {timerLabel}
+                  </Text>
+                )}
+              </View>
             </View>
-          </View>
+          </Pressable>
 
-          <View className="items-end">
-            <Text className="text-[10px] text-slate-500 dark:text-slate-400">
-              Elapsed
-            </Text>
-            <Text className="font-mono text-[14px] font-semibold text-slate-900 dark:text-slate-50">
-              {timerLabel}
-            </Text>
-          </View>
+          {/* finish button */}
+          <Pressable
+            onPress={handleFinishPress}
+            hitSlop={16}
+            style={{ flex: 0.9 }}
+            className={`items-center justify-center rounded-2xl bg-emerald-600 shadow-sm shadow-black/25 dark:bg-emerald-500 ${
+              isExpanded ? "py-1.5" : "py-1.5"
+            }`}
+          >
+            <View className="items-center">
+              <CheckCircle2 size={16} color="#ffffff" />
+              {isExpanded && (
+                <Text className="mt-0.5 text-[9px] font-semibold text-white">
+                  Finish
+                </Text>
+              )}
+            </View>
+          </Pressable>
         </View>
-      </Pressable>
-
-      {/* 1/5 width: finish button */}
-      <Pressable
-        onPress={handleFinishPress}
-        hitSlop={8}
-        style={{ flex: 1 }}
-        className="items-center justify-center rounded-2xl bg-emerald-600 shadow-sm shadow-black/25 dark:bg-emerald-500"
-      >
-        <View className="items-center">
-          <CheckCircle2 size={18} color="#ffffff" />
-          <Text className="mt-1 text-[10px] font-semibold text-white">
-            Finish
-          </Text>
-        </View>
-      </Pressable>
+      </View>
     </Animated.View>
   );
 }
