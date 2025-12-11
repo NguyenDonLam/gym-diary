@@ -1,6 +1,8 @@
 import React from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { SetProgramFormData, LoadUnit } from "../domain/type";
+import { X } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 
 type SetProgramFormProps = {
   formData: SetProgramFormData;
@@ -17,32 +19,32 @@ const BAND_OPTIONS = [
   {
     id: "green",
     label: "Green",
-    baseClass: "bg-emerald-100",
-    activeClass: "bg-emerald-400",
+    baseClass: "bg-emerald-100 dark:bg-emerald-950",
+    activeClass: "bg-emerald-400 dark:bg-emerald-500",
   },
   {
     id: "purple",
     label: "Purple",
-    baseClass: "bg-violet-100",
-    activeClass: "bg-violet-400",
+    baseClass: "bg-violet-100 dark:bg-violet-950",
+    activeClass: "bg-violet-400 dark:bg-violet-500",
   },
   {
     id: "black",
     label: "Black",
-    baseClass: "bg-neutral-200",
-    activeClass: "bg-neutral-800",
+    baseClass: "bg-neutral-200 dark:bg-neutral-800",
+    activeClass: "bg-neutral-800 dark:bg-neutral-50",
   },
   {
     id: "red",
     label: "Red",
-    baseClass: "bg-red-100",
-    activeClass: "bg-red-400",
+    baseClass: "bg-red-100 dark:bg-red-950",
+    activeClass: "bg-red-400 dark:bg-red-500",
   },
   {
     id: "yellow",
     label: "Yellow",
-    baseClass: "bg-amber-100",
-    activeClass: "bg-amber-400",
+    baseClass: "bg-amber-100 dark:bg-amber-950",
+    activeClass: "bg-amber-400 dark:bg-amber-500",
   },
 ];
 
@@ -52,6 +54,9 @@ export default function SetProgramForm({
   setFormData,
   onRemove,
 }: SetProgramFormProps) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const update = (patch: Partial<SetProgramFormData>) => {
     setFormData({ ...formData, ...patch });
   };
@@ -64,7 +69,6 @@ export default function SetProgramForm({
         ? LOAD_UNITS[0]
         : LOAD_UNITS[idx + 1];
 
-    // reset value when unit changes
     update({ loadUnit: next, loadValue: "" });
   };
 
@@ -72,7 +76,6 @@ export default function SetProgramForm({
     const unit = formData.loadUnit;
 
     if (unit === "kg" || unit === "lb") {
-      // numeric only (allow one dot/comma)
       let cleaned = raw.replace(/[^0-9.,]/g, "");
       const firstDot = cleaned.search(/[.,]/);
       if (firstDot !== -1) {
@@ -85,7 +88,6 @@ export default function SetProgramForm({
     }
 
     if (unit === "time") {
-      // minutes, mm:ss, or ranges like "14-15" / "14:30-15:00"
       const cleaned = raw.replace(/[^0-9:\-]/g, "");
       update({ loadValue: cleaned });
       return;
@@ -108,21 +110,24 @@ export default function SetProgramForm({
   const isNumericUnit =
     formData.loadUnit === "kg" || formData.loadUnit === "lb";
 
-  // time needs ":" / "-" so use default keyboard there
   const loadKeyboardType: any = isNumericUnit ? "numeric" : "default";
+
+  const removeIconColor = isDark ? "#FCA5A5" : "#DC2626";
 
   return (
     <View className="mt-2 flex-row items-center gap-2">
-      {/* index, low emphasis */}
-      <Text className="w-5 text-center text-[10px] text-neutral-400">
+      {/* index */}
+      <Text className="w-5 text-center text-[10px] text-neutral-400 dark:text-neutral-500">
         {index + 1}
       </Text>
 
       {/* REPS */}
-      <View className="flex-1 rounded-2xl bg-neutral-50 px-2 py-1">
-        <Text className="text-[9px] font-medium text-neutral-500">REPS</Text>
+      <View className="flex-1 rounded-2xl bg-neutral-50 px-2 py-1 dark:bg-neutral-800">
+        <Text className="text-[9px] font-medium text-neutral-500 dark:text-neutral-400">
+          REPS
+        </Text>
         <TextInput
-          className="mt-0.5 text-center text-[11px] text-neutral-900"
+          className="mt-0.5 text-center text-[11px] text-neutral-900 dark:text-neutral-50"
           keyboardType="number-pad"
           placeholder="8"
           placeholderTextColor="#9CA3AF"
@@ -132,30 +137,28 @@ export default function SetProgramForm({
       </View>
 
       {/* LOAD (value + unit) */}
-      <View className="flex-1 rounded-2xl bg-neutral-50 px-2 py-1">
+      <View className="flex-1 rounded-2xl bg-neutral-50 px-2 py-1 dark:bg-neutral-800">
         <View className="mb-0.5 flex-row items-center justify-between">
-          <Text className="text-[9px] font-medium text-neutral-500">LOAD</Text>
+          <Text className="text-[9px] font-medium text-neutral-500 dark:text-neutral-400">
+            LOAD
+          </Text>
           <Pressable
             onPress={cycleUnit}
-            className="rounded-full bg-white px-2 py-[1px]"
+            className="rounded-full bg-white px-2 py-[1px] dark:bg-neutral-700"
           >
-            <Text className="text-[9px] font-medium text-neutral-700">
+            <Text className="text-[9px] font-medium text-neutral-700 dark:text-neutral-100">
               {formData.loadUnit}
             </Text>
           </Pressable>
         </View>
 
-        {/* kg / lb / time / custom → field */}
+        {/* kg / lb / time / custom */}
         {!isBandUnit && (
           <TextInput
-            className="mt-0.5 text-center text-[11px] text-neutral-900"
+            className="mt-0.5 text-center text-[11px] text-neutral-900 dark:text-neutral-50"
             keyboardType={loadKeyboardType}
             placeholder={
-              isTimeUnit
-                ? "14:30" // mm:ss or minutes, your choice
-                : formData.loadUnit === "custom"
-                  ? ""
-                  : "60"
+              isTimeUnit ? "14:30" : formData.loadUnit === "custom" ? "" : "60"
             }
             placeholderTextColor="#9CA3AF"
             value={formData.loadValue}
@@ -163,7 +166,7 @@ export default function SetProgramForm({
           />
         )}
 
-        {/* band → full colour chips (green, purple, black, red, yellow) */}
+        {/* band → chips */}
         {isBandUnit && (
           <View className="mt-1 flex-row flex-wrap gap-2">
             {BAND_OPTIONS.map((band) => {
@@ -172,15 +175,15 @@ export default function SetProgramForm({
                 <Pressable
                   key={band.id}
                   onPress={() => selectBand(band.id)}
-                  className={`h-7 px-3 items-center justify-center rounded-full border border-neutral-200 ${
+                  className={`h-7 px-3 items-center justify-center rounded-full border border-neutral-200 dark:border-neutral-600 ${
                     active ? band.activeClass : band.baseClass
                   }`}
                 >
                   <Text
                     className={`text-[10px] font-semibold ${
                       band.id === "black" && active
-                        ? "text-white"
-                        : "text-neutral-900"
+                        ? "text-neutral-900 dark:text-neutral-900"
+                        : "text-neutral-900 dark:text-neutral-50"
                     }`}
                   >
                     {band.label}
@@ -193,10 +196,12 @@ export default function SetProgramForm({
       </View>
 
       {/* RPE */}
-      <View className="flex-1 rounded-2xl bg-neutral-50 px-2 py-1">
-        <Text className="text-[9px] font-medium text-neutral-500">RPE</Text>
+      <View className="flex-1 rounded-2xl bg-neutral-50 px-2 py-1 dark:bg-neutral-800">
+        <Text className="text-[9px] font-medium text-neutral-500 dark:text-neutral-400">
+          RPE
+        </Text>
         <TextInput
-          className="mt-0.5 text-center text-[11px] text-neutral-900"
+          className="mt-0.5 text-center text-[11px] text-neutral-900 dark:text-neutral-50"
           keyboardType="numeric"
           placeholder="7.5"
           placeholderTextColor="#9CA3AF"
@@ -207,10 +212,10 @@ export default function SetProgramForm({
 
       {/* Remove */}
       <Pressable
-        className="h-7 w-7 items-center justify-center rounded-full bg-red-50"
+        className="h-7 w-7 items-center justify-center rounded-full bg-red-50 dark:bg-red-900"
         onPress={onRemove}
       >
-        <Text className="text-[12px] text-red-500">✕</Text>
+        <X size={14} color={removeIconColor} />
       </Pressable>
     </View>
   );

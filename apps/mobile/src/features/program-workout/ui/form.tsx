@@ -11,7 +11,15 @@ import {
 import DraggableFlatList, {
   DragEndParams,
 } from "react-native-draggable-flatlist";
-import { ListChecks } from "lucide-react-native";
+import {
+  ListChecks,
+  Plus,
+  X,
+  Check,
+  Search,
+  BookOpen,
+} from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 
 import { WorkoutProgramFormData, ProgramColor } from "../domain/type";
 import { SetProgramFormData } from "../../program-set/domain/type";
@@ -37,37 +45,57 @@ const TEMPLATE_COLOR_OPTIONS: {
   {
     value: "neutral",
     label: "Neutral",
-    tileBg: "bg-neutral-100",
+    tileBg: "bg-neutral-100 dark:bg-neutral-800",
     dotBg: "bg-neutral-500",
   },
-  { value: "red", label: "Red", tileBg: "bg-red-100", dotBg: "bg-red-500" },
+  {
+    value: "red",
+    label: "Red",
+    tileBg: "bg-red-100 dark:bg-red-800",
+    dotBg: "bg-red-500",
+  },
   {
     value: "orange",
     label: "Orange",
-    tileBg: "bg-orange-100",
+    tileBg: "bg-orange-100 dark:bg-orange-800",
     dotBg: "bg-orange-500",
   },
   {
     value: "yellow",
     label: "Yellow",
-    tileBg: "bg-yellow-100",
+    tileBg: "bg-yellow-100 dark:bg-yellow-700",
     dotBg: "bg-yellow-400",
   },
   {
     value: "green",
     label: "Green",
-    tileBg: "bg-green-100",
+    tileBg: "bg-green-100 dark:bg-green-800",
     dotBg: "bg-green-500",
   },
-  { value: "teal", label: "Teal", tileBg: "bg-teal-100", dotBg: "bg-teal-500" },
-  { value: "blue", label: "Blue", tileBg: "bg-blue-100", dotBg: "bg-blue-500" },
+  {
+    value: "teal",
+    label: "Teal",
+    tileBg: "bg-teal-100 dark:bg-teal-800",
+    dotBg: "bg-teal-500",
+  },
+  {
+    value: "blue",
+    label: "Blue",
+    tileBg: "bg-blue-100 dark:bg-blue-800",
+    dotBg: "bg-blue-500",
+  },
   {
     value: "purple",
     label: "Purple",
-    tileBg: "bg-purple-100",
+    tileBg: "bg-purple-100 dark:bg-purple-800",
     dotBg: "bg-purple-500",
   },
-  { value: "pink", label: "Pink", tileBg: "bg-pink-100", dotBg: "bg-pink-500" },
+  {
+    value: "pink",
+    label: "Pink",
+    tileBg: "bg-pink-100 dark:bg-pink-800",
+    dotBg: "bg-pink-500",
+  },
 ];
 
 function makeDefaultSets(): SetProgramFormData[] {
@@ -84,6 +112,14 @@ export default function WorkoutProgramForm({
   formData,
   setFormData,
 }: TemplateWorkoutFormProps) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
+
+  // greys, no pure black / pure white
+  const primaryIconColor = isDark ? "#111827" : "#F9FAFB";
+  const secondaryIconColor = isDark ? "#D1D5DB" : "#4B5563";
+  const accentIconColor = isDark ? "#F9FAFB" : "#111827";
+
   const { name, description, exercises, color } = formData;
 
   const { options: exerciseOptions, refetch } = useExercises();
@@ -254,32 +290,32 @@ export default function WorkoutProgramForm({
 
   const renderHeader = () => (
     <View>
-      <View className="mb-3 rounded-2xl border border-neutral-200 bg-white px-3 py-3">
+      <View className="mb-3 rounded-2xl border border-neutral-200 bg-white px-3 py-3 dark:border-neutral-700 dark:bg-neutral-800">
         <View className="mb-2 flex-row items-center justify-between">
           <View className="flex-row items-center">
-            <View className="mr-2 h-7 w-7 items-center justify-center rounded-full bg-neutral-100">
-              <ListChecks width={14} height={14} color="#4B5563" />
+            <View className="mr-2 h-7 w-7 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700">
+              <ListChecks width={14} height={14} color={secondaryIconColor} />
             </View>
-            <Text className="text-[12px] font-semibold text-neutral-800">
+            <Text className="text-[12px] font-semibold text-neutral-800 dark:text-neutral-100">
               Template details
             </Text>
           </View>
 
           <Pressable
             onPress={() => setColorPickerOpen(true)}
-            className="flex-row items-center rounded-full border border-neutral-200 bg-neutral-50 px-2 py-1"
+            className="flex-row items-center rounded-full border border-neutral-200 bg-neutral-50 px-2 py-1 dark:border-neutral-600 dark:bg-neutral-900"
           >
             <View
               className={`mr-1 h-3 w-3 rounded-full ${currentColorOption.dotBg}`}
             />
-            <Text className="text-[11px] text-neutral-800">
+            <Text className="text-[11px] text-neutral-800 dark:text-neutral-100">
               {currentColorOption.label}
             </Text>
           </Pressable>
         </View>
 
         <TextInput
-          className="mt-1 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900"
+          className="mt-1 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-50"
           placeholder="Session name"
           placeholderTextColor="#9CA3AF"
           value={name}
@@ -287,7 +323,7 @@ export default function WorkoutProgramForm({
         />
 
         <TextInput
-          className="mt-2 min-h-[56px] max-h-24 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-[12px] text-neutral-900"
+          className="mt-2 min-h-[56px] max-h-24 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-[12px] text-neutral-900 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-50"
           placeholder="Optional notes, focus or cues"
           placeholderTextColor="#9CA3AF"
           value={description}
@@ -299,16 +335,18 @@ export default function WorkoutProgramForm({
 
       <View className="mb-2 flex-row items-center justify-between">
         <View className="flex-row items-center">
-          <View className="mr-2 h-6 w-6 items-center justify-center rounded-full bg-neutral-100">
-            <Text className="text-[11px] text-neutral-500">●</Text>
+          <View className="mr-2 h-6 w-6 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800">
+            <View className="h-1.5 w-1.5 rounded-full bg-neutral-500 dark:bg-neutral-400" />
           </View>
-          <Text className="text-[11px] text-neutral-600">Exercises</Text>
+          <Text className="text-[11px] text-neutral-600 dark:text-neutral-300">
+            Exercises
+          </Text>
         </View>
         <Pressable
           onPress={() => setLibraryOpen(true)}
-          className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900"
+          className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900 dark:bg-neutral-200"
         >
-          <Text className="text-[14px] text-white">＋</Text>
+          <Plus size={14} color={primaryIconColor} />
         </Pressable>
       </View>
     </View>
@@ -316,15 +354,15 @@ export default function WorkoutProgramForm({
 
   const renderEmpty = () => (
     <View className="mt-4 items-center">
-      <View className="h-10 w-10 items-center justify-center rounded-2xl border border-dashed border-neutral-300">
-        <Text className="text-[16px] text-neutral-400">＋</Text>
+      <View className="h-10 w-10 items-center justify-center rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-600">
+        <Plus size={16} color={secondaryIconColor} />
       </View>
     </View>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 px-4 pt-3 pb-6">
+    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-900">
+      <View className="flex-1 px-4 pt-3 pb-6 bg-white dark:bg-neutral-900">
         {renderHeader()}
 
         <DraggableFlatList
@@ -358,39 +396,45 @@ export default function WorkoutProgramForm({
         />
 
         {libraryOpen && (
-          <View className="absolute inset-0 bg-black/25" style={{ zIndex: 50 }}>
-            <View className="absolute inset-x-4 top-24 bottom-24 rounded-3xl bg-white px-4 py-4">
-              {/* Header */}
-              <View className="mb-3 flex-row items-center justify-between">
-                <Text className="text-[14px] font-semibold text-neutral-900">
-                  Exercise library
-                </Text>
-
+          <View
+            className="absolute inset-0 bg-neutral-900/60"
+            style={{ zIndex: 50 }}
+          >
+            <View className="absolute inset-x-4 top-16 bottom-16 rounded-3xl bg-white px-3 py-3 dark:bg-neutral-800">
+              <View className="mb-2 flex-row items-center justify-between">
+                <View className="flex-row items-center">
+                  <BookOpen size={16} color={secondaryIconColor} />
+                  <Text className="ml-1 text-[13px] text-neutral-900 dark:text-neutral-50">
+                    Exercise library
+                  </Text>
+                </View>
                 <View className="flex-row items-center gap-2">
                   <Pressable
                     onPress={handleCloseLibrary}
-                    className="h-7 px-3 items-center justify-center rounded-full"
+                    className="h-7 w-7 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700"
                   >
-                    <Text className="text-[12px] text-neutral-500">Close</Text>
+                    <X size={14} color={secondaryIconColor} />
                   </Pressable>
 
                   <Pressable
                     onPress={handleConfirmLibrary}
-                    className="h-7 px-3 items-center justify-center rounded-full bg-neutral-900"
+                    className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900 dark:bg-neutral-200"
                   >
-                    <Text className="text-[12px] font-medium text-white">
-                      Done
-                    </Text>
+                    <Check size={14} color={primaryIconColor} />
                   </Pressable>
                 </View>
               </View>
 
-              {/* Search + new */}
-              <View className="mb-3 flex-row items-center gap-2">
-                <View className="flex-1 rounded-2xl bg-neutral-100 px-3 py-1.5">
+              <View className="mb-2 flex-row items-center gap-2">
+                <View className="flex-1 flex-row items-center rounded-full bg-neutral-100 px-2 dark:bg-neutral-800">
+                  <Search
+                    size={14}
+                    color="#9CA3AF"
+                    style={{ marginRight: 4 }}
+                  />
                   <TextInput
-                    className="text-[12px] text-neutral-900"
-                    placeholder="Search exercises"
+                    className="flex-1 py-1 text-[12px] text-neutral-900 dark:text-neutral-50"
+                    placeholder=""
                     placeholderTextColor="#9CA3AF"
                     value={librarySearch}
                     onChangeText={setLibrarySearch}
@@ -398,12 +442,10 @@ export default function WorkoutProgramForm({
                 </View>
 
                 <Pressable
-                  onPress={handleOpenCreateExercise}
-                  className="h-8 px-3 items-center justify-center rounded-2xl bg-neutral-900"
+                  onPress={handleCreateExercisePress}
+                  className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900 dark:bg-neutral-200"
                 >
-                  <Text className="text-[11px] font-medium text-white">
-                    New
-                  </Text>
+                  <Plus size={13} color={primaryIconColor} />
                 </Pressable>
               </View>
 
@@ -419,46 +461,45 @@ export default function WorkoutProgramForm({
                     <Pressable
                       key={opt.id}
                       onPress={() => toggleSelect(opt.id)}
-                      className={`mb-1 flex-row items-center rounded-xl px-3 py-2 ${
-                        isSelected ? "bg-neutral-900" : "bg-neutral-50"
+                      className={`mb-1 flex-row items-center rounded-2xl px-2 py-1.5 ${
+                        isSelected
+                          ? "bg-neutral-900"
+                          : "bg-neutral-50 dark:bg-neutral-800"
                       }`}
                     >
-                      {/* Exercise icon / initial */}
+                      <View className="mr-2 h-6 w-6 items-center justify-center rounded-full bg-white dark:bg-neutral-900">
+                        {isSelected && (
+                          <Check size={12} color={accentIconColor} />
+                        )}
+                      </View>
                       <View
                         className={`mr-2 h-7 w-7 items-center justify-center rounded-xl ${
-                          isSelected ? "bg-neutral-800" : "bg-neutral-200"
+                          isSelected
+                            ? "bg-neutral-800"
+                            : "bg-neutral-200 dark:bg-neutral-700"
                         }`}
                       >
                         <Text
                           className={`text-[11px] font-semibold ${
-                            isSelected ? "text-white" : "text-neutral-800"
+                            isSelected
+                              ? "text-white"
+                              : "text-neutral-800 dark:text-neutral-50"
                           }`}
                         >
                           {initial}
                         </Text>
                       </View>
-
-                      {/* Name */}
-                      <Text
-                        className={`flex-1 text-[13px] ${
-                          isSelected ? "text-white" : "text-neutral-900"
-                        }`}
-                        numberOfLines={1}
-                      >
-                        {name}
-                      </Text>
-
-                      {/* Selection indicator */}
-                      <View
-                        className={`ml-2 h-4 w-4 items-center justify-center rounded-full border ${
-                          isSelected
-                            ? "border-white bg-white"
-                            : "border-neutral-300 bg-transparent"
-                        }`}
-                      >
-                        {isSelected && (
-                          <View className="h-3 w-3 rounded-full bg-neutral-900" />
-                        )}
+                      <View className="flex-1">
+                        <Text
+                          className={`text-[12px] ${
+                            isSelected
+                              ? "text-white"
+                              : "text-neutral-900 dark:text-neutral-50"
+                          }`}
+                          numberOfLines={1}
+                        >
+                          {name}
+                        </Text>
                       </View>
                     </Pressable>
                   );
@@ -508,17 +549,20 @@ export default function WorkoutProgramForm({
         )}
 
         {colorPickerOpen && (
-          <View className="absolute inset-0 bg-black/40" style={{ zIndex: 60 }}>
-            <View className="absolute inset-x-8 top-32 bottom-32 rounded-3xl bg-white px-4 py-3">
+          <View
+            className="absolute inset-0 bg-neutral-900/60"
+            style={{ zIndex: 60 }}
+          >
+            <View className="absolute inset-x-8 top-32 bottom-32 rounded-3xl bg-white px-4 py-3 dark:bg-neutral-800">
               <View className="mb-2 flex-row items-center justify-between">
-                <Text className="text-[13px] text-neutral-900">
+                <Text className="text-[13px] text-neutral-900 dark:text-neutral-50">
                   Choose template colour
                 </Text>
                 <Pressable
                   onPress={() => setColorPickerOpen(false)}
-                  className="h-7 w-7 items-center justify-center rounded-full bg-neutral-100"
+                  className="h-7 w-7 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700"
                 >
-                  <Text className="text-[12px] text-neutral-600">✕</Text>
+                  <X size={14} color={secondaryIconColor} />
                 </Pressable>
               </View>
 
@@ -537,20 +581,20 @@ export default function WorkoutProgramForm({
                           opt.tileBg
                         } ${
                           selected
-                            ? "border-2 border-neutral-900"
+                            ? "border-2 border-neutral-900 dark:border-neutral-100"
                             : "border border-transparent"
                         }`}
                       >
                         <View
                           className={`mb-1 h-4 w-4 rounded-full ${opt.dotBg}`}
                         />
-                        <Text className="text-[11px] text-neutral-900">
+                        <Text className="text-[11px] text-neutral-900 dark:text-neutral-50">
                           {opt.label}
                         </Text>
                         {selected && (
-                          <Text className="mt-0.5 text-[10px] text-neutral-900">
-                            ✓
-                          </Text>
+                          <View className="mt-0.5">
+                            <Check size={10} color={accentIconColor} />
+                          </View>
                         )}
                       </Pressable>
                     );

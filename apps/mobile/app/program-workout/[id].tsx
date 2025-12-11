@@ -110,13 +110,15 @@ export default function TemplateWorkoutEditScreen() {
   // Loading / error state
   if (isLoading || !hasLoadedTemplate) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
-        <View className="flex-row items-center justify-between border-b border-neutral-200 px-4 py-3">
+      <SafeAreaView className="flex-1 bg-white dark:bg-neutral-950">
+        <View className="flex-row items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-4 py-3 bg-white dark:bg-neutral-950">
           <Pressable onPress={handleCancel} disabled={isSaving}>
-            <Text className="text-sm text-neutral-500">Cancel</Text>
+            <Text className="text-sm text-neutral-500 dark:text-neutral-400">
+              Cancel
+            </Text>
           </Pressable>
 
-          <Text className="text-base font-semibold text-neutral-900">
+          <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
             Edit template
           </Text>
 
@@ -125,9 +127,9 @@ export default function TemplateWorkoutEditScreen() {
           </View>
         </View>
 
-        <View className="flex-1 items-center justify-center px-4">
+        <View className="flex-1 items-center justify-center px-4 bg-white dark:bg-neutral-950">
           {loadError ? (
-            <Text className="text-sm text-red-500 text-center">
+            <Text className="text-sm text-red-500 dark:text-red-400 text-center">
               {loadError}
             </Text>
           ) : (
@@ -140,19 +142,20 @@ export default function TemplateWorkoutEditScreen() {
 
   // Normal edit state
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      {/* Top bar */}
+    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-950">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={0} // adjust in screen if you have a header
+        keyboardVerticalOffset={0}
       >
-        <View className="flex-row items-center justify-between border-b border-neutral-200 px-4 py-3">
+        <View className="flex-row items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-4 py-3 bg-white dark:bg-neutral-950">
           <Pressable onPress={handleCancel} disabled={isSaving}>
-            <Text className="text-sm text-neutral-500">Cancel</Text>
+            <Text className="text-sm text-neutral-500 dark:text-neutral-400">
+              Cancel
+            </Text>
           </Pressable>
 
-          <Text className="text-base font-semibold text-neutral-900">
+          <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
             Edit template
           </Text>
 
@@ -160,12 +163,16 @@ export default function TemplateWorkoutEditScreen() {
             onPress={handleSave}
             disabled={!canSave}
             className={`rounded-full px-3 py-1.5 ${
-              canSave ? "bg-black" : "bg-neutral-300"
+              canSave
+                ? "bg-black dark:bg-neutral-50"
+                : "bg-neutral-300 dark:bg-neutral-700"
             }`}
           >
             <Text
               className={`text-xs font-semibold ${
-                canSave ? "text-white" : "text-neutral-500"
+                canSave
+                  ? "text-white dark:text-neutral-900"
+                  : "text-neutral-500 dark:text-neutral-300"
               }`}
             >
               Save
@@ -173,8 +180,9 @@ export default function TemplateWorkoutEditScreen() {
           </Pressable>
         </View>
 
-        {/* Form body */}
-        <WorkoutProgramForm formData={formData} setFormData={setFormData} />
+        <View className="flex-1 bg-white dark:bg-neutral-950">
+          <WorkoutProgramForm formData={formData} setFormData={setFormData} />
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
