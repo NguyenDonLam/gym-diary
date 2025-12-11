@@ -271,7 +271,6 @@ export default function WorkoutProgramForm({
     }
   };
 
-
   const handleCancelCreateExercise = () => {
     setCreateExerciseOpen(false);
     setNewExerciseName("");
@@ -442,7 +441,7 @@ export default function WorkoutProgramForm({
                 </View>
 
                 <Pressable
-                  onPress={handleCreateExercisePress}
+                  onPress={handleOpenCreateExercise}
                   className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900 dark:bg-neutral-200"
                 >
                   <Plus size={13} color={primaryIconColor} />

@@ -14,6 +14,7 @@ Workout tracking platform with:
 <p align="center">
   <img src="./docs/images/home-screen.png" alt="Home screen" width="260" />
   <img src="./docs/images/home-screen-2.png" alt="Home screen (stats)" width="260" />
+  <img src="./docs/images/home-screen-dark.png" alt="Home screen (stats)" width="260" />
 </p>
 
 ### Mobile — Template management
@@ -21,6 +22,7 @@ Workout tracking platform with:
 <p align="center">
   <img src="./docs/images/template-screen.png" alt="Template list" width="260" />
   <img src="./docs/images/template-screen-drag.png" alt="Template drag-and-drop" width="260" />
+  <img src="./docs/images/template-screen-dark.png" alt="Template drag-and-drop" width="260" />
 </p>
 
 ### Mobile — Exercise library
@@ -28,6 +30,13 @@ Workout tracking platform with:
 <p align="center">
   <img src="./docs/images/exercise-library-select.png" alt="Template list" width="260" />
   <img src="./docs/images/create-new-exercise.png" alt="Template drag-and-drop" width="260" />
+</p>
+
+### Mobile — Ongoing session
+
+<p align="center">
+  <img src="./docs/images/session-screen-dark.png" alt="Template list" width="260" />
+  <img src="./docs/images/session-screen-light.png" alt="Template drag-and-drop" width="260" />
 </p>
 
 ## Repo layout
