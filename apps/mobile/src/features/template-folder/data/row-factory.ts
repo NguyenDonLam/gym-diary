@@ -1,10 +1,10 @@
-import { templateFolders } from "@/db/schema";
+import { programFolders } from "@/db/schema";
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 import { generateId } from "@/src/lib/id";
 import { TemplateFolder } from "../domain/types";
 
-export type TemplateFolderRow = InferSelectModel<typeof templateFolders>;
-export type NewTemplateFolderRow = InferInsertModel<typeof templateFolders>;
+export type TemplateFolderRow = InferSelectModel<typeof programFolders>;
+export type NewTemplateFolderRow = InferInsertModel<typeof programFolders>;
 
 /**
  * Factory responsible ONLY for mapping between:
