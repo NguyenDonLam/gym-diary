@@ -40,6 +40,7 @@ export class SessionWorkoutFactory {
             templateSet: tplSet,
 
             orderIndex: tplSet.orderIndex ?? setIndex,
+            isCompleted: false,
 
             reps: null,
             loadUnit: tplSet.loadUnit,
@@ -81,12 +82,14 @@ export class SessionWorkoutFactory {
 
     const session: SessionWorkout = {
       id: sessionId,
+      name: template.name,
 
       startedAt: now,
       endedAt: null,
 
       sourceTemplateId: template.id,
       sourceTemplate: template,
+      status: "in_progress",
 
       note: null,
 

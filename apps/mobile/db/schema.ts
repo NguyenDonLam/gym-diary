@@ -84,8 +84,15 @@ export const setPrograms = sqliteTable("program_sets", {
  */
 export const workoutSessions = sqliteTable("workout_sessions", {
   id: text("id").primaryKey(), // UUID
+  name: text("name"),
   startedAt: text("started_at").notNull(),
   endedAt: text("ended_at"),
+  status: text("status", {
+    enum: ["in_progress", "completed", "discarded"],
+  })
+    .notNull()
+    .default("in_progress"),
+
   sourceProgramId: text("source_program_id").references(
     () => workoutPrograms.id,
     { onDelete: "set null" }
@@ -94,6 +101,7 @@ export const workoutSessions = sqliteTable("workout_sessions", {
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
 
 /**
  * session_exercises
@@ -134,13 +142,13 @@ export const sessionSets = sqliteTable("session_sets", {
   sessionExerciseId: text("session_exercise_id")
     .notNull()
     .references(() => sessionExercises.id, {
-      // delete session_exercise -> delete its sets
       onDelete: "cascade",
     }),
   setProgramId: text("set_program_id").references(() => setPrograms.id, {
     onDelete: "set null",
   }),
   orderIndex: integer("order_index").notNull(),
+
   reps: integer("reps"),
   loadUnit: text("load_unit", {
     enum: ["kg", "lb", "band", "time", "custom"],
@@ -149,11 +157,17 @@ export const sessionSets = sqliteTable("session_sets", {
     .default("custom"),
   loadValue: text("load_value"),
   rpe: real("rpe"),
+
+  isCompleted: integer("is_completed", { mode: "boolean" })
+    .notNull()
+    .default(false),
+
   isWarmup: integer("is_warmup", { mode: "boolean" }).notNull().default(false),
   note: text("note"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
 
 
 /**

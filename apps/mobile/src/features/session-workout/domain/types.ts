@@ -6,8 +6,12 @@ import { WorkoutProgram } from "../../program-workout/domain/type";
 export type SessionWorkout = {
   id: string;
 
+  name: string | null;
+
   startedAt: Date;
   endedAt: Date | null;
+
+  status: "in_progress" | "completed" | "discarded";
 
   sourceTemplateId: string | null;
   sourceTemplate?: WorkoutProgram;
@@ -17,6 +21,5 @@ export type SessionWorkout = {
   createdAt: Date;
   updatedAt: Date;
 
-  // relation: all exercises in this session, ordered by orderIndex
   exercises?: SessionExercise[];
 };

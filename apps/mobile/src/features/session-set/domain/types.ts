@@ -14,6 +14,7 @@ export type SessionSet = {
   loadValue: string | null;
   rpe: number | null;
 
+  isCompleted: boolean;
   isWarmup: boolean;
 
   note: string | null;

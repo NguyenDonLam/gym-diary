@@ -139,6 +139,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
         loadValue: null,
         rpe: null,
 
+        isCompleted: false,
         isWarmup: false,
         note: null,
 

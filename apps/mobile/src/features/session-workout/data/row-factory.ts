@@ -34,6 +34,8 @@ export class SessionWorkoutRowFactory {
     return {
       id: row.id,
       startedAt: new Date(row.startedAt),
+      name: row.name,
+      status: row.status,
       endedAt: row.endedAt ? new Date(row.endedAt) : null,
       sourceTemplateId: row.sourceProgramId ?? null,
       sourceTemplate: undefined,
@@ -62,6 +64,7 @@ export class SessionWorkoutRowFactory {
           loadValue: s.loadValue,
           rpe: s.rpe,
 
+          isCompleted: s.isCompleted,
           isWarmup: s.isWarmup,
 
           note: s.note,
@@ -97,6 +100,8 @@ export class SessionWorkoutRowFactory {
 
     return {
       id: result.id,
+      name: result.name,
+      status: result.status,
 
       startedAt: new Date(result.startedAt),
       endedAt: result.endedAt ? new Date(result.endedAt) : null,
@@ -122,6 +127,8 @@ export class SessionWorkoutRowFactory {
   static fromDomain(domain: SessionWorkout): SessionWorkoutRow {
     return {
       id: domain.id,
+      name: domain.name,
+      status: domain.status,
 
       startedAt: domain.startedAt.toISOString(),
       endedAt: domain.endedAt ? domain.endedAt.toISOString() : null,
@@ -178,6 +185,7 @@ export class SessionWorkoutRowFactory {
           loadValue: s.loadValue,
           rpe: s.rpe,
 
+          isCompleted: s.isCompleted,
           isWarmup: s.isWarmup,
 
           note: s.note,
