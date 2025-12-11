@@ -44,7 +44,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
     entity: SessionWorkout & { id?: string | null }
   ): Promise<SessionWorkout> {
     const id = entity.id ?? generateId();
-    const withId: SessionWorkout = { ...(entity as SessionWorkout), id };
+    const withId: SessionWorkout = { ...entity, id };
 
     const { workout, exercises, sets } =
       SessionWorkoutRowFactory.toRowTree(withId);

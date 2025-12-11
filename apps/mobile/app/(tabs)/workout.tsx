@@ -31,6 +31,7 @@ import FolderRow from "@/src/features/template-folder/components/folder-row";
 import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
+import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
 
 const COLOR_STRIP_MAP: Record<ProgramColor, string> = {
   neutral: "bg-neutral-400",
@@ -165,6 +166,7 @@ export default function Workout() {
 
   const [unassignedOpen, setUnassignedOpen] = useState(true);
   const [openFolderIds, setOpenFolderIds] = useState<string[]>([]);
+  const { setOngoing } = useOngoingSession();
 
   // keep layout in sync with source templates (initial + external changes)
   useEffect(() => {
@@ -222,14 +224,10 @@ export default function Workout() {
       console.log("error when fetching full program");
       return;
     }
+
     const session =
       await sessionWorkoutRepository.createFromTemplate(fullProgram);
-
-    try {
-      await AsyncStorage.setItem("ongoing_session_id", session.id);
-    } catch (e) {
-      console.log("Failed to store ongoing session id", e);
-    }
+    await setOngoing(session);
 
     router.push({
       pathname: "/session-workout/[id]",

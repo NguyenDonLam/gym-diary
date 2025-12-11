@@ -16,8 +16,9 @@ import "react-native-gesture-handler";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "nativewind";
-import { CurrentSessionBanner } from "@/src/hooks/current-session-banner";
+import { CurrentSessionBanner } from "@/src/components/current-session-banner";
 import { ThemeToggle } from "@/src/components/theme-toggle";
+import { OngoingSessionProvider } from "@/src/features/session-workout/hooks/use-ongoing-session";
 const THEME_KEY = "theme"; // "light" | "dark"
 
 export default function RootLayout() {
@@ -60,38 +61,39 @@ export default function RootLayout() {
           options={{ enableChangeListener: true }}
           useSuspense
         >
-          {/* Root background for everything, including under tabs */}
-          <View className="flex-1 bg-white dark:bg-slate-950">
-            <SafeAreaView className="flex-1">
-              <View className="flex-1">
-                <CurrentSessionBanner dbReady={success} />
-                <ThemeToggle />
+          <OngoingSessionProvider>
+            <View className="flex-1 bg-white dark:bg-slate-950">
+              <SafeAreaView className="flex-1">
+                <View className="flex-1">
+                  <CurrentSessionBanner dbReady={success} />
+                  <ThemeToggle></ThemeToggle>
 
-                <Stack>
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="program-workout"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="program-workout/new"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="program-workout/[id]"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="session-workout/[id]"
-                    options={{ headerShown: false }}
-                  />
-                </Stack>
-              </View>
-            </SafeAreaView>
-          </View>
+                  <Stack>
+                    <Stack.Screen
+                      name="(tabs)"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="program-workout"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="program-workout/new"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="program-workout/[id]"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="session-workout/[id]"
+                      options={{ headerShown: false }}
+                    />
+                  </Stack>
+                </View>
+              </SafeAreaView>
+            </View>
+          </OngoingSessionProvider>
         </SQLiteProvider>
       </Suspense>
     </GestureHandlerRootView>
