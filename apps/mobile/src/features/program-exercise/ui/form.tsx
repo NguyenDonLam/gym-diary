@@ -1,33 +1,19 @@
-import { useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View, ScrollView } from "react-native";
+import React, { useMemo } from "react";
+import { Pressable, Text, View } from "react-native";
 import { ExerciseProgramFormData } from "../domain/type";
 import { SetProgramFormData } from "../../program-set/domain/type";
 import { useExercises } from "../../exercise/hooks/use-exercises";
 import SetProgramForm from "@/src/features/program-set/ui/form";
-import { Exercise } from "@packages/exercise";
-import {
-  GripVertical,
-  X,
-  Plus,
-  Check,
-  Search,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react-native";
+import { GripVertical, X, Plus, Minus } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
 type ExerciseProgramFormProps = {
   formData: ExerciseProgramFormData;
-  index: number;
+  index: number; // kept for parent use, no longer rendered
   setFormData: (next: ExerciseProgramFormData) => void;
   onRemove: () => void;
   onDrag?: () => void;
 };
-
-// TODO: wire this to your real repository
-async function createExercise(name: string): Promise<Exercise> {
-  throw new Error("createExercise(name: string) is not implemented yet.");
-}
 
 export default function ExerciseProgramForm({
   formData,
@@ -36,44 +22,23 @@ export default function ExerciseProgramForm({
   onRemove,
   onDrag,
 }: ExerciseProgramFormProps) {
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerSearch, setPickerSearch] = useState("");
-
-  const [creatingNew, setCreatingNew] = useState(false);
-  const [newExerciseName, setNewExerciseName] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-
   const { options: exerciseOptions } = useExercises();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  // greys — no pure black/white
-  const bgCard = isDark ? "bg-neutral-800" : "bg-white";
-  const borderCard = isDark ? "border-neutral-700" : "border-neutral-200";
-
-  const bgDropdown = isDark ? "bg-neutral-800" : "bg-neutral-50";
-  const borderDropdown = isDark ? "border-neutral-700" : "border-neutral-200";
-
-  const txtMain = isDark ? "text-neutral-100" : "text-neutral-900";
-  const txtSoft = isDark ? "text-neutral-400" : "text-neutral-500";
-
-  const btnGrey = isDark ? "bg-neutral-700" : "bg-neutral-100";
-  const btnDark = isDark ? "bg-neutral-200" : "bg-neutral-900";
-  const btnDarkText = isDark ? "text-neutral-900" : "text-white";
+  const cardBg = isDark ? "bg-neutral-800" : "bg-white";
+  const cardBorder = isDark ? "border-neutral-700" : "border-neutral-200";
+  const textMain = isDark ? "text-neutral-100" : "text-neutral-900";
+  const textSoft = isDark ? "text-neutral-500" : "text-neutral-500";
+  const handleBg = isDark ? "bg-neutral-700" : "bg-neutral-100";
+  // neutral delete styling (no red)
+  const deleteBg = handleBg;
+  const deleteColor = isDark ? "#E5E7EB" : "#6B7280";
+  const chipBg = isDark ? "bg-neutral-200" : "bg-neutral-900";
+  const chipText = isDark ? "text-neutral-900" : "text-white";
 
   const update = (patch: Partial<ExerciseProgramFormData>) =>
     setFormData({ ...formData, ...patch });
-
-  const selectedExercise = useMemo(
-    () =>
-      formData.exerciseId
-        ? (exerciseOptions.find((opt) => opt.id === formData.exerciseId) ??
-          null)
-        : null,
-    [exerciseOptions, formData.exerciseId]
-  );
-
-  // sets
 
   const addSet = () => {
     const next: SetProgramFormData = {
@@ -83,10 +48,12 @@ export default function ExerciseProgramForm({
       loadUnit: "kg",
       rpe: "",
     };
+    update({ sets: [...formData.sets, next] });
+  };
 
-    update({
-      sets: [...formData.sets, next],
-    });
+  const removeLastSet = () => {
+    if (formData.sets.length === 0) return;
+    update({ sets: formData.sets.slice(0, -1) });
   };
 
   const applyPreset = (count: number, reps: number) => {
@@ -99,272 +66,94 @@ export default function ExerciseProgramForm({
         rpe: "",
       })
     );
-
     update({ sets: nextSets });
   };
 
-  const removeSet = (setId: string) => {
-    update({
-      sets: formData.sets.filter((s) => s.id !== setId),
-    });
-  };
-
-  // picker matches
-
-  const query = pickerSearch.trim().toLowerCase();
-  const matches =
-    pickerOpen && exerciseOptions.length > 0
-      ? exerciseOptions
-          .filter((opt) =>
-            query ? opt.name.toLowerCase().includes(query) : true
-          )
-          .slice(0, 100)
-      : [];
-
-  const selectExerciseOption = (option: Exercise) => {
-    update({ exerciseId: option.id });
-    setPickerOpen(false);
-    setPickerSearch("");
-    setCreatingNew(false);
-    setNewExerciseName("");
-  };
-
-  const selectorLabel = selectedExercise?.name ?? "Select exercise";
-
-  const getInitial = (opt: Exercise) => {
-    const trimmed = (opt.name ?? "").trim();
-    return trimmed ? trimmed[0]!.toUpperCase() : "?";
-  };
-
-  // create-new flow
-
-  const startCreateNew = () => {
-    setCreatingNew(true);
-    setNewExerciseName(pickerSearch.trim());
-  };
-
-  const cancelCreateNew = () => {
-    setCreatingNew(false);
-    setNewExerciseName("");
-  };
-
-  const handleCreateNew = async () => {
-    const name = newExerciseName.trim();
-    if (!name) return;
-
-    try {
-      setIsCreating(true);
-      const created = await createExercise(name);
-      update({ exerciseId: created.id });
-      setPickerOpen(false);
-      setPickerSearch("");
-      setNewExerciseName("");
-      setCreatingNew(false);
-    } finally {
-      setIsCreating(false);
-    }
-  };
+  const exerciseName = useMemo(() => {
+    if (!formData.exerciseId) return "Exercise";
+    const found = exerciseOptions.find((e) => e.id === formData.exerciseId);
+    return found?.name || "Exercise";
+  }, [exerciseOptions, formData.exerciseId]);
 
   return (
     <View
-      className={`mb-3 rounded-2xl px-3 py-3 border ${bgCard} ${borderCard}`}
-      style={{
-        overflow: "visible",
-        zIndex: pickerOpen ? 20 : 0,
-        elevation: pickerOpen ? 20 : 0,
-      }}
+      className={`mb-2 rounded-2xl border px-3 py-2 ${cardBg} ${cardBorder}`}
     >
-      {/* Header: drag + remove */}
-      <View className="mb-2 flex-row items-center justify-between">
-        {onDrag ? (
-          <Pressable
-            onLongPress={onDrag}
-            delayLongPress={120}
-            hitSlop={8}
-            className={`mr-2 h-7 w-7 items-center justify-center rounded-full ${btnGrey}`}
+      {/* Header: drag + name + delete exercise (no index, neutral delete) */}
+      <View className="mb-1 flex-row items-center justify-between">
+        <View className="flex-row items-center flex-1">
+          {onDrag ? (
+            <Pressable
+              onLongPress={onDrag}
+              delayLongPress={120}
+              hitSlop={8}
+              className={`mr-2 h-6 w-6 items-center justify-center rounded-full ${handleBg}`}
+            >
+              <GripVertical size={14} color={isDark ? "#9CA3AF" : "#6B7280"} />
+            </Pressable>
+          ) : (
+            <View className="mr-2 h-6 w-6" />
+          )}
+
+          <Text
+            className={`flex-1 text-[13px] font-medium ${textMain}`}
+            numberOfLines={1}
           >
-            <GripVertical size={16} color={isDark ? "#9CA3AF" : "#6B7280"} />
-          </Pressable>
-        ) : (
-          <View className="mr-2 h-7 w-7" />
-        )}
+            {exerciseName}
+          </Text>
+        </View>
 
         <Pressable
           onPress={onRemove}
-          className="h-7 w-7 items-center justify-center rounded-full bg-red-100 dark:bg-red-900"
+          hitSlop={8}
+          className={`h-6 w-6 items-center justify-center rounded-full ${deleteBg}`}
         >
-          <X size={14} color={isDark ? "#FCA5A5" : "#DC2626"} />
+          <X size={13} color={deleteColor} />
         </Pressable>
       </View>
 
-      {/* Selector + dropdown */}
-      <View className="relative z-10">
-        <Pressable
-          className={`flex-row items-center justify-between rounded-xl px-3 py-2 border ${borderCard} ${bgCard}`}
-          onPress={() => setPickerOpen((prev) => !prev)}
-        >
-          <Text
-            className={`flex-1 text-[12px] ${
-              selectedExercise ? txtMain : txtSoft
-            }`}
-            numberOfLines={1}
-          >
-            {selectorLabel}
-          </Text>
-          {pickerOpen ? (
-            <ChevronUp size={14} color={isDark ? "#9CA3AF" : "#6B7280"} />
-          ) : (
-            <ChevronDown size={14} color={isDark ? "#9CA3AF" : "#6B7280"} />
-          )}
-        </Pressable>
-
-        {pickerOpen && (
-          <View
-            className={`mt-2 rounded-xl border ${borderDropdown} ${bgDropdown}`}
-            style={{ zIndex: 30, elevation: 30 }}
-          >
-            {/* Search */}
-            <View
-              className={`flex-row items-center border-b px-2 py-1.5 ${borderDropdown}`}
-            >
-              <Search size={14} color={isDark ? "#9CA3AF" : "#6B7280"} />
-              <TextInput
-                className={`ml-2 flex-1 rounded-lg px-2 py-1.5 text-xs ${txtMain} border ${borderDropdown} ${bgDropdown}`}
-                placeholder=""
-                placeholderTextColor={isDark ? "#6B7280" : "#9CA3AF"}
-                value={pickerSearch}
-                onChangeText={setPickerSearch}
-              />
-            </View>
-
-            {/* List */}
-            <View className="max-h-72">
-              {matches.length === 0 ? (
-                <View className="px-3 py-3">
-                  <Text className={`text-[11px] ${txtSoft}`}>
-                    No exercises found
-                  </Text>
-                </View>
-              ) : (
-                <ScrollView keyboardShouldPersistTaps="handled">
-                  {matches.map((opt) => {
-                    const isSelected = opt.id === formData.exerciseId;
-                    const initial = getInitial(opt);
-
-                    return (
-                      <Pressable
-                        key={opt.id}
-                        onPress={() => selectExerciseOption(opt)}
-                        className={`mx-2 mb-1 flex-row items-center rounded-xl px-2 py-1.5 ${
-                          isSelected ? "bg-neutral-900 dark:bg-neutral-700" : ""
-                        }`}
-                      >
-                        <View
-                          className={`mr-2 h-7 w-7 items-center justify-center rounded-xl ${
-                            isSelected
-                              ? "bg-neutral-800"
-                              : "bg-neutral-200 dark:bg-neutral-700"
-                          }`}
-                        >
-                          <Text
-                            className={`text-[11px] font-semibold ${
-                              isSelected
-                                ? "text-white"
-                                : "text-neutral-700 dark:text-neutral-300"
-                            }`}
-                          >
-                            {initial}
-                          </Text>
-                        </View>
-
-                        <Text
-                          className={`flex-1 text-[12px] ${
-                            isSelected ? "text-white" : txtMain
-                          }`}
-                          numberOfLines={1}
-                        >
-                          {opt.name}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                  <View className="h-2" />
-                </ScrollView>
-              )}
-            </View>
-
-            {/* Create new */}
-            <View className={`border-t px-2 py-2 ${borderDropdown}`}>
-              {!creatingNew ? (
-                <Pressable
-                  onPress={startCreateNew}
-                  className={`h-7 w-7 items-center justify-center rounded-full ${btnDark}`}
-                >
-                  <Plus size={14} color={isDark ? "#111827" : "#F9FAFB"} />
-                </Pressable>
-              ) : (
-                <View className="flex-row items-center gap-2">
-                  <TextInput
-                    className={`flex-1 rounded-lg border px-2 py-1.5 text-xs ${txtMain} ${borderDropdown} ${bgDropdown}`}
-                    placeholder=""
-                    placeholderTextColor={txtSoft.replace("text-", "#")}
-                    value={newExerciseName}
-                    onChangeText={setNewExerciseName}
-                  />
-
-                  <Pressable
-                    onPress={cancelCreateNew}
-                    disabled={isCreating}
-                    className={`h-7 w-7 items-center justify-center rounded-full ${btnGrey}`}
-                  >
-                    <X size={12} color={isDark ? "#9CA3AF" : "#6B7280"} />
-                  </Pressable>
-
-                  <Pressable
-                    onPress={handleCreateNew}
-                    disabled={isCreating || !newExerciseName.trim()}
-                    className={`h-7 w-7 items-center justify-center rounded-full ${btnDark}`}
-                  >
-                    <Check size={14} color={isDark ? "#111827" : "#F9FAFB"} />
-                  </Pressable>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
-      </View>
-
-      {/* Preset chips */}
+      {/* Presets – very small, only when no sets */}
       {formData.sets.length === 0 && (
-        <View className="mt-3 flex-row flex-wrap gap-2">
+        <View className="mb-1 flex-row flex-wrap gap-1.5">
           <Pressable
-            className={`rounded-full px-3 py-1 ${btnDark}`}
+            className={`rounded-full px-2.5 py-0.5 ${chipBg}`}
             onPress={() => applyPreset(1, 8)}
           >
-            <Text className={`text-[11px] font-semibold ${btnDarkText}`}>
-              1×8
-            </Text>
+            <Text className={`text-[10px] font-semibold ${chipText}`}>1×8</Text>
           </Pressable>
           <Pressable
-            className={`rounded-full px-3 py-1 ${btnDark}`}
+            className={`rounded-full px-2.5 py-0.5 ${chipBg}`}
             onPress={() => applyPreset(2, 10)}
           >
-            <Text className={`text-[11px] font-semibold ${btnDarkText}`}>
+            <Text className={`text-[10px] font-semibold ${chipText}`}>
               2×10
             </Text>
           </Pressable>
           <Pressable
-            className={`rounded-full px-3 py-1 ${btnDark}`}
+            className={`rounded-full px-2.5 py-0.5 ${chipBg}`}
             onPress={() => applyPreset(3, 12)}
           >
-            <Text className={`text-[11px] font-semibold ${btnDarkText}`}>
+            <Text className={`text-[10px] font-semibold ${chipText}`}>
               3×12
             </Text>
           </Pressable>
         </View>
       )}
+      {formData.sets.length > 0 && (
+        <View className="mt-1 mb-0.5 flex-row items-center gap-2 px-1">
+          <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-neutral-400">
+            Reps
+          </Text>
+          <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-neutral-400">
+            Load
+          </Text>
+          <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-neutral-400">
+            Effort
+          </Text>
+        </View>
+      )}
 
-      {/* Sets list */}
+      {/* Sets */}
       {formData.sets.map((s, setIndex) => (
         <SetProgramForm
           key={s.id}
@@ -377,17 +166,43 @@ export default function ExerciseProgramForm({
               ),
             })
           }
-          onRemove={() => removeSet(s.id)}
         />
       ))}
 
-      {/* Add Set */}
-      <Pressable
-        className={`mt-2 h-7 w-7 items-center justify-center self-end rounded-full ${btnDark}`}
-        onPress={addSet}
-      >
-        <Plus size={14} color={isDark ? "#111827" : "#F9FAFB"} />
-      </Pressable>
+      {/* Set controls – minimal icon-only */}
+      <View className="mt-1 flex-row justify-end gap-2">
+        <Pressable
+          onPress={removeLastSet}
+          disabled={formData.sets.length === 0}
+          hitSlop={8}
+          className={`h-6 w-6 items-center justify-center rounded-full ${
+            formData.sets.length === 0
+              ? "bg-neutral-200 dark:bg-neutral-700"
+              : chipBg
+          }`}
+        >
+          <Minus
+            size={12}
+            color={
+              formData.sets.length === 0
+                ? isDark
+                  ? "#9CA3AF"
+                  : "#9CA3AF"
+                : isDark
+                  ? "#111827"
+                  : "#F9FAFB"
+            }
+          />
+        </Pressable>
+
+        <Pressable
+          onPress={addSet}
+          hitSlop={8}
+          className={`h-6 w-6 items-center justify-center rounded-full ${chipBg}`}
+        >
+          <Plus size={12} color={isDark ? "#111827" : "#F9FAFB"} />
+        </Pressable>
+      </View>
     </View>
   );
 }
