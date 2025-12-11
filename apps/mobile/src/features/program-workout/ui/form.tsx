@@ -31,12 +31,12 @@ import ExerciseProgramForm from "../../program-exercise/ui/form";
 import { exerciseFactory } from "../../exercise/domain/factory";
 import { exerciseRepository } from "../../exercise/data/exercise-repository";
 
-type TemplateWorkoutFormProps = {
+type WorkoutProgramFormProps = {
   formData: WorkoutProgramFormData;
   setFormData: React.Dispatch<React.SetStateAction<WorkoutProgramFormData>>;
 };
 
-const TEMPLATE_COLOR_OPTIONS: {
+const PROGRAM_COLOR_OPTIONS: {
   value: ProgramColor;
   label: string;
   tileBg: string;
@@ -111,7 +111,7 @@ function makeDefaultSets(): SetProgramFormData[] {
 export default function WorkoutProgramForm({
   formData,
   setFormData,
-}: TemplateWorkoutFormProps) {
+}: WorkoutProgramFormProps) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
@@ -277,8 +277,8 @@ export default function WorkoutProgramForm({
   };
 
   const currentColorOption =
-    TEMPLATE_COLOR_OPTIONS.find((opt) => opt.value === color) ??
-    TEMPLATE_COLOR_OPTIONS[0];
+    PROGRAM_COLOR_OPTIONS.find((opt) => opt.value === color) ??
+    PROGRAM_COLOR_OPTIONS[0];
 
   const handleDragEnd = ({ data }: DragEndParams<ExerciseProgramFormData>) => {
     setFormData((prev) => ({
@@ -291,23 +291,25 @@ export default function WorkoutProgramForm({
     <View>
       <View className="mb-3 rounded-2xl border border-neutral-200 bg-white px-3 py-3 dark:border-neutral-700 dark:bg-neutral-800">
         <View className="mb-2 flex-row items-center justify-between">
+          {/* Left: icon + short label */}
           <View className="flex-row items-center">
-            <View className="mr-2 h-7 w-7 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-700">
+            <View className="mr-2 h-6 w-6 items-center justify-center rounded-full bg-neutral-100/70 dark:bg-neutral-800">
               <ListChecks width={14} height={14} color={secondaryIconColor} />
             </View>
-            <Text className="text-[12px] font-semibold text-neutral-800 dark:text-neutral-100">
-              Template details
+            <Text className="text-[11px] font-semibold text-neutral-800 dark:text-neutral-100">
+              Details
             </Text>
           </View>
 
+          {/* Right: very small color chip selector */}
           <Pressable
             onPress={() => setColorPickerOpen(true)}
-            className="flex-row items-center rounded-full border border-neutral-200 bg-neutral-50 px-2 py-1 dark:border-neutral-600 dark:bg-neutral-900"
+            className="flex-row items-center rounded-full px-2 py-[3px]"
           >
             <View
               className={`mr-1 h-3 w-3 rounded-full ${currentColorOption.dotBg}`}
             />
-            <Text className="text-[11px] text-neutral-800 dark:text-neutral-100">
+            <Text className="text-[10px] text-neutral-600 dark:text-neutral-200">
               {currentColorOption.label}
             </Text>
           </Pressable>
@@ -555,7 +557,7 @@ export default function WorkoutProgramForm({
             <View className="absolute inset-x-8 top-32 bottom-32 rounded-3xl bg-white px-4 py-3 dark:bg-neutral-800">
               <View className="mb-2 flex-row items-center justify-between">
                 <Text className="text-[13px] text-neutral-900 dark:text-neutral-50">
-                  Choose template colour
+                  Choose program colour
                 </Text>
                 <Pressable
                   onPress={() => setColorPickerOpen(false)}
@@ -567,7 +569,7 @@ export default function WorkoutProgramForm({
 
               <ScrollView className="mt-2" keyboardShouldPersistTaps="handled">
                 <View className="flex-row flex-wrap gap-3">
-                  {TEMPLATE_COLOR_OPTIONS.map((opt) => {
+                  {PROGRAM_COLOR_OPTIONS.map((opt) => {
                     const selected = opt.value === color;
                     return (
                       <Pressable

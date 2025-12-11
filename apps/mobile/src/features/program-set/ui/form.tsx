@@ -2,7 +2,7 @@ import React from "react";
 import { Text, TextInput, View, Pressable } from "react-native";
 import { SetProgramFormData, LoadUnit } from "../domain/type";
 import { useColorScheme } from "nativewind";
-import { Wind, Gauge, Flame } from "lucide-react-native";
+import { Wind, Gauge, Flame, ChevronsUpDown } from "lucide-react-native";
 
 type SetProgramFormProps = {
   formData: SetProgramFormData;
@@ -29,7 +29,7 @@ const BAND_OPTIONS = [
   {
     id: "black",
     label: "Black",
-    baseClass: "bg-neutral-200 dark:bg-neutral-800",
+    baseClass: "bg-neutral-900 dark:bg-neutral-100",
     dotClass: "bg-neutral-900 dark:bg-neutral-50",
   },
   {
@@ -63,7 +63,7 @@ export default function SetProgramForm({
   const update = (patch: Partial<SetProgramFormData>) =>
     setFormData({ ...formData, ...patch });
 
-  // ensure medium by default
+  // default effort = medium
   React.useEffect(() => {
     if (!formData.rpe) {
       update({ rpe: "7" });
@@ -140,16 +140,16 @@ export default function SetProgramForm({
       (l) => l.rpe === formData.rpe
     );
     const nextIndex =
-      currentIdx === -1
-        ? 1 // start at medium
-        : (currentIdx + 1) % INTENSITY_LEVELS.length;
+      currentIdx === -1 ? 1 : (currentIdx + 1) % INTENSITY_LEVELS.length;
     const next = INTENSITY_LEVELS[nextIndex];
     update({ rpe: next.rpe });
   };
 
   const outerField = "flex-1 px-1 py-1";
-  const inputShell =
-    "rounded-xl bg-neutral-100/90 dark:bg-neutral-800/90 px-2 py-0.5";
+  const shellBase = "rounded-xl px-2 py-0.5 flex-row items-center";
+  const inputShell = `${shellBase} ${
+    isDark ? "bg-neutral-800/90" : "bg-white"
+  }`;
 
   const renderIntensityIcon = (id: string, active: boolean) => {
     const size = 14;
@@ -166,13 +166,15 @@ export default function SetProgramForm({
     return <Flame size={size} color={color} />;
   };
 
+  const unitIconColor = isDark ? "#9CA3AF" : "#6B7280";
+
   return (
     <View className="mt-1 flex-row items-center gap-2">
       {/* REPS */}
       <View className={outerField}>
         <View className={inputShell}>
           <TextInput
-            className="text-center text-[11px] text-neutral-900 dark:text-neutral-50"
+            className="flex-1 text-center text-[11px] text-neutral-900 dark:text-neutral-50"
             keyboardType="number-pad"
             value={formData.reps}
             onChangeText={(v) => update({ reps: v })}
@@ -184,50 +186,68 @@ export default function SetProgramForm({
 
       {/* LOAD */}
       <View className={outerField}>
-        <View className="mb-0.5 flex-row justify-end px-1">
-          <Pressable onPress={cycleUnit} hitSlop={8}>
-            <Text className="text-[9px] text-neutral-600 dark:text-neutral-200">
-              {formData.loadUnit}
-            </Text>
-          </Pressable>
+        <View className={inputShell}>
+          {!isBandUnit && (
+            <>
+              <TextInput
+                className="flex-1 text-center text-[11px] text-neutral-900 dark:text-neutral-50"
+                keyboardType={loadKeyboardType}
+                value={formData.loadValue}
+                onChangeText={handleChangeLoadValue}
+                placeholder="..."
+                placeholderTextColor={isDark ? "#6B7280" : "#9CA3AF"}
+              />
+              <Pressable
+                onPress={cycleUnit}
+                hitSlop={8}
+                className="ml-1 flex-row items-center gap-0.5"
+              >
+                <Text className="text-[9px] text-neutral-600 dark:text-neutral-100">
+                  {formData.loadUnit}
+                </Text>
+                <ChevronsUpDown size={11} color={unitIconColor} />
+              </Pressable>
+            </>
+          )}
+
+          {isBandUnit && (
+            <>
+              {/* left: colour only, aligned like value */}
+              <Pressable
+                onPress={cycleBand}
+                hitSlop={8}
+                className="flex-1 items-center"
+              >
+                <View
+                  className={`h-4 w-10 rounded-full ${selectedBand.dotClass}`}
+                />
+              </Pressable>
+
+              {/* right: "band" + chevron inline, same pattern as kg/lb */}
+              <Pressable
+                onPress={cycleUnit}
+                hitSlop={8}
+                className="ml-1 flex-row items-center gap-0.5"
+              >
+                <Text className="text-[9px] text-neutral-600 dark:text-neutral-100">
+                  band
+                </Text>
+                <ChevronsUpDown size={11} color={unitIconColor} />
+              </Pressable>
+            </>
+          )}
         </View>
-
-        {!isBandUnit && (
-          <View className={inputShell}>
-            <TextInput
-              className="text-center text-[11px] text-neutral-900 dark:text-neutral-50"
-              keyboardType={loadKeyboardType}
-              value={formData.loadValue}
-              onChangeText={handleChangeLoadValue}
-              placeholder="..."
-              placeholderTextColor={isDark ? "#6B7280" : "#9CA3AF"}
-            />
-          </View>
-        )}
-
-        {isBandUnit && (
-          <Pressable
-            onPress={cycleBand}
-            hitSlop={8}
-            className={`${inputShell} flex-row items-center justify-center gap-2 ${selectedBand.baseClass}`}
-          >
-            <View className={`h-3 w-6 rounded-full ${selectedBand.dotClass}`} />
-            <Text className="text-[10px] text-neutral-900 dark:text-neutral-50">
-              {selectedBand.label}
-            </Text>
-          </Pressable>
-        )}
       </View>
 
-      {/* INTENSITY (RPE via tap-to-cycle, one option visible) */}
+      {/* EFFORT (tap to cycle) */}
       <View className={outerField}>
         <Pressable
           onPress={cycleIntensity}
           hitSlop={8}
-          className={`${inputShell} flex-row items-center justify-center gap-2`}
+          className={`${inputShell} justify-center`}
         >
           {renderIntensityIcon(selectedIntensity.id, true)}
-          <Text className="text-[10px] text-neutral-900 dark:text-neutral-50">
+          <Text className="ml-1 text-[10px] text-neutral-900 dark:text-neutral-50">
             {selectedIntensity.label}
           </Text>
         </Pressable>
