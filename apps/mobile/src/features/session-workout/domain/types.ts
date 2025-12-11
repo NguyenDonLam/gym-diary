@@ -11,7 +11,7 @@ export type SessionWorkout = {
   startedAt: Date;
   endedAt: Date | null;
 
-  status: "in_progress" | "completed" | "discarded";
+  status: SessionStatus;
 
   sourceTemplateId: string | null;
   sourceTemplate?: WorkoutProgram;
@@ -23,3 +23,5 @@ export type SessionWorkout = {
 
   exercises?: SessionExercise[];
 };
+
+export type SessionStatus = "in_progress" | "completed" | "discarded"

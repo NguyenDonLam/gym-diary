@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Animated } from "react-native";
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import { CheckCircle2 } from "lucide-react-native";
 import { eq } from "drizzle-orm";
 
@@ -23,6 +23,7 @@ const AUTO_COMPACT_MS = 3000;
 
 export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const { ongoing, clearOngoing } = useOngoingSession();
 
   const [current, setCurrent] = useState<typeof ongoing>(null);
@@ -140,11 +141,19 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
       return;
     }
 
+    const target = `/session-workout/${sessionId}`;
+
+    // If already on this session page, do nothing
+    if (pathname === target) {
+      return;
+    }
+
     router.push({
       pathname: "/session-workout/[id]",
       params: { id: sessionId },
     });
   };
+
 
   const handleFinishPress = async () => {
     if (!sessionId) return;

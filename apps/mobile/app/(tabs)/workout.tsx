@@ -32,6 +32,9 @@ import { sessionWorkoutRepository } from "@/src/features/session-workout/data/re
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
 import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
+import { eq } from "drizzle-orm";
+import { workoutSessions } from "@/db/schema";
+import { db } from "@/db";
 
 const COLOR_STRIP_MAP: Record<ProgramColor, string> = {
   neutral: "bg-neutral-400",
@@ -166,7 +169,9 @@ export default function Workout() {
 
   const [unassignedOpen, setUnassignedOpen] = useState(true);
   const [openFolderIds, setOpenFolderIds] = useState<string[]>([]);
-  const { setOngoing } = useOngoingSession();
+  const { ongoing, setOngoing, clearOngoing } = useOngoingSession();
+  const [checkedOngoing, setCheckedOngoing] = useState(false);
+
 
   // keep layout in sync with source templates (initial + external changes)
   useEffect(() => {
@@ -219,21 +224,80 @@ export default function Workout() {
   };
 
   async function handleStartFromTemplate(template: WorkoutProgram) {
-    const fullProgram = await workoutProgramRepository.get(template.id);
-    if (!fullProgram) {
-      console.log("error when fetching full program");
+    const startNewSession = async () => {
+      const fullProgram = await workoutProgramRepository.get(template.id);
+      if (!fullProgram) {
+        console.log("error when fetching full program");
+        return;
+      }
+
+      const session =
+        await sessionWorkoutRepository.createFromTemplate(fullProgram);
+      await setOngoing(session);
+
+      router.push({
+        pathname: "/session-workout/[id]",
+        params: { id: session.id },
+      });
+    };
+
+    // If there is an ongoing session, gate the action
+    if (ongoing) {
+      const sessionName = ongoing.name ?? "Current session";
+
+      Alert.alert(
+        "Session in progress",
+        `You already have an ongoing session: "${sessionName}".`,
+        [
+          {
+            text: "Keep going",
+            style: "default",
+            onPress: () => {
+              router.push({
+                pathname: "/session-workout/[id]",
+                params: { id: ongoing.id },
+              });
+            },
+          },
+          {
+            text: "Finish",
+            onPress: async () => {
+              try {
+                await sessionWorkoutRepository.finish(ongoing.id);
+                await clearOngoing();
+                await startNewSession();
+              } catch (err) {
+                console.warn("[workout] failed to finish ongoing session", err);
+              }
+            },
+          },
+          {
+            text: "Discard",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await sessionWorkoutRepository.discard(ongoing.id);
+                await clearOngoing();
+                await startNewSession();
+              } catch (err) {
+                console.warn(
+                  "[workout] failed to discard ongoing session",
+                  err
+                );
+              }
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+
       return;
     }
 
-    const session =
-      await sessionWorkoutRepository.createFromTemplate(fullProgram);
-    await setOngoing(session);
-
-    router.push({
-      pathname: "/session-workout/[id]",
-      params: { id: session.id },
-    });
+    // No ongoing session: just start new
+    await startNewSession();
   }
+
 
   const handleEditTemplate = (id: string) => {
     router.push({

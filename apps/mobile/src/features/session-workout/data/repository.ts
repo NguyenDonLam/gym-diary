@@ -122,6 +122,34 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
     const session = SessionWorkoutFactory.fromTemplate(template);
     return this.save(session);
   }
+
+  async finish(
+    id: string,
+    endedAt?: string
+  ): Promise<void> {
+    const endedAtValue = endedAt ?? new Date().toISOString();
+
+    await db
+      .update(workoutSessions)
+      .set({
+        status: "completed",
+        endedAt: endedAtValue,
+        updatedAt: endedAtValue,
+      })
+      .where(eq(workoutSessions.id, id));
+  }
+
+  async discard(id: string): Promise<void> {
+    const now = new Date().toISOString();
+
+    await db
+      .update(workoutSessions)
+      .set({
+        status: "discarded",
+        updatedAt: now,
+      })
+      .where(eq(workoutSessions.id, id));
+  }
 }
 
 export const sessionWorkoutRepository = new SessionWorkoutRepository();
