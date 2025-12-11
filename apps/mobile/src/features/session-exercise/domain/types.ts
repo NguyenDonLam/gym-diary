@@ -6,8 +6,8 @@ export type SessionExercise = {
   workoutSessionId: string;
 
   exerciseId: string | null;
-  templateExerciseId: string | null;
-  templateExercise?: ExerciseProgram;
+  exerciseProgramId: string | null;
+  exerciseProgram?: ExerciseProgram;
 
   // snapshot name for history
   exerciseName: string | null;

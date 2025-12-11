@@ -54,12 +54,12 @@ export class SessionWorkoutRowFactory {
           id: s.id,
 
           sessionExerciseId: s.sessionExerciseId,
-          templateSetId: s.setProgramId,
-          templateSet: undefined,
+          setProgramId: s.setProgramId,
+          setProgram: undefined,
 
           orderIndex: s.orderIndex,
 
-          reps: s.reps,
+          targetQuantity: s.targetQuantity ?? null,
           loadUnit: s.loadUnit,
           loadValue: s.loadValue,
           rpe: s.rpe,
@@ -79,8 +79,8 @@ export class SessionWorkoutRowFactory {
           workoutSessionId: ex.workoutSessionId,
 
           exerciseId: ex.exerciseId,
-          templateExerciseId: ex.exerciseProgramId,
-          templateExercise: undefined,
+          exerciseProgramId: ex.exerciseProgramId,
+          exerciseProgram: undefined,
 
           exerciseName: ex.exerciseName,
 
@@ -161,7 +161,7 @@ export class SessionWorkoutRowFactory {
         id: ex.id,
         workoutSessionId: ex.workoutSessionId,
         exerciseId: ex.exerciseId,
-        exerciseProgramId: ex.templateExerciseId,
+        exerciseProgramId: ex.exerciseProgramId,
         exerciseName: ex.exerciseName,
         orderIndex: ex.orderIndex,
         note: ex.note,
@@ -176,11 +176,11 @@ export class SessionWorkoutRowFactory {
           id: s.id,
 
           sessionExerciseId: s.sessionExerciseId,
-          setProgramId: s.templateSetId,
+          setProgramId: s.setProgramId,
 
           orderIndex: s.orderIndex,
 
-          reps: s.reps,
+          targetQuantity: s.targetQuantity ?? null,
           loadUnit: s.loadUnit,
           loadValue: s.loadValue,
           rpe: s.rpe,

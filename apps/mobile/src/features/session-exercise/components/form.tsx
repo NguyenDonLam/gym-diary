@@ -29,7 +29,6 @@ export type SessionExerciseView = SessionExercise & {
   lastSessionSets?: LastSetSnapshot[]; // ⬅️ new
 };
 
-
 type StatusColors = {
   containerBg: string;
   containerBorder: string;
@@ -103,11 +102,10 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
   const circleIdleColor = colorScheme === "dark" ? "#6B7280" : "#9CA3AF";
 
   const sets = value.sets ?? [];
-  const lastSets = value.lastSessionSets ?? []; 
+  const lastSets = value.lastSessionSets ?? [];
 
   const isSetDone = (s: SessionSet) =>
-    s.reps !== null &&
-    s.reps > 0 &&
+    s.targetQuantity !== null &&
     s.loadValue !== null &&
     s.loadValue.trim() !== "" &&
     s.rpe !== null;
@@ -122,14 +120,14 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
 
   const updateSetField = (
     setId: string,
-    field: keyof Pick<SessionSet, "reps" | "loadValue">,
+    field: keyof Pick<SessionSet, "targetQuantity" | "loadValue">,
     rawValue: string
   ) => {
     update((prev) => {
       const nextSets = (prev.sets ?? []).map((s) => {
         if (s.id !== setId) return s;
 
-        if (field === "reps") {
+        if (field === "targetQuantity") {
           const num = rawValue.trim() === "" ? null : Number(rawValue);
           return { ...s, reps: Number.isNaN(num) ? null : num };
         }
@@ -168,12 +166,12 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
       const newSet: SessionSet = {
         id: generateId(),
         sessionExerciseId: prev.id,
-        templateSetId: null,
-        templateSet: undefined,
+        setProgramId: null,
+        setProgram: undefined,
 
         orderIndex: nextOrderIndex,
 
-        reps: null,
+        targetQuantity: null,
         loadUnit: currentSets[0]?.loadUnit ?? "kg",
         loadValue: null,
         rpe: EFFORT_LEVELS[1].rpe, // default medium
@@ -323,10 +321,10 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
           <View>
             {sets.map((set) => {
               const done = isSetDone(set);
-              const tpl = set.templateSet;
+              const tpl = set.setProgram;
 
               const prevRepsNum =
-                tpl && tpl.targetReps != null ? tpl.targetReps : null;
+                tpl && tpl.targetQuantity != null ? tpl.targetQuantity : null;
 
               const rawPrevWeight = tpl?.loadValue ?? null;
               const prevWeightStr =
@@ -337,7 +335,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
               const prevRpeNum =
                 tpl && tpl.targetRpe != null ? tpl.targetRpe : null;
 
-              const currentRepsNum = set.reps ?? 0;
+              const currentRepsNum = set.targetQuantity ?? 0;
 
               let clamped = 0;
               let barClass = "bg-neutral-300 dark:bg-neutral-700";
@@ -365,7 +363,8 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
                 goalLabel = `${prevRepsNum}→${goal}`;
               }
 
-              const repsValue = set.reps === null ? "" : String(set.reps);
+              const repsValue =
+                set.targetQuantity === null ? "" : String(set.targetQuantity);
               const loadValue = set.loadValue ?? "";
               const repsPlaceholder =
                 prevRepsNum && prevRepsNum > 0 ? String(prevRepsNum) : "...";
@@ -404,7 +403,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
                         placeholderTextColor="#9CA3AF"
                         value={repsValue}
                         onChangeText={(text) =>
-                          updateSetField(set.id, "reps", text)
+                          updateSetField(set.id, "targetQuantity", text)
                         }
                         onEndEditing={() => onSetCommit?.(set.id)}
                       />

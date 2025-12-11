@@ -43,7 +43,7 @@ export default function ExerciseProgramForm({
   const addSet = () => {
     const next: SetProgramFormData = {
       id: Math.random().toString(36).slice(2),
-      reps: "",
+      targetQuantity: 0,
       loadValue: "",
       loadUnit: "kg",
       rpe: "",
@@ -60,7 +60,7 @@ export default function ExerciseProgramForm({
     const nextSets: SetProgramFormData[] = Array.from({ length: count }).map(
       () => ({
         id: Math.random().toString(36).slice(2),
-        reps: String(reps),
+        targetQuantity: reps,
         loadValue: "",
         loadUnit: "kg",
         rpe: "",

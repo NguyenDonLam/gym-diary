@@ -98,16 +98,6 @@ const PROGRAM_COLOR_OPTIONS: {
   },
 ];
 
-function makeDefaultSets(): SetProgramFormData[] {
-  return Array.from({ length: 3 }).map(() => ({
-    id: generateId(),
-    reps: "8",
-    loadValue: "",
-    loadUnit: "kg",
-    rpe: "",
-  }));
-}
-
 export default function WorkoutProgramForm({
   formData,
   setFormData,

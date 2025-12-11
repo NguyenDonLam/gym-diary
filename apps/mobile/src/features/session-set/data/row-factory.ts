@@ -26,16 +26,17 @@ export class SessionSetRowFactory {
       id: row.id,
 
       sessionExerciseId: row.sessionExerciseId,
-      templateSetId: row.templateSetId,
-      templateSet,
+      setProgramId: row.setProgramId,
+      setProgram: templateSet,
 
       orderIndex: row.orderIndex,
 
-      reps: row.reps,
+      targetQuantity: row.targetQuantity,
       loadUnit: row.loadUnit,
       loadValue: row.loadValue,
       rpe: row.rpe,
 
+      isCompleted: row.isCompleted,
       isWarmup: row.isWarmup,
 
       note: row.note,
@@ -55,15 +56,16 @@ export class SessionSetRowFactory {
       id: domain.id,
 
       sessionExerciseId: domain.sessionExerciseId,
-      templateSetId: domain.templateSetId,
+      setProgramId: domain.setProgramId,
 
       orderIndex: domain.orderIndex,
 
-      reps: domain.reps,
+      targetQuantity: domain.targetQuantity,
       loadUnit: domain.loadUnit,
       loadValue: domain.loadValue,
       rpe: domain.rpe,
 
+      isCompleted: domain.isCompleted,
       isWarmup: domain.isWarmup,
 
       note: domain.note,

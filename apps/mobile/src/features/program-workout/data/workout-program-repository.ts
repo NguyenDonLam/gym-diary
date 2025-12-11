@@ -110,7 +110,7 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
             id: setProgramId,
             exerciseProgramId,
             orderIndex: s.orderIndex,
-            targetReps: s.targetReps ?? null,
+            targetQuantity: s.targetQuantity ?? null,
             loadUnit: s.loadUnit as any, // domain must already hold a valid LoadUnit
             loadValue:
               s.loadValue === null || s.loadValue === undefined
@@ -204,7 +204,7 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
             id: s.id,
             exerciseProgramId: ex.id,
             orderIndex: s.orderIndex,
-            targetReps: s.targetReps,
+            targetQuantity: s.targetQuantity,
             loadUnit: s.loadUnit,
             loadValue:
               s.loadValue === null || s.loadValue === undefined

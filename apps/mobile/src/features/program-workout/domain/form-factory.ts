@@ -57,7 +57,7 @@ export class WorkoutProgramFormFactory {
           id: s.id || generateId(),
           exerciseProgramId,
           orderIndex: setIndex,
-          targetReps: parseNumberOrNull(s.reps),
+          targetQuantity: s.targetQuantity ?? null,
           loadValue: parseNumberOrNull(s.loadValue),
           loadUnit: s.loadUnit,
           targetRpe: parseNumberOrNull(s.rpe),
@@ -105,7 +105,7 @@ export class WorkoutProgramFormFactory {
         isCustom: false,
         sets: ex.sets.map((s) => ({
           id: s.id,
-          reps: s.targetReps != null ? String(s.targetReps) : "",
+          targetQuantity: s.targetQuantity ?? null,
           loadValue: s.loadValue != null ? String(s.loadValue) : "",
           loadUnit: s.loadUnit,
           rpe: s.targetRpe != null ? String(s.targetRpe) : "",

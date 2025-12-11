@@ -79,7 +79,13 @@ export class WorkoutProgramRowFactory {
     const exercises: ExerciseProgram[] = (result.exercises ?? []).map((ex) => ({
       id: ex.id,
       exerciseId: ex.exerciseId,
-      exercise: ex.exercise,
+      exercise: ex.exercise
+        ? {
+            ...ex.exercise,
+            createdAt: new Date(ex.exercise.createdAt),
+            updatedAt: new Date(ex.exercise.updatedAt),
+          }
+        : undefined,
       orderIndex: ex.orderIndex,
       note: ex.note,
       createdAt: new Date(ex.createdAt),
@@ -88,7 +94,7 @@ export class WorkoutProgramRowFactory {
         id: s.id,
         exerciseProgramId: ex.id,
         orderIndex: s.orderIndex,
-        targetReps: s.targetReps,
+        targetQuantity: s.targetQuantity ?? null,
         loadUnit: s.loadUnit as LoadUnit,
         loadValue: s.loadValue,
         targetRpe: s.targetRpe,
@@ -152,7 +158,7 @@ export class WorkoutProgramRowFactory {
           id: set.id,
           exerciseProgramId: ex.id,
           orderIndex: set.orderIndex,
-          targetReps: set.targetReps,
+          targetQuantity: set.targetQuantity ?? null,
           loadUnit: set.loadUnit,
           loadValue:
             set.loadValue === null || set.loadValue === undefined

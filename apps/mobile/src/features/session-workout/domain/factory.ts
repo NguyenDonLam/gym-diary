@@ -42,7 +42,7 @@ export class SessionWorkoutFactory {
             orderIndex: tplSet.orderIndex ?? setIndex,
             isCompleted: false,
 
-            reps: null,
+            targetQuantity: null,
             loadUnit: tplSet.loadUnit,
             loadValue: null,
             rpe: null,
@@ -61,8 +61,8 @@ export class SessionWorkoutFactory {
           workoutSessionId: sessionId,
 
           exerciseId: tplEx.exerciseId ?? null,
-          templateExerciseId: tplEx.id,
-          templateExercise: tplEx,
+          exerciseProgramId: tplEx.id,
+          exerciseProgram: tplEx,
 
           // if you have a denormalised name on the template, snapshot it here
           exerciseName: tplEx.exercise?.name ?? "Unnamed Exercise",

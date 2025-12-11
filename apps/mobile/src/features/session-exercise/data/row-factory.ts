@@ -2,8 +2,8 @@
 
 import { SessionExercise } from "@/src/features/session-exercise/domain/types";
 import { SessionSet } from "@/src/features/session-set/domain/types";
-import { TemplateExercise } from "@/src/features/template-exercise/domain/type";
 import { SessionExerciseRow } from "./types";
+import { ExerciseProgram } from "../../program-exercise/domain/type";
 
 /**
  * Factory responsible ONLY for mapping between:
@@ -23,7 +23,7 @@ export class SessionExerciseRowFactory {
   static toDomain(
     row: SessionExerciseRow,
     sets: SessionSet[] = [],
-    templateExercise?: TemplateExercise
+    templateExercise?: ExerciseProgram
   ): SessionExercise {
     return {
       id: row.id,
@@ -31,8 +31,8 @@ export class SessionExerciseRowFactory {
       workoutSessionId: row.workoutSessionId,
 
       exerciseId: row.exerciseId,
-      templateExerciseId: row.templateExerciseId,
-      templateExercise,
+      exerciseProgramId: row.exerciseProgramId,
+      exerciseProgram: templateExercise,
 
       exerciseName: row.exerciseName,
 
@@ -60,7 +60,7 @@ export class SessionExerciseRowFactory {
       workoutSessionId: domain.workoutSessionId,
 
       exerciseId: domain.exerciseId,
-      templateExerciseId: domain.templateExerciseId,
+      exerciseProgramId: domain.exerciseProgramId,
 
       exerciseName: domain.exerciseName,
 
@@ -80,7 +80,7 @@ export class SessionExerciseRowFactory {
   static fromRow(
     row: SessionExerciseRow,
     sets: SessionSet[] = [],
-    templateExercise?: TemplateExercise
+    templateExercise?: ExerciseProgram
   ): SessionExercise {
     return this.toDomain(row, sets, templateExercise);
   }

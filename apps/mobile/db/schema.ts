@@ -66,7 +66,7 @@ export const setPrograms = sqliteTable("program_sets", {
       onDelete: "cascade",
     }),
   orderIndex: integer("order_index").notNull(),
-  targetReps: integer("target_reps"),
+  targetQuantity: integer("target_quantity"),
   loadUnit: text("load_unit", {
     enum: ["kg", "lb", "band", "time", "custom"],
   })
@@ -149,7 +149,7 @@ export const sessionSets = sqliteTable("session_sets", {
   }),
   orderIndex: integer("order_index").notNull(),
 
-  reps: integer("reps"),
+  targetQuantity: integer("target_quantity"),
   loadUnit: text("load_unit", {
     enum: ["kg", "lb", "band", "time", "custom"],
   })
