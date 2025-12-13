@@ -371,7 +371,7 @@ export default function WorkoutProgramForm({
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           paddingTop: 8,
-          paddingBottom: 160, // fixes bottom cut-off
+          paddingBottom: 70, // fixes bottom cut-off
         }}
         ListEmptyComponent={renderEmpty}
         renderItem={({ item, drag, isActive }) => {

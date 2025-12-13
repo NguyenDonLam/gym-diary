@@ -176,8 +176,19 @@ export default function SetProgramForm({
           <TextInput
             className="flex-1 text-center text-[11px] text-neutral-900 dark:text-neutral-50"
             keyboardType="number-pad"
-            value={formData.targetQuantity?.toString()}
-            onChangeText={(v) => update({ targetQuantity: parseInt(v, 10) })}
+            value={
+              formData.targetQuantity == null
+                ? ""
+                : String(formData.targetQuantity)
+            }
+            onChangeText={(raw) => {
+              const cleaned = raw.replace(/[^\d]/g, "");
+              if (cleaned.length === 0) {
+                update({ targetQuantity: undefined });
+                return;
+              }
+              update({ targetQuantity: Number(cleaned) });
+            }}
             placeholder="..."
             placeholderTextColor={isDark ? "#6B7280" : "#9CA3AF"}
           />
