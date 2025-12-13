@@ -1,5 +1,5 @@
 import React from "react";
-import { SafeAreaView, View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable } from "react-native";
 
 export default function Insights() {
   // All data here is placeholder. Wire these to your real selectors / API.
@@ -58,7 +58,6 @@ export default function Insights() {
   };
 
   return (
-    <SafeAreaView className="flex-1">
       <View className="flex-1">
         {/* HEADER */}
         <View className="px-4 pt-3 pb-2">
@@ -147,6 +146,5 @@ export default function Insights() {
           <View className="h-6" />
         </ScrollView>
       </View>
-    </SafeAreaView>
   );
 }

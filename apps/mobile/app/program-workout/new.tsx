@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   Pressable,
@@ -8,9 +7,7 @@ import {
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
-import {
-  WorkoutProgramFormData,
-} from "@/src/features/program-workout/domain/type";
+import { WorkoutProgramFormData } from "@/src/features/program-workout/domain/type";
 import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
 import { WorkoutProgramFormFactory } from "@/src/features/program-workout/domain/form-factory";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
@@ -48,42 +45,40 @@ export default function TemplateWorkoutCreate() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={0} // adjust in screen if you have a header
-      >
-        {/* Top bar */}
-        <View className="flex-row items-center justify-between border-b border-neutral-200 px-4 py-3">
-          <Pressable onPress={handleCancel} disabled={isSaving}>
-            <Text className="text-sm text-neutral-500">Cancel</Text>
-          </Pressable>
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0} // adjust in screen if you have a header
+    >
+      {/* Top bar */}
+      <View className="flex-row items-center justify-between border-b border-neutral-200 px-4 py-3">
+        <Pressable onPress={handleCancel} disabled={isSaving}>
+          <Text className="text-sm text-neutral-500">Cancel</Text>
+        </Pressable>
 
-          <Text className="text-base font-semibold text-neutral-900">
-            New template
-          </Text>
+        <Text className="text-base font-semibold text-neutral-900">
+          New template
+        </Text>
 
-          <Pressable
-            onPress={handleSave}
-            disabled={!canSave}
-            className={`rounded-full px-3 py-1.5 ${
-              canSave ? "bg-black" : "bg-neutral-300"
+        <Pressable
+          onPress={handleSave}
+          disabled={!canSave}
+          className={`rounded-full px-3 py-1.5 ${
+            canSave ? "bg-black" : "bg-neutral-300"
+          }`}
+        >
+          <Text
+            className={`text-xs font-semibold ${
+              canSave ? "text-white" : "text-neutral-500"
             }`}
           >
-            <Text
-              className={`text-xs font-semibold ${
-                canSave ? "text-white" : "text-neutral-500"
-              }`}
-            >
-              Save
-            </Text>
-          </Pressable>
-        </View>
+            Save
+          </Text>
+        </Pressable>
+      </View>
 
-        {/* Form body */}
-        <WorkoutProgramForm formData={formData} setFormData={setFormData} />
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      {/* Form body */}
+      <WorkoutProgramForm formData={formData} setFormData={setFormData} />
+    </KeyboardAvoidingView>
   );
 }

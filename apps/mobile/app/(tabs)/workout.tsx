@@ -1,7 +1,6 @@
 // apps/mobile/app/(tabs)/workout.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   Pressable,
@@ -332,14 +331,14 @@ export default function Workout() {
 
   if (isLoading || foldersLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-white dark:bg-slate-950">
+      <View className="flex-1 items-center justify-center bg-white dark:bg-slate-950">
         <ActivityIndicator size="large" />
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
+    <View className="flex-1 bg-white dark:bg-slate-950">
       <DraggableFlatList
         data={rows}
         keyExtractor={(item) => item.key}
@@ -395,6 +394,6 @@ export default function Workout() {
           ) : null
         }
       />
-    </SafeAreaView>
+    </View>
   );
 }

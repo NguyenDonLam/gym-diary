@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { SafeAreaView, View, Text, Pressable } from "react-native";
+import { View, Text, Pressable } from "react-native";
 
 type Session = {
   id: string;
@@ -122,7 +122,6 @@ export default function History() {
   }, [sessions, monthDate]);
 
   return (
-    <SafeAreaView className="flex-1 bg-black">
       <View className="flex-1">
         {/* HEADER */}
         <View className="px-4 pt-3 pb-2">
@@ -247,6 +246,5 @@ export default function History() {
           </View>
         </View>
       </View>
-    </SafeAreaView>
   );
 }

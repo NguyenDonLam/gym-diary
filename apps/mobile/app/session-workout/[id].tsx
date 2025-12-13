@@ -1,7 +1,7 @@
 // apps/mobile/app/session-workout/[id].tsx
 
 import React, { useEffect, useState } from "react";
-import { SafeAreaView, View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -86,7 +86,7 @@ export default function SessionWorkoutPage() {
   }, [params.id]);
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-950">
+    <View className="flex-1 bg-white dark:bg-neutral-950">
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-3 pb-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
         {/* Left: back button */}
@@ -157,7 +157,7 @@ export default function SessionWorkoutPage() {
           />
         ))}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
