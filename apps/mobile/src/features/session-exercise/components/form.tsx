@@ -90,7 +90,7 @@ const EFFORT_LEVELS = [
 type Props = {
   value: SessionExerciseView;
   onChange: (next: SessionExerciseView) => void;
-  onSetCommit?: (setId: string) => void;
+  onSetCommit?: (set: SessionSet) => void;
 };
 
 export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {

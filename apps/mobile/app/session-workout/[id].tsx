@@ -12,6 +12,8 @@ import {
   SessionExerciseCard,
   SessionExerciseView,
 } from "@/src/features/session-exercise/components/form";
+import { SessionSet } from "@/src/features/session-set/domain/types";
+import { sessionSetRepository } from "@/src/features/session-set/data/repository";
 
 // Load a stored session from DB and project into view-model
 async function getInitialSessionData(sessionId: string): Promise<{
@@ -26,7 +28,6 @@ async function getInitialSessionData(sessionId: string): Promise<{
   }
 
   const session = await sessionWorkoutRepository.get(sessionId);
-  console.log(JSON.stringify(session, null, 2));
 
   if (!session || !session.exercises) {
     return {
@@ -155,6 +156,13 @@ export default function SessionWorkoutPage() {
                 prev.map((e) => (e.id === next.id ? next : e))
               )
             }
+            onSetCommit={async (set: SessionSet) => {
+              try {
+                await sessionSetRepository.save(set);
+              } catch (err) {
+                console.error("Failed to save session set", err);
+              }
+            }}
           />
         ))}
       </ScrollView>

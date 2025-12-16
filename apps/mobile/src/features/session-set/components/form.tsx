@@ -1,6 +1,6 @@
 // apps/mobile/app/session-workout/session-set-row.tsx
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { CheckCircle2, Circle, Wind, Gauge, Flame } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
@@ -32,7 +32,7 @@ function renderEffortIcon(
 type Props = {
   value: SessionSet;
   setValue: (next: SessionSet) => void;
-  onSetCommit?: (setId: string) => void;
+  onSetCommit?: (set: SessionSet) => void; // this should persist the set to DB
 };
 
 export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
@@ -72,10 +72,50 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
     value.loadValue.trim() !== "" &&
     value.rpe !== null;
 
+  // one effect: debounce-save ONLY when the row is done
+  const skipFirstRef = useRef(true);
+  const tRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (skipFirstRef.current) {
+      skipFirstRef.current = false;
+      return;
+    }
+
+    // cancel any pending save
+    if (tRef.current) {
+      clearTimeout(tRef.current);
+      tRef.current = null;
+    }
+
+    // only commit when done
+    if (!isDone) return;
+
+    tRef.current = setTimeout(() => {
+      onSetCommit?.(value);
+      tRef.current = null;
+    }, 500);
+
+    return () => {
+      if (tRef.current) {
+        clearTimeout(tRef.current);
+        tRef.current = null;
+      }
+    };
+  }, [
+    isDone,
+    value.targetQuantity,
+    value.loadValue,
+    value.rpe,
+    value.isWarmup,
+    value.note,
+    value.id,
+    onSetCommit,
+  ]);
+
   const fillRepsFromProgram = () => {
     if (programTargetReps == null || programTargetReps <= 0) return;
     setValue({ ...value, targetQuantity: programTargetReps });
-    onSetCommit?.(value.id);
   };
 
   const onChangeReps = (raw: string) => {
@@ -98,7 +138,6 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
     const nextIdx = idx === -1 ? 1 : (idx + 1) % EFFORT_LEVELS.length;
     const next = EFFORT_LEVELS[nextIdx];
     setValue({ ...value, rpe: next.rpe });
-    onSetCommit?.(value.id);
   };
 
   const effort = getEffortFromRpe(value.rpe);
@@ -138,7 +177,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
           )}
         </Pressable>
 
-        {/* Reps: tap field to focus */}
+        {/* Reps */}
         <Pressable
           onPress={() => repsRef.current?.focus()}
           className="flex-1 rounded-xl bg-neutral-50 dark:bg-neutral-900 px-2 py-0.5"
@@ -151,7 +190,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
             placeholderTextColor="#9CA3AF"
             value={repsValue}
             onChangeText={onChangeReps}
-            onEndEditing={() => onSetCommit?.(value.id)}
+            onEndEditing={() => onSetCommit?.(value)} // still commit edits after done
           />
         </Pressable>
 
@@ -164,7 +203,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
             placeholderTextColor="#9CA3AF"
             value={loadValue}
             onChangeText={onChangeLoad}
-            onEndEditing={() => onSetCommit?.(value.id)}
+            onEndEditing={() => onSetCommit?.(value)}
           />
         </View>
 
