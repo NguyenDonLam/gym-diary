@@ -55,7 +55,7 @@ export class SessionWorkoutRowFactory {
 
           sessionExerciseId: s.sessionExerciseId,
           setProgramId: s.setProgramId,
-          setProgram: undefined,
+          setProgram: s.setProgram ?? undefined,
 
           orderIndex: s.orderIndex,
 

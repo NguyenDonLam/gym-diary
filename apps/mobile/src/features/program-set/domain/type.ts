@@ -6,7 +6,7 @@ export type SetProgram = {
   orderIndex: number; // 1, 2, 3, …
   targetQuantity: number | null;
   loadUnit: LoadUnit;
-  loadValue: number | string | null;
+  loadValue: string | null;
   targetRpe: number | null;
   note: string | null;
   createdAt: Date;

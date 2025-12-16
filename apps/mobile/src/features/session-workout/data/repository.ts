@@ -19,7 +19,11 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
         with: {
           sessionExercises: {
             with: {
-              sessionSets: true,
+              sessionSets: {
+                with: {
+                  setProgram: true,
+                },
+              },
             },
             orderBy: (se, { asc }) => [asc(se.orderIndex)],
           },

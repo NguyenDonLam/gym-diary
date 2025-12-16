@@ -26,6 +26,7 @@ async function getInitialSessionData(sessionId: string): Promise<{
   }
 
   const session = await sessionWorkoutRepository.get(sessionId);
+  console.log(JSON.stringify(session, null, 2));
 
   if (!session || !session.exercises) {
     return {

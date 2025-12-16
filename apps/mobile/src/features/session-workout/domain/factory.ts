@@ -36,16 +36,16 @@ export class SessionWorkoutFactory {
             id: generateId(),
 
             sessionExerciseId,
-            templateSetId: tplSet.id,
-            templateSet: tplSet,
+            setProgramId: tplSet.id,
+            setProgram: tplSet,
 
             orderIndex: tplSet.orderIndex ?? setIndex,
             isCompleted: false,
 
             targetQuantity: null,
             loadUnit: tplSet.loadUnit,
-            loadValue: null,
-            rpe: null,
+            loadValue: tplSet.loadValue,
+            rpe: tplSet.targetRpe,
 
             isWarmup: false,
 
