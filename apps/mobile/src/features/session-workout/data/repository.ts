@@ -6,7 +6,6 @@ import { sessionExercises, sessionSets, workoutSessions } from "@/db/schema";
 import { db } from "@/db";
 import { generateId } from "@/src/lib/id";
 import { SessionWorkout } from "../domain/types";
-import { SessionWorkoutRowFactory } from "./row-factory";
 import { SessionWorkoutRow } from "./types";
 import { WorkoutProgram } from "../../program-workout/domain/type";
 import { SessionWorkoutFactory } from "../domain/factory";
@@ -32,7 +31,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
 
       if (!session) return null;
 
-      return SessionWorkoutRowFactory.fromQuery(session);
+      return SessionWorkoutFactory.domainFromDb(session);
     } catch (error) {
       console.error("SessionWorkoutRepository.get error:", error);
       throw error;
@@ -41,7 +40,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
 
   async getAll(): Promise<SessionWorkout[]> {
     const rows: SessionWorkoutRow[] = await db.select().from(workoutSessions);
-    return rows.map((row) => SessionWorkoutRowFactory.toDomain(row));
+    return rows.map((row) => SessionWorkoutFactory.domainFromDb(row));
   }
 
   async getCompleted(): Promise<SessionWorkout[]> {
@@ -50,7 +49,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
       .from(workoutSessions)
       .where(eq(workoutSessions.status, "completed"));
 
-    return rows.map((row) => SessionWorkoutRowFactory.toDomain(row));
+    return rows.map((row) => SessionWorkoutFactory.domainFromDb(row));
   }
 
   /**
@@ -75,7 +74,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
       },
     });
 
-    return rows.map((row) => SessionWorkoutRowFactory.fromQuery(row));
+    return rows.map((row) => SessionWorkoutFactory.domainFromDb(row));
   }
 
   protected async insert(
@@ -85,7 +84,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
     const withId: SessionWorkout = { ...entity, id };
 
     const { workout, exercises, sets } =
-      SessionWorkoutRowFactory.toRowTree(withId);
+      SessionWorkoutFactory.dbFromDomain(withId);
 
     await db.transaction(async (tx) => {
       await tx.insert(workoutSessions).values(workout);
@@ -112,7 +111,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
     const withId = entity as SessionWorkout;
 
     const { workout, exercises, sets } =
-      SessionWorkoutRowFactory.toRowTree(withId);
+      SessionWorkoutFactory.dbFromDomain(withId);
 
     await db.transaction(async (tx) => {
       // 1. update session row
@@ -157,7 +156,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
   }
 
   async createFromTemplate(template: WorkoutProgram): Promise<SessionWorkout> {
-    const session = SessionWorkoutFactory.fromTemplate(template);
+    const session = SessionWorkoutFactory.domainFromProgram(template);
     return this.save(session);
   }
 
