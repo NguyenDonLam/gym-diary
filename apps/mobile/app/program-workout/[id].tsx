@@ -1,7 +1,6 @@
 // apps/mobile/app/template-workout/[id].tsx
 import React, { useEffect, useState } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   Pressable,
@@ -16,7 +15,7 @@ import {
   WorkoutProgramFormData,
 } from "@/src/features/program-workout/domain/type";
 import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
-import { WorkoutProgramFormFactory } from "@/src/features/program-workout/domain/form-factory";
+import { WorkoutProgramFactory } from "@/src/features/program-workout/domain/factory";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
 
 export default function TemplateWorkoutEditScreen() {
@@ -24,7 +23,7 @@ export default function TemplateWorkoutEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [formData, setFormData] = useState<WorkoutProgramFormData>(
-    WorkoutProgramFormFactory.createEmpty()
+    WorkoutProgramFactory.createForm()
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +56,7 @@ export default function TemplateWorkoutEditScreen() {
         }
 
         if (!cancelled) {
-          const form = WorkoutProgramFormFactory.fromDomain(template);
+          const form = WorkoutProgramFactory.formFromDomain(template);
           setFormData(form);
           setHasLoadedTemplate(true);
         }
@@ -95,7 +94,7 @@ export default function TemplateWorkoutEditScreen() {
 
     setIsSaving(true);
     try {
-      const template = WorkoutProgramFormFactory.toDomain(formData);
+      const template = WorkoutProgramFactory.domainFromForm(formData);
       // ensure we keep the existing id when saving
       template.id = id;
 
@@ -110,7 +109,7 @@ export default function TemplateWorkoutEditScreen() {
   // Loading / error state
   if (isLoading || !hasLoadedTemplate) {
     return (
-      <SafeAreaView className="flex-1 bg-white dark:bg-neutral-950">
+      <View className="flex-1 bg-white dark:bg-neutral-950">
         <View className="flex-row items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-4 py-3 bg-white dark:bg-neutral-950">
           <Pressable onPress={handleCancel} disabled={isSaving}>
             <Text className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -136,54 +135,52 @@ export default function TemplateWorkoutEditScreen() {
             <ActivityIndicator />
           )}
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Normal edit state
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-950">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={0}
-      >
-        <View className="flex-row items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-4 py-3 bg-white dark:bg-neutral-950">
-          <Pressable onPress={handleCancel} disabled={isSaving}>
-            <Text className="text-sm text-neutral-500 dark:text-neutral-400">
-              Cancel
-            </Text>
-          </Pressable>
-
-          <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
-            Edit template
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
+    >
+      <View className="flex-row items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-4 py-3 bg-white dark:bg-neutral-950">
+        <Pressable onPress={handleCancel} disabled={isSaving}>
+          <Text className="text-sm text-neutral-500 dark:text-neutral-400">
+            Cancel
           </Text>
+        </Pressable>
 
-          <Pressable
-            onPress={handleSave}
-            disabled={!canSave}
-            className={`rounded-full px-3 py-1.5 ${
+        <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
+          Edit template
+        </Text>
+
+        <Pressable
+          onPress={handleSave}
+          disabled={!canSave}
+          className={`rounded-full px-3 py-1.5 ${
+            canSave
+              ? "bg-black dark:bg-neutral-50"
+              : "bg-neutral-300 dark:bg-neutral-700"
+          }`}
+        >
+          <Text
+            className={`text-xs font-semibold ${
               canSave
-                ? "bg-black dark:bg-neutral-50"
-                : "bg-neutral-300 dark:bg-neutral-700"
+                ? "text-white dark:text-neutral-900"
+                : "text-neutral-500 dark:text-neutral-300"
             }`}
           >
-            <Text
-              className={`text-xs font-semibold ${
-                canSave
-                  ? "text-white dark:text-neutral-900"
-                  : "text-neutral-500 dark:text-neutral-300"
-              }`}
-            >
-              Save
-            </Text>
-          </Pressable>
-        </View>
+            Save
+          </Text>
+        </Pressable>
+      </View>
 
-        <View className="flex-1 bg-white dark:bg-neutral-950">
-          <WorkoutProgramForm formData={formData} setFormData={setFormData} />
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <View className="flex-1 bg-white dark:bg-neutral-950">
+        <WorkoutProgramForm formData={formData} setFormData={setFormData} />
+      </View>
+    </KeyboardAvoidingView>
   );
 }

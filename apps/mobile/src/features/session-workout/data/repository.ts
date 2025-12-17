@@ -1,12 +1,11 @@
 // src/features/session-workout/data/session-workout-repository.ts
 
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lt } from "drizzle-orm";
 import { BaseRepository } from "@/src/lib/base-repository";
 import { sessionExercises, sessionSets, workoutSessions } from "@/db/schema";
 import { db } from "@/db";
 import { generateId } from "@/src/lib/id";
 import { SessionWorkout } from "../domain/types";
-import { SessionWorkoutRowFactory } from "./row-factory";
 import { SessionWorkoutRow } from "./types";
 import { WorkoutProgram } from "../../program-workout/domain/type";
 import { SessionWorkoutFactory } from "../domain/factory";
@@ -19,7 +18,11 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
         with: {
           sessionExercises: {
             with: {
-              sessionSets: true,
+              sessionSets: {
+                with: {
+                  setProgram: true,
+                },
+              },
             },
             orderBy: (se, { asc }) => [asc(se.orderIndex)],
           },
@@ -28,7 +31,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
 
       if (!session) return null;
 
-      return SessionWorkoutRowFactory.fromQuery(session);
+      return SessionWorkoutFactory.domainFromDb(session);
     } catch (error) {
       console.error("SessionWorkoutRepository.get error:", error);
       throw error;
@@ -37,7 +40,41 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
 
   async getAll(): Promise<SessionWorkout[]> {
     const rows: SessionWorkoutRow[] = await db.select().from(workoutSessions);
-    return rows.map((row) => SessionWorkoutRowFactory.toDomain(row));
+    return rows.map((row) => SessionWorkoutFactory.domainFromDb(row));
+  }
+
+  async getCompleted(): Promise<SessionWorkout[]> {
+    const rows: SessionWorkoutRow[] = await db
+      .select()
+      .from(workoutSessions)
+      .where(eq(workoutSessions.status, "completed"));
+
+    return rows.map((row) => SessionWorkoutFactory.domainFromDb(row));
+  }
+
+  /**
+   * Inclusive start, exclusive end. Pass ISO strings.
+   * Use startedAt if want "the day it was performed".
+   * If your schema doesn't have startedAt, switch to endedAt.
+   */
+  async getCompletedInRange(
+    startISO: string,
+    endISO: string
+  ): Promise<SessionWorkout[]> {
+    const rows = await db.query.workoutSessions.findMany({
+      where: (ws, { and, eq, gte, lt, isNotNull }) =>
+        and(
+          eq(ws.status, "completed"),
+          isNotNull(ws.startedAt),
+          gte(ws.startedAt, startISO),
+          lt(ws.startedAt, endISO)
+        ),
+      with: {
+        sourceProgram: true,
+      },
+    });
+
+    return rows.map((row) => SessionWorkoutFactory.domainFromDb(row));
   }
 
   protected async insert(
@@ -47,7 +84,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
     const withId: SessionWorkout = { ...entity, id };
 
     const { workout, exercises, sets } =
-      SessionWorkoutRowFactory.toRowTree(withId);
+      SessionWorkoutFactory.dbFromDomain(withId);
 
     await db.transaction(async (tx) => {
       await tx.insert(workoutSessions).values(workout);
@@ -74,7 +111,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
     const withId = entity as SessionWorkout;
 
     const { workout, exercises, sets } =
-      SessionWorkoutRowFactory.toRowTree(withId);
+      SessionWorkoutFactory.dbFromDomain(withId);
 
     await db.transaction(async (tx) => {
       // 1. update session row
@@ -119,14 +156,11 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
   }
 
   async createFromTemplate(template: WorkoutProgram): Promise<SessionWorkout> {
-    const session = SessionWorkoutFactory.fromTemplate(template);
+    const session = SessionWorkoutFactory.domainFromProgram(template);
     return this.save(session);
   }
 
-  async finish(
-    id: string,
-    endedAt?: string
-  ): Promise<void> {
+  async finish(id: string, endedAt?: string): Promise<void> {
     const endedAtValue = endedAt ?? new Date().toISOString();
 
     await db

@@ -1,7 +1,7 @@
 // apps/mobile/app/session-workout/[id].tsx
 
 import React, { useEffect, useState } from "react";
-import { SafeAreaView, View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -12,6 +12,8 @@ import {
   SessionExerciseCard,
   SessionExerciseView,
 } from "@/src/features/session-exercise/components/form";
+import { SessionSet } from "@/src/features/session-set/domain/types";
+import { sessionSetRepository } from "@/src/features/session-set/data/repository";
 
 // Load a stored session from DB and project into view-model
 async function getInitialSessionData(sessionId: string): Promise<{
@@ -86,7 +88,7 @@ export default function SessionWorkoutPage() {
   }, [params.id]);
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-neutral-950">
+    <View className="flex-1 bg-white dark:bg-neutral-950">
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-3 pb-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
         {/* Left: back button */}
@@ -154,10 +156,17 @@ export default function SessionWorkoutPage() {
                 prev.map((e) => (e.id === next.id ? next : e))
               )
             }
+            onSetCommit={async (set: SessionSet) => {
+              try {
+                await sessionSetRepository.save(set);
+              } catch (err) {
+                console.error("Failed to save session set", err);
+              }
+            }}
           />
         ))}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

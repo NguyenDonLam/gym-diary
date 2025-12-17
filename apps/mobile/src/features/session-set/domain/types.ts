@@ -4,12 +4,12 @@ export type SessionSet = {
   id: string;
 
   sessionExerciseId: string;
-  templateSetId: string | null;
-  templateSet?: SetProgram;
+  setProgramId: string | null;
+  setProgram?: SetProgram;
 
   orderIndex: number;
 
-  reps: number | null;
+  targetQuantity: number | null;
   loadUnit: LoadUnit;
   loadValue: string | null;
   rpe: number | null;

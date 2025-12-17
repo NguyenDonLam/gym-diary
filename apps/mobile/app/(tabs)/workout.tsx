@@ -1,13 +1,6 @@
 // apps/mobile/app/(tabs)/workout.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  SafeAreaView,
-  View,
-  Text,
-  Pressable,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, Pressable, Alert, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import DraggableFlatList, {
   RenderItemParams,
@@ -15,10 +8,7 @@ import DraggableFlatList, {
 } from "react-native-draggable-flatlist";
 
 import { useWorkoutPrograms } from "@/src/features/program-workout/hooks/use-workout-programs";
-import {
-  ProgramColor,
-  WorkoutProgram,
-} from "@/src/features/program-workout/domain/type";
+import { WorkoutProgram } from "@/src/features/program-workout/domain/type";
 import { templateFolderRepository } from "@/src/features/template-folder/data/repository";
 import type { TemplateFolder } from "@/src/features/template-folder/domain/types";
 import FolderRow from "@/src/features/template-folder/components/folder-row";
@@ -27,19 +17,11 @@ import { workoutProgramRepository } from "@/src/features/program-workout/data/wo
 import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
 import { ProgramRow } from "@/src/features/program-workout/ui/template-row";
 import { UnassignedHeaderRow } from "@/src/components/unassigned-header-row";
-import { applyDragResult, buildRows, Row } from "@/src/features/program-workout/utils";
-
-const COLOR_STRIP_MAP: Record<ProgramColor, string> = {
-  neutral: "bg-neutral-400",
-  red: "bg-red-500",
-  orange: "bg-orange-500",
-  yellow: "bg-yellow-400",
-  green: "bg-green-500",
-  teal: "bg-teal-500",
-  blue: "bg-blue-500",
-  purple: "bg-purple-500",
-  pink: "bg-pink-500",
-};
+import {
+  applyDragResult,
+  buildRows,
+  Row,
+} from "@/src/features/program-workout/utils";
 
 export default function Workout() {
   const router = useRouter();
@@ -55,7 +37,6 @@ export default function Workout() {
   const [openFolderIds, setOpenFolderIds] = useState<string[]>([]);
   const { ongoing, setOngoing, clearOngoing } = useOngoingSession();
   const [checkedOngoing, setCheckedOngoing] = useState(false);
-
 
   // keep layout in sync with source templates (initial + external changes)
   useEffect(() => {
@@ -182,7 +163,6 @@ export default function Workout() {
     await startNewSession();
   }
 
-
   const handleEditTemplate = (id: string) => {
     router.push({
       pathname: "/program-workout/[id]",
@@ -230,7 +210,6 @@ export default function Workout() {
       console.error("Failed to update folder", err);
     }
   };
-
 
   const handleDeleteFolder = async (folderId: string) => {
     try {
@@ -329,17 +308,16 @@ export default function Workout() {
     );
   };
 
-
   if (isLoading || foldersLoading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-white dark:bg-slate-950">
+      <View className="flex-1 items-center justify-center bg-white dark:bg-slate-950">
         <ActivityIndicator size="large" />
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-slate-950">
+    <View className="flex-1 bg-white dark:bg-slate-950">
       <DraggableFlatList
         data={rows}
         keyExtractor={(item) => item.key}
@@ -395,6 +373,6 @@ export default function Workout() {
           ) : null
         }
       />
-    </SafeAreaView>
+    </View>
   );
 }
