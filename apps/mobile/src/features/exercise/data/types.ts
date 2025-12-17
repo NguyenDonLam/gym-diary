@@ -1,8 +1,8 @@
 // apps/mobile/domain/exercise/type.ts
 
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import type { Exercise } from "@gym-diary/exercise";
 import { exercises } from "@/db/schema";
+import { Exercise } from "@packages/exercise";
 
 /**
  * Raw DB row type from Drizzle.

@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { setPrograms } from "@/db/schema";
 
 import type { SetProgram } from "../domain/type";
-import { SetProgramFactory } from "./factory";
+import { SetProgramFactory } from "../domain/factory";
 
 export class SetProgramRepository extends BaseRepository<SetProgram> {
   constructor() {
@@ -19,7 +19,7 @@ export class SetProgramRepository extends BaseRepository<SetProgram> {
     });
 
     if (!row) return null;
-    return SetProgramFactory.DBToDomain(row);
+    return SetProgramFactory.domainFromDb(row);
   }
 
   async getAll(): Promise<SetProgram[]> {
@@ -27,7 +27,7 @@ export class SetProgramRepository extends BaseRepository<SetProgram> {
       orderBy: (sp, { asc }) => [asc(sp.createdAt)],
     });
 
-    return rows.map((r) => SetProgramFactory.DBToDomain(r));
+    return rows.map((r) => SetProgramFactory.domainFromDb(r));
   }
 
   async getAllForExerciseProgram(
@@ -38,13 +38,13 @@ export class SetProgramRepository extends BaseRepository<SetProgram> {
       orderBy: (sp, { asc }) => [asc(sp.orderIndex)],
     });
 
-    return rows.map((r) => SetProgramFactory.DBToDomain(r));
+    return rows.map((r) => SetProgramFactory.domainFromDb(r));
   }
 
   protected async insert(
     entity: SetProgram & { id?: string | null }
   ): Promise<SetProgram> {
-    const row = SetProgramFactory.DomainToDB(entity);
+    const row = SetProgramFactory.dbFromDomain(entity);
 
     await db.insert(setPrograms).values(row);
 
@@ -56,7 +56,7 @@ export class SetProgramRepository extends BaseRepository<SetProgram> {
   ): Promise<SetProgram> {
     if (!entity.id) throw new Error("Cannot update SetProgram without id");
 
-    const row = SetProgramFactory.DomainToDB(entity);
+    const row = SetProgramFactory.dbFromDomain(entity);
     const { id: _ignore, exerciseProgram: _rel, ...updateData } = row;
 
     await db

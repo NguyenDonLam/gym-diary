@@ -1,13 +1,12 @@
 // domain/exercise/exercise-repository.ts
 
-import type { Exercise } from "@gym-diary/exercise";
-
 import { eq, type InferSelectModel, type InferInsertModel } from "drizzle-orm";
 import { BaseRepository } from "@/src/lib/base-repository";
 import { exercises } from "@/db/schema";
 import { db } from "@/db";
 import { toDomain, toRow } from "./types";
 import { generateId } from "@/src/lib/id";
+import { Exercise } from "@packages/exercise";
 
 type ExerciseRow = InferSelectModel<typeof exercises>;
 type NewExerciseRow = InferInsertModel<typeof exercises>;
