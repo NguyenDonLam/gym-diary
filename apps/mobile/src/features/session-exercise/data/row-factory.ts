@@ -1,44 +1,39 @@
-// src/features/session-exercise/data/row-factory.ts
+// src/features/session-exercise/domain/session-exercise-factory.ts
 
-import { SessionExercise } from "@/src/features/session-exercise/domain/types";
-import { SessionSet } from "@/src/features/session-set/domain/types";
-import { SessionExerciseRow } from "./types";
-import { ExerciseProgram } from "../../program-exercise/domain/type";
+import type { SessionExercise } from "@/src/features/session-exercise/domain/types";
+import type { SessionSet } from "@/src/features/session-set/domain/types";
+import type { ExerciseProgram } from "@/src/features/program-exercise/domain/type";
 
-/**
- * Factory responsible ONLY for mapping between:
- *   - DB row shape (SessionExerciseRow)
- *   - Domain aggregate (SessionExercise)
- *
- * It does not know about forms or UI.
- */
-export class SessionExerciseRowFactory {
-  /**
-   * DB row + already-loaded sets (+ optional templateExercise)
-   * -> domain aggregate.
-   *
-   * Sets should be mapped by their own factories and passed in here
-   * as domain objects.
-   */
-  static toDomain(
-    row: SessionExerciseRow,
-    sets: SessionSet[] = [],
-    templateExercise?: ExerciseProgram
-  ): SessionExercise {
+import type { SessionExerciseRow } from "@/src/features/session-exercise/data/types";
+import type { SessionSetRow } from "@/src/features/session-set/data/types";
+import type { ExerciseProgramRow } from "@/src/features/program-exercise/data/type";
+import { SessionSetFactory } from "../../session-set/domain/factory";
+
+export class SessionExerciseFactory {
+  static domainFromDb(row: SessionExerciseRow): SessionExercise {
+    const sets: SessionSet[] = (row.sessionSets ?? [])
+      .slice()
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .map((s: SessionSetRow) => SessionSetFactory.domainFromDb(s));
+
+    const exerciseProgram = row.exerciseProgram
+      ? SessionExerciseFactory.exerciseProgramDomainFromDb(row.exerciseProgram)
+      : undefined;
+
     return {
       id: row.id,
 
       workoutSessionId: row.workoutSessionId,
 
-      exerciseId: row.exerciseId,
-      exerciseProgramId: row.exerciseProgramId,
-      exerciseProgram: templateExercise,
+      exerciseId: row.exerciseId ?? null,
+      exerciseProgramId: row.exerciseProgramId ?? null,
+      exerciseProgram,
 
-      exerciseName: row.exerciseName,
+      exerciseName: row.exerciseName ?? null,
 
       orderIndex: row.orderIndex,
 
-      note: row.note,
+      note: row.note ?? null,
 
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
@@ -47,41 +42,46 @@ export class SessionExerciseRowFactory {
     };
   }
 
-  /**
-   * Domain aggregate -> DB row for the session_exercises table.
-   *
-   * Sets are NOT handled here; they should be persisted via
-   * their own row factories / DAOs.
-   */
-  static fromDomain(domain: SessionExercise): SessionExerciseRow {
+  static dbFromDomain(domain: SessionExercise): SessionExerciseRow {
     return {
       id: domain.id,
 
       workoutSessionId: domain.workoutSessionId,
 
-      exerciseId: domain.exerciseId,
-      exerciseProgramId: domain.exerciseProgramId,
+      exerciseId: domain.exerciseId ?? null,
+      exerciseProgramId: domain.exerciseProgramId ?? null,
 
-      exerciseName: domain.exerciseName,
+      exerciseName: domain.exerciseName ?? null,
 
       orderIndex: domain.orderIndex,
 
-      note: domain.note,
+      note: domain.note ?? null,
 
       createdAt: domain.createdAt.toISOString(),
       updatedAt: domain.updatedAt.toISOString(),
     };
   }
 
-  static toRow(domain: SessionExercise): SessionExerciseRow {
-    return this.fromDomain(domain);
-  }
+  private static exerciseProgramDomainFromDb(
+    row: ExerciseProgramRow
+  ): ExerciseProgram {
+    // Explicit mapping only.
+    // Keep exactly aligned to your ExerciseProgram domain type.
+    return {
+      id: row.id,
+      workoutProgramId: row.workoutProgramId ?? null,
 
-  static fromRow(
-    row: SessionExerciseRow,
-    sets: SessionSet[] = [],
-    templateExercise?: ExerciseProgram
-  ): SessionExercise {
-    return this.toDomain(row, sets, templateExercise);
+      exerciseId: row.exerciseId ?? null,
+      exercise: undefined,
+
+      orderIndex: row.orderIndex,
+
+      note: row.note ?? null,
+
+      createdAt: new Date(row.createdAt),
+      updatedAt: new Date(row.updatedAt),
+
+      sets: [],
+    };
   }
 }

@@ -4,6 +4,7 @@ import { SetProgram, SetProgramFormData } from "../../program-set/domain/type";
 export type ExerciseProgram = {
   id: string;
   exerciseId: string;
+  workoutProgramId: string;
   exercise?: Exercise;
   orderIndex: number; // 1, 2, 3, ...
   note: string | null;
