@@ -1,6 +1,6 @@
 // src/features/session-workout/data/session-workout-repository.ts
 
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lt } from "drizzle-orm";
 import { BaseRepository } from "@/src/lib/base-repository";
 import { sessionExercises, sessionSets, workoutSessions } from "@/db/schema";
 import { db } from "@/db";
@@ -42,6 +42,40 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
   async getAll(): Promise<SessionWorkout[]> {
     const rows: SessionWorkoutRow[] = await db.select().from(workoutSessions);
     return rows.map((row) => SessionWorkoutRowFactory.toDomain(row));
+  }
+
+  async getCompleted(): Promise<SessionWorkout[]> {
+    const rows: SessionWorkoutRow[] = await db
+      .select()
+      .from(workoutSessions)
+      .where(eq(workoutSessions.status, "completed"));
+
+    return rows.map((row) => SessionWorkoutRowFactory.toDomain(row));
+  }
+
+  /**
+   * Inclusive start, exclusive end. Pass ISO strings.
+   * Use startedAt if want "the day it was performed".
+   * If your schema doesn't have startedAt, switch to endedAt.
+   */
+  async getCompletedInRange(
+    startISO: string,
+    endISO: string
+  ): Promise<SessionWorkout[]> {
+    const rows = await db.query.workoutSessions.findMany({
+      where: (ws, { and, eq, gte, lt, isNotNull }) =>
+        and(
+          eq(ws.status, "completed"),
+          isNotNull(ws.startedAt),
+          gte(ws.startedAt, startISO),
+          lt(ws.startedAt, endISO)
+        ),
+      with: {
+        sourceProgram: true,
+      },
+    });
+
+    return rows.map((row) => SessionWorkoutRowFactory.fromQuery(row));
   }
 
   protected async insert(
@@ -127,10 +161,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
     return this.save(session);
   }
 
-  async finish(
-    id: string,
-    endedAt?: string
-  ): Promise<void> {
+  async finish(id: string, endedAt?: string): Promise<void> {
     const endedAtValue = endedAt ?? new Date().toISOString();
 
     await db

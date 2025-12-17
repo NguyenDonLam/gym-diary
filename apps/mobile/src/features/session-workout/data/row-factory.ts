@@ -12,8 +12,8 @@ import { SessionSetRow } from "../../session-set/data/types";
 import { SessionSet } from "../../session-set/domain/types";
 
 type SessionWorkoutQueryResult = SessionWorkoutRow & {
-  sessionExercises: (SessionExerciseRow & {
-    sessionSets: SessionSetRow[];
+  sessionExercises?: (SessionExerciseRow & {
+    sessionSets?: SessionSetRow[];
   })[];
 };
 /**
