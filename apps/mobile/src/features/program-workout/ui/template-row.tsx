@@ -2,19 +2,7 @@
 import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { GripVertical, Trash2 } from "lucide-react-native";
-import { ProgramColor, WorkoutProgram } from "../domain/type";
-
-const COLOR_STRIP_MAP: Record<ProgramColor, string> = {
-  neutral: "bg-neutral-400",
-  red: "bg-red-500",
-  orange: "bg-orange-500",
-  yellow: "bg-yellow-400",
-  green: "bg-green-500",
-  teal: "bg-teal-500",
-  blue: "bg-blue-500",
-  purple: "bg-purple-500",
-  pink: "bg-pink-500",
-};
+import { COLOR_STRIP_MAP, ProgramColor, WorkoutProgram } from "../domain/type";
 
 type Props = {
   template: WorkoutProgram;

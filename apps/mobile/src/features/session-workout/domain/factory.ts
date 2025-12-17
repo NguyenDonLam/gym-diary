@@ -13,6 +13,7 @@ import type { SessionSetRow } from "@/src/features/session-set/data/types";
 
 import type { SetProgramRow } from "@/src/features/program-set/data/type";
 import type { SetProgram } from "@/src/features/program-set/domain/type";
+import { WorkoutProgramFactory } from "../../program-workout/domain/factory";
 
 export class SessionWorkoutFactory {
   // -----------------------------
@@ -81,8 +82,8 @@ export class SessionWorkoutFactory {
       startedAt: now,
       endedAt: null,
 
-      sourceTemplateId: program.id,
-      sourceTemplate: program,
+      sourceProgramId: program.id,
+      sourceProgram: program,
 
       status: "in_progress",
       note: null,
@@ -159,8 +160,10 @@ export class SessionWorkoutFactory {
       startedAt: new Date(row.startedAt),
       endedAt: row.endedAt ? new Date(row.endedAt) : null,
 
-      sourceTemplateId: row.sourceProgramId ?? null,
-      sourceTemplate: undefined,
+      sourceProgramId: row.sourceProgramId ?? null,
+      sourceProgram: row.sourceProgram ? WorkoutProgramFactory.domainFromDb(
+        row.sourceProgram
+      ) : undefined,
 
       note: row.note,
 
@@ -190,7 +193,7 @@ export class SessionWorkoutFactory {
       startedAt: domain.startedAt.toISOString(),
       endedAt: domain.endedAt ? domain.endedAt.toISOString() : null,
 
-      sourceProgramId: domain.sourceTemplateId,
+      sourceProgramId: domain.sourceProgramId,
 
       note: domain.note,
 
