@@ -1,6 +1,14 @@
 // src/features/exercise/domain/factory.ts
+
 import type { Exercise } from "@packages/exercise";
 import { generateId } from "@/src/lib/id";
+
+// You already use this row type elsewhere:
+// import type { ExerciseRow } from "@/src/features/exercise/data/types";
+import type { ExerciseRow } from "@/src/features/exercise/data/types";
+
+const toIso = (d: Date) => d.toISOString();
+const fromIso = (s: string) => new Date(s);
 
 export type ExerciseFactoryCreateInput = {
   id?: string;
@@ -8,6 +16,9 @@ export type ExerciseFactoryCreateInput = {
 };
 
 export class ExerciseFactory {
+  // -----------------------------
+  // Constructors / mutations
+  // -----------------------------
   create(input: ExerciseFactoryCreateInput): Exercise {
     const now = new Date();
     const name = input.name.trim();
@@ -28,6 +39,34 @@ export class ExerciseFactory {
       name: trimmed,
       updatedAt: new Date(),
     };
+  }
+
+  // -----------------------------
+  // DB <-> Domain
+  // -----------------------------
+  domainFromDb(row: ExerciseRow): Exercise {
+    return {
+      id: row.id,
+      name: row.name,
+      createdAt: fromIso(row.createdAt),
+      updatedAt: fromIso(row.updatedAt),
+    };
+  }
+
+  dbFromDomain(domain: Exercise): ExerciseRow {
+    return {
+      id: domain.id,
+      name: domain.name,
+      createdAt: toIso(domain.createdAt),
+      updatedAt: toIso(domain.updatedAt),
+    };
+  }
+
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  normalizeName(name: string): string {
+    return name.trim();
   }
 }
 

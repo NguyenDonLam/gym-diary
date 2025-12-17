@@ -1,10 +1,12 @@
 import { Exercise } from "@packages/exercise";
 import { SetProgram, SetProgramFormData } from "../../program-set/domain/type";
+import { WorkoutProgram } from "../../program-workout/domain/type";
 
 export type ExerciseProgram = {
   id: string;
   exerciseId: string;
   workoutProgramId: string;
+  workoutProgram?: WorkoutProgram;
   exercise?: Exercise;
   orderIndex: number; // 1, 2, 3, ...
   note: string | null;
