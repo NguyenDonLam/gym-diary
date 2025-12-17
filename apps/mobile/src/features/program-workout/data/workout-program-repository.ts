@@ -3,8 +3,8 @@ import { BaseRepository } from "@/src/lib/base-repository";
 import { exercisePrograms, setPrograms, workoutPrograms } from "@/db/schema";
 import { db } from "@/db";
 import { generateId } from "@/src/lib/id";
-import { WorkoutProgramRowFactory } from "./row-factory";
 import { WorkoutProgram } from "../domain/type";
+import { WorkoutProgramFactory } from "../domain/factory";
 
 export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
   constructor() {
@@ -27,7 +27,7 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
       });
       if (!program) return null;
 
-      return WorkoutProgramRowFactory.fromQuery(program);
+      return WorkoutProgramFactory.domainFromDb(program);
     } catch (error) {
       console.error("WorkoutProgramRepository.get error:", error);
       throw error;
@@ -40,95 +40,59 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
       .from(workoutPrograms)
       .orderBy(asc(workoutPrograms.createdAt));
 
-    return rows.map((row) => WorkoutProgramRowFactory.toDomain(row, []));
+    return rows.map((row) => WorkoutProgramFactory.domainFromDb(row));
   }
 
   protected async insert(
     entity: WorkoutProgram & { id?: string | null }
   ): Promise<WorkoutProgram> {
-    // 1. Ensure program id
     const programId = entity.id ?? generateId();
+
     const withId: WorkoutProgram = {
-      ...(entity as WorkoutProgram),
+      ...entity,
       id: programId,
     };
 
-    // Root row
-    const programRow = WorkoutProgramRowFactory.toRow(withId);
+    const graph = WorkoutProgramFactory.dbFromDomain(withId);
 
     await db.transaction(async (tx) => {
-      // 2. Insert program row
-      await tx.insert(workoutPrograms).values(programRow);
+      // 1) Insert root
+      await tx.insert(workoutPrograms).values(graph.workoutPrograms);
 
-      const exerciseRows: (typeof exercisePrograms.$inferInsert)[] = [];
-      const setRows: (typeof setPrograms.$inferInsert)[] = [];
+      // 2) Insert exercise programs
+      if (graph.exercisePrograms.length > 0) {
+        const exerciseRows: (typeof exercisePrograms.$inferInsert)[] =
+          graph.exercisePrograms.map((r) => {
+            const {
+              sets: _sets,
+              exercise: _exercise,
+              workoutProgram: _workoutProgram,
+              ...rest
+            } = r;
 
-      // 3. Map domain exercises -> program_exercises / program_sets
-      for (const ex of withId.exercises) {
-        if (ex.orderIndex === undefined || ex.orderIndex === null) {
-          throw new Error(
-            "ExerciseProgram.orderIndex must be set before insert"
-          );
-        }
-        if (!ex.exerciseId) {
-          throw new Error(
-            "ExerciseProgram.exerciseId must be set before insert"
-          );
-        }
-
-        const exerciseProgramId = ex.id ?? generateId();
-
-        if (!ex.createdAt || !ex.updatedAt) {
-          throw new Error(
-            "ExerciseProgram.createdAt/updatedAt must be set before insert"
-          );
-        }
-
-        exerciseRows.push({
-          id: exerciseProgramId,
-          workoutProgramId: programId,
-          exerciseId: ex.exerciseId,
-          orderIndex: ex.orderIndex,
-          note: ex.note ?? null,
-          createdAt: ex.createdAt.toISOString(),
-          updatedAt: ex.updatedAt.toISOString(),
-        });
-
-        for (const s of ex.sets) {
-          if (s.orderIndex === undefined || s.orderIndex === null) {
-            throw new Error("SetProgram.orderIndex must be set before insert");
-          }
-          if (!s.createdAt || !s.updatedAt) {
-            throw new Error(
-              "SetProgram.createdAt/updatedAt must be set before insert"
-            );
-          }
-
-          const setProgramId = s.id ?? generateId();
-
-          setRows.push({
-            id: setProgramId,
-            exerciseProgramId,
-            orderIndex: s.orderIndex,
-            targetQuantity: s.targetQuantity ?? null,
-            loadUnit: s.loadUnit as any, // domain must already hold a valid LoadUnit
-            loadValue:
-              s.loadValue === null || s.loadValue === undefined
-                ? null
-                : String(s.loadValue),
-            targetRpe: s.targetRpe ?? null,
-            note: s.note ?? null,
-            createdAt: s.createdAt.toISOString(),
-            updatedAt: s.updatedAt.toISOString(),
+            return {
+              ...rest,
+              id: r.id ?? generateId(),
+              workoutProgramId: programId, // enforce FK
+            };
           });
-        }
-      }
 
-      // 4. Insert child rows
-      if (exerciseRows.length > 0) {
         await tx.insert(exercisePrograms).values(exerciseRows);
       }
-      if (setRows.length > 0) {
+
+      // 3) Insert set programs
+      if (graph.setPrograms.length > 0) {
+        const setRows: (typeof setPrograms.$inferInsert)[] =
+          graph.setPrograms.map((r) => {
+            const { exerciseProgram: _exerciseProgram, ...rest } = r;
+
+            return {
+              ...rest,
+              id: r.id ?? generateId(),
+              // exerciseProgramId already set by factory; keep it
+            };
+          });
+
         await tx.insert(setPrograms).values(setRows);
       }
     });
@@ -139,12 +103,19 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
   protected async update(
     entity: WorkoutProgram & { id?: string | null }
   ): Promise<WorkoutProgram> {
-    if (!entity.id) {
-      throw new Error("Cannot update WorkoutProgram without id");
-    }
+    if (!entity.id) throw new Error("Cannot update WorkoutProgram without id");
 
-    const programRow = WorkoutProgramRowFactory.toRow(entity as WorkoutProgram);
-    const { id: _ignore, ...programUpdate } = programRow;
+    const graph = WorkoutProgramFactory.dbFromDomain(entity);
+
+    const programRow = graph.workoutPrograms[0];
+    if (!programRow) throw new Error("Factory did not produce program row");
+
+    // never update primary key; never persist hydrated relation field
+    const {
+      id: _ignoreProgramId,
+      exercisePrograms: _rel,
+      ...programUpdate
+    } = programRow;
 
     await db.transaction(async (tx) => {
       //
@@ -165,66 +136,66 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
 
       const dbExerciseIds = new Set(dbExercises.map((x) => x.id));
 
-      const dbSets = await tx
-        .select()
-        .from(setPrograms)
-        .where(
-          inArray(
-            setPrograms.exerciseProgramId,
-            dbExercises.map((x) => x.id)
-          )
-        );
+      const dbSets =
+        dbExercises.length === 0
+          ? []
+          : await tx
+              .select()
+              .from(setPrograms)
+              .where(
+                inArray(
+                  setPrograms.exerciseProgramId,
+                  dbExercises.map((x) => x.id)
+                )
+              );
 
       const dbSetIds = new Set(dbSets.map((x) => x.id));
 
       //
-      // 3) MAP domain children into rows keyed by id
+      // 3) MAP factory children into rows keyed by id (force FK + drop relations)
       //
       const domainExerciseRows = new Map<
         string,
         typeof exercisePrograms.$inferInsert
       >();
 
+      for (const r of graph.exercisePrograms) {
+        const {
+          sets: _sets,
+          exercise: _exercise,
+          workoutProgram: _workoutProgram,
+          ...rest
+        } = r;
+
+        const id = r.id ?? generateId();
+
+        domainExerciseRows.set(id, {
+          ...rest,
+          id,
+          workoutProgramId: entity.id!, // enforce FK
+        });
+      }
+
       const domainSetRows = new Map<string, typeof setPrograms.$inferInsert>();
 
-      // ---- YOU MUST MAP YOUR DOMAIN HERE ----
-      for (const ex of entity.exercises) {
-        domainExerciseRows.set(ex.id, {
-          id: ex.id,
-          workoutProgramId: entity.id!,
-          exerciseId: ex.exerciseId,
-          orderIndex: ex.orderIndex,
-          note: ex.note ?? null,
-          createdAt: ex.createdAt.toISOString(),
-          updatedAt: ex.updatedAt.toISOString(),
+      for (const r of graph.setPrograms) {
+        const { exerciseProgram: _exerciseProgram, ...rest } = r;
+
+        const id = r.id ?? generateId();
+
+        domainSetRows.set(id, {
+          ...rest,
+          id,
+          // keep exerciseProgramId from factory; it should already point at the correct exerciseProgram row id
         });
-
-        for (const s of ex.sets) {
-          domainSetRows.set(s.id, {
-            id: s.id,
-            exerciseProgramId: ex.id,
-            orderIndex: s.orderIndex,
-            targetQuantity: s.targetQuantity,
-            loadUnit: s.loadUnit,
-            loadValue:
-              s.loadValue === null || s.loadValue === undefined
-                ? null
-                : String(s.loadValue),
-            targetRpe: s.targetRpe,
-            note: s.note ?? null,
-            createdAt: s.createdAt.toISOString(),
-            updatedAt: s.updatedAt.toISOString(),
-          });
-        }
       }
-      // ----------------------------------------
 
       //
-      // 4) DIFF – Decide insert/update/delete for exercises
+      // 4) DIFF – exercises
       //
-      const exercisesToInsert = [];
-      const exercisesToUpdate = [];
-      const exercisesToDelete = [];
+      const exercisesToInsert: (typeof exercisePrograms.$inferInsert)[] = [];
+      const exercisesToUpdate: (typeof exercisePrograms.$inferInsert)[] = [];
+      const exercisesToDelete: string[] = [];
 
       for (const [id, row] of domainExerciseRows) {
         if (dbExerciseIds.has(id)) exercisesToUpdate.push(row);
@@ -236,11 +207,11 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
       }
 
       //
-      // 5) DIFF – Decide insert/update/delete for sets
+      // 5) DIFF – sets
       //
-      const setsToInsert = [];
-      const setsToUpdate = [];
-      const setsToDelete = [];
+      const setsToInsert: (typeof setPrograms.$inferInsert)[] = [];
+      const setsToUpdate: (typeof setPrograms.$inferInsert)[] = [];
+      const setsToDelete: string[] = [];
 
       for (const [id, row] of domainSetRows) {
         if (dbSetIds.has(id)) setsToUpdate.push(row);
@@ -252,51 +223,54 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
       }
 
       //
-      // 6) APPLY MUTATIONS IN CORRECT ORDER
+      // 6) APPLY MUTATIONS (order matters)
       //
 
-      // --- DELETE sets removed in domain ---
+      // delete sets first
       if (setsToDelete.length > 0) {
         await tx
           .delete(setPrograms)
           .where(inArray(setPrograms.id, setsToDelete));
       }
 
-      // --- DELETE exercises removed in domain ---
+      // delete removed exercises (after their sets are gone)
       if (exercisesToDelete.length > 0) {
         await tx
           .delete(exercisePrograms)
           .where(inArray(exercisePrograms.id, exercisesToDelete));
       }
 
-      // --- UPDATE existing exercises ---
+      // update exercises (no PK updates)
       for (const row of exercisesToUpdate) {
+        const { id, ...update } = row;
+        if (!id) continue;
+
         await tx
           .update(exercisePrograms)
-          .set(row)
-          .where(eq(exercisePrograms.id, row.id!));
+          .set(update)
+          .where(eq(exercisePrograms.id, id));
       }
 
-      // --- INSERT new exercises ---
+      // insert new exercises
       if (exercisesToInsert.length > 0) {
         await tx.insert(exercisePrograms).values(exercisesToInsert);
       }
 
-      // --- UPDATE existing sets ---
+      // update sets (no PK updates)
       for (const row of setsToUpdate) {
-        await tx
-          .update(setPrograms)
-          .set(row)
-          .where(eq(setPrograms.id, row.id!));
+        const { id, ...update } = row;
+        if (!id) continue;
+
+        await tx.update(setPrograms).set(update).where(eq(setPrograms.id, id));
       }
 
-      // --- INSERT new sets ---
+      // insert new sets
       if (setsToInsert.length > 0) {
         await tx.insert(setPrograms).values(setsToInsert);
       }
     });
 
-    return entity as WorkoutProgram;
+    return entity;
   }
 
   async delete(id: string): Promise<void> {

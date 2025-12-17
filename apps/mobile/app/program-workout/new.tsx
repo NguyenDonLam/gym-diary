@@ -9,7 +9,7 @@ import {
 import { useRouter } from "expo-router";
 import { WorkoutProgramFormData } from "@/src/features/program-workout/domain/type";
 import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
-import { WorkoutProgramFormFactory } from "@/src/features/program-workout/domain/form-factory";
+import { WorkoutProgramFactory } from "@/src/features/program-workout/domain/factory";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
 export default function TemplateWorkoutCreate() {
   const router = useRouter();
@@ -35,7 +35,7 @@ export default function TemplateWorkoutCreate() {
     if (!canSave) return;
     setIsSaving(true);
     try {
-      const template = await WorkoutProgramFormFactory.toDomain(formData);
+      const template = await WorkoutProgramFactory.toDomain(formData);
       await workoutProgramRepository.save(template);
 
       router.replace("/workout");
