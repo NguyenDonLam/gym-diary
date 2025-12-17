@@ -17,5 +17,5 @@ import type { ExerciseProgramRow } from "@/src/features/program-exercise/data/ty
  * so hydrating workoutProgram.exercisePrograms can include the whole tree.
  */
 export type WorkoutProgramRow = InferSelectModel<typeof workoutPrograms> & {
-  exercisePrograms?: ExerciseProgramRow[];
+  exercises?: ExerciseProgramRow[];
 };

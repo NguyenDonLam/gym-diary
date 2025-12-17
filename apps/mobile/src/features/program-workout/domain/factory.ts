@@ -15,6 +15,7 @@ import type { ExerciseProgramRow } from "@/src/features/program-exercise/data/ty
 
 import { SetProgramRow } from "@/src/features/program-set/data/type";
 import { ExerciseProgramFactory } from "../../program-exercise/data/factory";
+import { generateId } from "@/src/lib/id";
 
 const toIso = (d: Date) => d.toISOString();
 const fromIso = (s: string) => new Date(s);
@@ -24,7 +25,7 @@ export class WorkoutProgramFactory {
   // DB -> Domain (FULL STRUCTURE)
   // -----------------------------
   static domainFromDb(row: WorkoutProgramRow): WorkoutProgram {
-    const exercises: ExerciseProgram[] = (row.exercisePrograms ?? [])
+    const exercises: ExerciseProgram[] = (row.exercises ?? [])
       .slice()
       .sort((a, b) => a.orderIndex - b.orderIndex)
       .map((ep: ExerciseProgramRow) => ExerciseProgramFactory.domainFromDb(ep));
@@ -58,7 +59,7 @@ export class WorkoutProgramFactory {
       createdAt: toIso(domain.createdAt),
       updatedAt: toIso(domain.updatedAt),
       // hydrated-only
-      exercisePrograms: undefined,
+      exercises: undefined,
     };
 
     const exercisePrograms: ExerciseProgramRow[] = [];
@@ -84,35 +85,33 @@ export class WorkoutProgramFactory {
   // -----------------------------
   // Form -> Domain (FULL STRUCTURE)
   // -----------------------------
-  static domainFromForm(input: {
-    id: string;
-    form: WorkoutProgramFormData;
-    createdAt: Date;
-    updatedAt: Date;
-  }): WorkoutProgram {
-    const exercises: ExerciseProgram[] = (input.form.exercises ?? []).map(
+  static domainFromForm(form: WorkoutProgramFormData): WorkoutProgram {
+    const now = new Date();
+    const id = generateId();
+
+    const exercises: ExerciseProgram[] = (form.exercises ?? []).map(
       (ep: ExerciseProgramFormData, i: number) =>
         ExerciseProgramFactory.domainFromForm({
           form: ep,
-          workoutProgramId: input.id,
-          exerciseId: ep.exerciseId,
+          workoutProgramId: id,
+          exerciseId: ep.exerciseId!, //TODO: proper typing here
           orderIndex: i + 1,
           note: null,
-          createdAt: input.createdAt,
-          updatedAt: input.updatedAt,
+          createdAt: now,
+          updatedAt: now,
           exercise: undefined,
         })
     );
 
     return {
-      id: input.id,
-      name: input.form.name.trim(),
+      id,
+      name: (form.name ?? "").trim(),
       description:
-        input.form.description.trim() === "" ? null : input.form.description,
-      folderId: input.form.folderId ?? null,
-      color: input.form.color,
-      createdAt: input.createdAt,
-      updatedAt: input.updatedAt,
+        (form.description ?? "").trim() === "" ? null : form.description,
+      folderId: form.folderId ?? null,
+      color: form.color ?? "neutral",
+      createdAt: now,
+      updatedAt: now,
       exercises,
     };
   }
@@ -143,23 +142,48 @@ export class WorkoutProgramFactory {
   // -----------------------------
   // Form -> DB (FLATTENED PAYLOAD)
   // -----------------------------
-  static dbFromForm(input: {
-    id: string;
-    form: WorkoutProgramFormData;
-    createdAt: Date;
-    updatedAt: Date;
-  }): {
+  static dbFromForm(form: WorkoutProgramFormData): {
     workoutPrograms: WorkoutProgramRow[];
     exercisePrograms: ExerciseProgramRow[];
     setPrograms: SetProgramRow[];
   } {
-    return this.dbFromDomain(
-      this.domainFromForm({
-        id: input.id,
-        form: input.form,
-        createdAt: input.createdAt,
-        updatedAt: input.updatedAt,
-      })
-    );
+    return this.dbFromDomain(this.domainFromForm(form));
+  }
+
+  // -----------------------------
+  // Create (Domain) — partial in, defaults out
+  // -----------------------------
+  static create(overrides: Partial<WorkoutProgram> = {}): WorkoutProgram {
+    const now = new Date();
+
+    const fallbackId = generateId();
+
+    return {
+      id: overrides.id ?? fallbackId,
+      name: (overrides.name ?? "").trim(),
+      description: overrides.description ?? null,
+      folderId: overrides.folderId ?? null,
+      color: overrides.color ?? "neutral",
+      createdAt: overrides.createdAt ?? now,
+      updatedAt: overrides.updatedAt ?? now,
+      exercises: (overrides.exercises ?? [])
+        .slice()
+        .sort((a, b) => a.orderIndex - b.orderIndex),
+    };
+  }
+
+  // -----------------------------
+  // Create (Form) — partial in, defaults out
+  // -----------------------------
+  static createForm(
+    overrides: Partial<WorkoutProgramFormData> = {}
+  ): WorkoutProgramFormData {
+    return {
+      name: overrides.name ?? "",
+      description: overrides.description ?? "",
+      folderId: overrides.folderId ?? null,
+      color: overrides.color ?? "neutral",
+      exercises: (overrides.exercises ?? []).slice(),
+    };
   }
 }

@@ -35,7 +35,7 @@ export default function TemplateWorkoutCreate() {
     if (!canSave) return;
     setIsSaving(true);
     try {
-      const template = await WorkoutProgramFactory.toDomain(formData);
+      const template = await WorkoutProgramFactory.domainFromForm(formData);
       await workoutProgramRepository.save(template);
 
       router.replace("/workout");

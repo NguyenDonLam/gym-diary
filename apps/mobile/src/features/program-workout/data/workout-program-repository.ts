@@ -26,7 +26,6 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
         },
       });
       if (!program) return null;
-
       return WorkoutProgramFactory.domainFromDb(program);
     } catch (error) {
       console.error("WorkoutProgramRepository.get error:", error);
@@ -113,7 +112,7 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
     // never update primary key; never persist hydrated relation field
     const {
       id: _ignoreProgramId,
-      exercisePrograms: _rel,
+      exercises: _rel,
       ...programUpdate
     } = programRow;
 

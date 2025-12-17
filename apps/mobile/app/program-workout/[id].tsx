@@ -23,7 +23,7 @@ export default function TemplateWorkoutEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [formData, setFormData] = useState<WorkoutProgramFormData>(
-    WorkoutProgramFactory.createEmpty()
+    WorkoutProgramFactory.createForm()
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,7 +56,7 @@ export default function TemplateWorkoutEditScreen() {
         }
 
         if (!cancelled) {
-          const form = WorkoutProgramFactory.fromDomain(template);
+          const form = WorkoutProgramFactory.formFromDomain(template);
           setFormData(form);
           setHasLoadedTemplate(true);
         }
@@ -94,7 +94,7 @@ export default function TemplateWorkoutEditScreen() {
 
     setIsSaving(true);
     try {
-      const template = WorkoutProgramFactory.toDomain(formData);
+      const template = WorkoutProgramFactory.domainFromForm(formData);
       // ensure we keep the existing id when saving
       template.id = id;
 
