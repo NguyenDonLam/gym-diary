@@ -19,6 +19,9 @@ export type SessionSet = {
 
   note: string | null;
 
+  e1rm: number | null;
+  e1rmVersion: number;
+
   createdAt: Date;
   updatedAt: Date;
 };

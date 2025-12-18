@@ -17,6 +17,9 @@ export type SessionWorkout = {
   sourceProgram?: WorkoutProgram;
 
   note: string | null;
+  strengthScore: number | null,
+  strengthScoreVersion: number,
+  
 
   createdAt: Date;
   updatedAt: Date;

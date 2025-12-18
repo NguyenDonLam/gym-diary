@@ -15,6 +15,8 @@ export type SessionExercise = {
   orderIndex: number;
 
   note: string | null;
+  strengthScore: number | null;
+  strengthScoreVersion: number;
 
   createdAt: Date;
   updatedAt: Date;

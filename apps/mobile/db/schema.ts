@@ -1,6 +1,6 @@
 //apps/mobile/db/schema.ts
 import { relations } from "drizzle-orm";
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 /**
  * meta
  */
@@ -98,6 +98,10 @@ export const workoutSessions = sqliteTable("workout_sessions", {
     { onDelete: "set null" }
   ),
   note: text("note"),
+
+  strengthScore: real("strength_score"),
+  strengthScoreVersion: integer("strength_score_version").notNull().default(1),
+
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
@@ -111,13 +115,10 @@ export const sessionExercises = sqliteTable("session_exercises", {
   workoutSessionId: text("workout_session_id")
     .notNull()
     .references(() => workoutSessions.id, {
-      // delete session -> delete its session_exercises
       onDelete: "cascade",
     }),
 
-  // link to library exercise, but nullable so old sessions survive library deletes
   exerciseId: text("exercise_id").references(() => exercises.id, {
-    // delete exercise from library -> set this FK to null, keep row
     onDelete: "set null",
   }),
   exerciseProgramId: text("exercise_program_id").references(
@@ -125,11 +126,14 @@ export const sessionExercises = sqliteTable("session_exercises", {
     { onDelete: "set null" }
   ),
 
-  // snapshot name used for display so sessions still show correctly
   exerciseName: text("exercise_name"),
 
   orderIndex: integer("order_index").notNull(),
   note: text("note"),
+
+  strengthScore: real("strength_score"),
+  strengthScoreVersion: integer("strength_score_version").notNull().default(1),
+
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
@@ -164,19 +168,97 @@ export const sessionSets = sqliteTable("session_sets", {
 
   isWarmup: integer("is_warmup", { mode: "boolean" }).notNull().default(false),
   note: text("note"),
+
+  e1rm: real("e1rm"),
+  e1rmVersion: integer("e1rm_version").notNull().default(1),
+
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
 
+// Cache for current exercise data (to be updated consistently)
+export const exerciseStats = sqliteTable("exercise_stats", {
+  exerciseId: text("exercise_id")
+    .primaryKey()
+    .references(() => exercises.id, { onDelete: "cascade" }),
+
+  baselineExerciseStrengthScore: real("baseline_exercise_strength_score"),
+  baselineSetE1rm: real("baseline_set_e1rm"),
+
+  sampleCount: integer("sample_count").notNull().default(0),
+
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+export const exerciseStatsRelations = relations(exerciseStats, ({ one }) => ({
+  exercise: one(exercises, {
+    fields: [exerciseStats.exerciseId],
+    references: [exercises.id],
+  }),
+}));
+
+// Store stats for each week, month, year for ease of graphing
+export const exercisePeriodStats = sqliteTable("exercise_period_stats", {
+  id: text("id").primaryKey(), // UUID
+
+  exerciseId: text("exercise_id")
+    .notNull()
+    .references(() => exercises.id, { onDelete: "cascade" }),
+
+  periodType: text("period_type", {
+    enum: ["week", "month", "year"],
+  }).notNull(),
+  periodStart: integer("period_start", { mode: "timestamp_ms" }).notNull(),
+
+  sessionCount: integer("session_count").notNull().default(0),
+
+  bestStrengthScore: real("best_strength_score"),
+  medianStrengthScore: real("median_strength_score"),
+
+  bestSetE1rm: real("best_set_e1rm"),
+  medianSetE1rm: real("median_set_e1rm"),
+
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+});
+
+// indexes / uniqueness (separate exports)
+export const exercisePeriodStatsIndexes = {
+  // ensure one row per (exercise, periodType, periodStart)
+  uniq: uniqueIndex("exercise_period_stats_uniq").on(
+    exercisePeriodStats.exerciseId,
+    exercisePeriodStats.periodType,
+    exercisePeriodStats.periodStart
+  ),
+
+  // fast range scans for charts
+  exPeriod: index("exercise_period_stats_ex_period_idx").on(
+    exercisePeriodStats.exerciseId,
+    exercisePeriodStats.periodType,
+    exercisePeriodStats.periodStart
+  ),
+};
+
+export const exercisePeriodStatsRelations = relations(
+  exercisePeriodStats,
+  ({ one }) => ({
+    exercise: one(exercises, {
+      fields: [exercisePeriodStats.exerciseId],
+      references: [exercises.id],
+    }),
+  })
+);
 
 
 /**
  * exercises
  */
-export const exercisesRelations = relations(exercises, ({ many }) => ({
+export const exercisesRelations = relations(exercises, ({ many, one }) => ({
   programExercises: many(exercisePrograms),
   sessionExercises: many(sessionExercises),
+  stats: one(exerciseStats),
+  periodStats: many(exercisePeriodStats),
 }));
+
 
 /**
  * program_folders
