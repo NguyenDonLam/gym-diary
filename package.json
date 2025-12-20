@@ -6,7 +6,8 @@
     "packages/*"
   ],
   "dependencies": {
-    "@gym-diary/exercise": "file:./packages/exercise"
+    "@gym-diary/exercise": "file:./packages/exercise",
+    "@gym-diary/strength-score": "file:./packages/strength-score"
   },
   "scripts": {
     "dev:api": "npm --workspace apps/api run start:dev",
