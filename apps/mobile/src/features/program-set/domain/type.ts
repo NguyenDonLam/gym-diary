@@ -1,4 +1,4 @@
-export type LoadUnit = "kg" | "lb" | "band" | "time" | "custom";
+export type LoadUnit = "kg" | "lb" | "band" | "custom";
 
 export type SetProgram = {
   id: string; // UUID

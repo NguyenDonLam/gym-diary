@@ -1,12 +1,6 @@
 // packages/metrics/src/strength-score/aggregate/strength-score-aggregate.ts
 
-import type {
-  ExerciseMeanScoreStrategy,
-  MaybeScore,
-  SetE1rmScoreStrategy,
-  StrengthScoreContext,
-  WorkoutNormalizedScoreStrategy,
-} from "../strategies";
+import type { ExerciseMeanScoreStrategy, MaybeScore, SetE1rmScoreStrategy, StrengthScoreContext, WorkoutNormalizedScoreStrategy } from "../strategies";
 import type { ISetScoreStrategy } from "../strategies/set-session-score-strategy";
 import type { IExerciseScoreStrategy } from "../strategies/exercise-session-score-strategy";
 import type { IWorkoutScoreStrategy } from "../strategies/workout-session-score-strategy";
@@ -16,9 +10,9 @@ export class ScoreAggregateV1<
   TExerciseSession,
   TSession,
 > implements IStrengthScoreAggregate<TSetSession, TExerciseSession, TSession> {
+  static readonly VERSION = 1 as const;
+  readonly version = ScoreAggregateV1.VERSION;
   readonly key = "strengthScore" as const;
-
-  readonly version: number;
 
   private readonly session: TSession;
 
@@ -54,7 +48,6 @@ export class ScoreAggregateV1<
   private readonly ctxBySetId = new Map<string, StrengthScoreContext>();
 
   constructor(args: {
-    version: number;
     session: TSession;
 
     setStrategy: SetE1rmScoreStrategy<TSetSession>;
@@ -69,7 +62,6 @@ export class ScoreAggregateV1<
     getSetExerciseSessionId: (set: TSetSession) => string;
     getExerciseSessionId: (ex: TExerciseSession) => string;
   }) {
-    this.version = args.version;
     this.session = args.session;
 
     this.setStrategy = args.setStrategy;
