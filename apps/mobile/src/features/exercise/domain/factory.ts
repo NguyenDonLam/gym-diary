@@ -26,6 +26,7 @@ export class ExerciseFactory {
     return {
       id: input.id ?? generateId(),
       name,
+      quantityUnit: "reps",
       createdAt: now,
       updatedAt: now,
     };
@@ -48,6 +49,7 @@ export class ExerciseFactory {
     return {
       id: row.id,
       name: row.name,
+      quantityUnit: row.quantityUnit,
       createdAt: fromIso(row.createdAt),
       updatedAt: fromIso(row.updatedAt),
     };
@@ -57,6 +59,7 @@ export class ExerciseFactory {
     return {
       id: domain.id,
       name: domain.name,
+      quantityUnit: domain.quantityUnit,
       createdAt: toIso(domain.createdAt),
       updatedAt: toIso(domain.updatedAt),
     };

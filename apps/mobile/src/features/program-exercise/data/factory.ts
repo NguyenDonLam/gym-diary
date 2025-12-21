@@ -23,6 +23,7 @@ export class ExerciseProgramFactory {
       workoutProgramId: row.workoutProgramId,
 
       exercise,
+      quantityUnit: row.quantityUnit,
 
       orderIndex: row.orderIndex,
       note: row.note ?? null,
@@ -54,6 +55,7 @@ export class ExerciseProgramFactory {
       id: domain.id,
       exerciseId: domain.exerciseId,
       workoutProgramId: domain.workoutProgramId,
+      quantityUnit: domain.quantityUnit,
       orderIndex: domain.orderIndex,
       note: domain.note ?? null,
       createdAt: toIso(domain.createdAt),
@@ -85,6 +87,7 @@ export class ExerciseProgramFactory {
       id: input.form.id,
       exerciseId: input.exerciseId,
       workoutProgramId: input.workoutProgramId,
+      quantityUnit: input.form.quantityUnit,
       exercise: input.exercise,
 
       orderIndex: input.orderIndex,
@@ -109,6 +112,7 @@ export class ExerciseProgramFactory {
     return {
       id: domain.id,
       exerciseId: domain.exerciseId,
+      quantityUnit: domain.quantityUnit,
       isCustom: false,
       sets: domain.sets
         .slice()

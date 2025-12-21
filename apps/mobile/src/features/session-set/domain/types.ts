@@ -1,4 +1,5 @@
-import { LoadUnit, SetProgram } from "../../program-set/domain/type";
+import { LoadUnit } from "@/db/enums";
+import { SetProgram } from "../../program-set/domain/type";
 
 export type SessionSet = {
   id: string;

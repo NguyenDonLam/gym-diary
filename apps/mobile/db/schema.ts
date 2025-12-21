@@ -1,6 +1,14 @@
 //apps/mobile/db/schema.ts
 import { relations } from "drizzle-orm";
-import { sqliteTable, text, integer, real, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  real,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core";
+import { LOAD_UNITS, QUANTITY_UNITS } from "./enums";
 /**
  * meta
  */
@@ -15,6 +23,10 @@ export const meta = sqliteTable("meta", {
 export const exercises = sqliteTable("exercises", {
   id: text("id").primaryKey(), // UUID
   name: text("name").notNull(),
+  quantityUnit: text("quantity_unit", {
+    enum: QUANTITY_UNITS,
+  }).notNull(),
+
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
@@ -28,7 +40,6 @@ export const programFolders = sqliteTable("program_folders", {
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
-
 
 export const workoutPrograms = sqliteTable("program_workouts", {
   id: text("id").primaryKey(), // UUID
@@ -49,6 +60,9 @@ export const exercisePrograms = sqliteTable("program_exercises", {
     .references(() => workoutPrograms.id, {
       onDelete: "cascade",
     }),
+  quantityUnit: text("quantity_unit", {
+    enum: QUANTITY_UNITS,
+  }).notNull(),
   exerciseId: text("exercise_id")
     .notNull()
     .references(() => exercises.id),
@@ -67,11 +81,10 @@ export const setPrograms = sqliteTable("program_sets", {
     }),
   orderIndex: integer("order_index").notNull(),
   targetQuantity: integer("target_quantity"),
-  loadUnit: text("load_unit", {
-    enum: ["kg", "lb", "band", "time", "custom"],
-  })
+  loadUnit: text("load_unit", { enum: LOAD_UNITS })
     .notNull()
-    .default("custom"),
+    .notNull()
+    .default("kg"),
   loadValue: text("load_value"),
   targetRpe: real("target_rpe"),
   note: text("note"),
@@ -106,7 +119,6 @@ export const workoutSessions = sqliteTable("workout_sessions", {
   updatedAt: text("updated_at").notNull(),
 });
 
-
 /**
  * session_exercises
  */
@@ -125,6 +137,9 @@ export const sessionExercises = sqliteTable("session_exercises", {
     () => exercisePrograms.id,
     { onDelete: "set null" }
   ),
+  quantityUnit: text("quantity_unit", {
+    enum: QUANTITY_UNITS,
+  }).notNull(),
 
   exerciseName: text("exercise_name"),
 
@@ -154,11 +169,11 @@ export const sessionSets = sqliteTable("session_sets", {
   orderIndex: integer("order_index").notNull(),
 
   targetQuantity: integer("target_quantity"),
-  loadUnit: text("load_unit", {
-    enum: ["kg", "lb", "band", "time", "custom"],
-  })
+  quantity: integer("quantity"),
+  loadUnit: text("load_unit", { enum: LOAD_UNITS })
     .notNull()
-    .default("custom"),
+    .notNull()
+    .default("kg"),
   loadValue: text("load_value"),
   rpe: real("rpe"),
 
@@ -248,7 +263,6 @@ export const exercisePeriodStatsRelations = relations(
   })
 );
 
-
 /**
  * exercises
  */
@@ -258,7 +272,6 @@ export const exercisesRelations = relations(exercises, ({ many, one }) => ({
   stats: one(exerciseStats),
   periodStats: many(exercisePeriodStats),
 }));
-
 
 /**
  * program_folders

@@ -28,12 +28,16 @@ export class SessionExerciseFactory {
       exerciseId: row.exerciseId ?? null,
       exerciseProgramId: row.exerciseProgramId ?? null,
       exerciseProgram,
+      quantityUnit: row.quantityUnit,
 
       exerciseName: row.exerciseName ?? null,
 
       orderIndex: row.orderIndex,
 
       note: row.note ?? null,
+
+      strengthScore: row.strengthScore,
+      strengthScoreVersion: row.strengthScoreVersion,
 
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
@@ -50,12 +54,15 @@ export class SessionExerciseFactory {
 
       exerciseId: domain.exerciseId ?? null,
       exerciseProgramId: domain.exerciseProgramId ?? null,
+      quantityUnit: domain.quantityUnit,
 
       exerciseName: domain.exerciseName ?? null,
 
       orderIndex: domain.orderIndex,
 
       note: domain.note ?? null,
+      strengthScore: domain.strengthScore,
+      strengthScoreVersion: domain.strengthScoreVersion,
 
       createdAt: domain.createdAt.toISOString(),
       updatedAt: domain.updatedAt.toISOString(),
@@ -73,6 +80,7 @@ export class SessionExerciseFactory {
 
       exerciseId: row.exerciseId ?? null,
       exercise: undefined,
+      quantityUnit: row.quantityUnit,
 
       orderIndex: row.orderIndex,
 

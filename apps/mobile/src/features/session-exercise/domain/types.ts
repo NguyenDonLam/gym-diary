@@ -1,3 +1,4 @@
+import { QuantityUnit } from "@/db/enums";
 import { ExerciseProgram } from "../../program-exercise/domain/type";
 import { SessionSet } from "../../session-set/domain/types";
 export type SessionExercise = {
@@ -8,6 +9,7 @@ export type SessionExercise = {
   exerciseId: string | null;
   exerciseProgramId: string | null;
   exerciseProgram?: ExerciseProgram;
+  quantityUnit: QuantityUnit;
 
   // snapshot name for history
   exerciseName: string | null;

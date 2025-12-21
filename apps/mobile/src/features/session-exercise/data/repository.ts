@@ -7,7 +7,7 @@ import { BaseRepository } from "@/src/lib/base-repository";
 import { sessionExercises } from "@/db/schema";
 import { db } from "@/db";
 import { generateId } from "@/src/lib/id";
-import { SessionExerciseFactory } from "./row-factory";
+import { SessionExerciseFactory } from "./factory";
 
 type SessionExerciseRow = InferSelectModel<typeof sessionExercises>;
 type NewSessionExerciseRow = InferInsertModel<typeof sessionExercises>;

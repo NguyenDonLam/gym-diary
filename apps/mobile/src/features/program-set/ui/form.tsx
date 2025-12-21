@@ -1,17 +1,15 @@
 import React from "react";
 import { Text, TextInput, View, Pressable } from "react-native";
-import { SetProgramFormData, LoadUnit } from "../domain/type";
+import { SetProgramFormData } from "../domain/type";
 import { useColorScheme } from "nativewind";
 import { Wind, Gauge, Flame, ChevronsUpDown } from "lucide-react-native";
+import { LOAD_UNITS } from "@/db/enums";
 
 type SetProgramFormProps = {
   formData: SetProgramFormData;
   index: number;
   setFormData: (next: SetProgramFormData) => void;
 };
-
-// "kg" | "lb" | "band" | "time" | "custom"
-const LOAD_UNITS: LoadUnit[] = ["kg", "lb", "band", "time", "custom"];
 
 const BAND_OPTIONS = [
   {
@@ -92,12 +90,6 @@ export default function SetProgramForm({
         const tail = cleaned.slice(firstDot + 1).replace(/[.,]/g, "");
         cleaned = head + tail;
       }
-      update({ loadValue: cleaned });
-      return;
-    }
-
-    if (unit === "time") {
-      const cleaned = raw.replace(/[^0-9:\-]/g, "");
       update({ loadValue: cleaned });
       return;
     }

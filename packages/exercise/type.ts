@@ -9,6 +9,7 @@ export type Exercise = {
   name: string;
   createdAt: Date;
   updatedAt: Date;
+  quantityUnit: "reps" | "time";
 
   // relations
   programExercises?: ExerciseProgram[];

@@ -3,7 +3,6 @@
 import type { SessionSet } from "@/src/features/session-set/domain/types";
 import type {
   SetProgram,
-  LoadUnit,
 } from "@/src/features/program-set/domain/type";
 import type { SessionSetRow } from "@/src/features/session-set/data/types";
 import type { SetProgramRow } from "@/src/features/program-set/data/type";
@@ -22,7 +21,7 @@ export class SessionSetFactory {
       orderIndex: row.orderIndex,
 
       targetQuantity: row.targetQuantity ?? null,
-      loadUnit: row.loadUnit as LoadUnit,
+      loadUnit: row.loadUnit,
       loadValue: row.loadValue ?? null,
       rpe: row.rpe ?? null,
 
@@ -67,7 +66,7 @@ export class SessionSetFactory {
       orderIndex: row.orderIndex,
 
       targetQuantity: row.targetQuantity ?? null,
-      loadUnit: row.loadUnit as LoadUnit,
+      loadUnit: row.loadUnit,
       loadValue: row.loadValue ?? null,
       targetRpe: row.targetRpe ?? null,
 
