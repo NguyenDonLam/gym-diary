@@ -11,16 +11,13 @@ import { WorkoutProgramFormData } from "@/src/features/program-workout/domain/ty
 import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
 import { WorkoutProgramFactory } from "@/src/features/program-workout/domain/factory";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
-export default function TemplateWorkoutCreate() {
+export default function ProgramWorkoutCreate() {
   const router = useRouter();
 
-  const [formData, setFormData] = useState<WorkoutProgramFormData>({
-    name: "",
-    description: "",
-    color: "neutral",
-    exercises: [],
-    folderId: null,
-  });
+  const [formData, setFormData] = useState<WorkoutProgramFormData>(
+    WorkoutProgramFactory.createForm()
+  );
+
 
   const [isSaving, setIsSaving] = useState(false);
 
