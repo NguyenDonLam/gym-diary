@@ -19,6 +19,7 @@ import { SessionExercise } from "@/src/features/session-exercise/domain/types";
 import { SessionSet } from "@/src/features/session-set/domain/types";
 import { generateId } from "@/src/lib/id";
 import { SessionSetRow } from "../../session-set/components/form";
+import { SessionSetFactory } from "../../session-set/domain/factory";
 
 type LastSetSnapshot = {
   id: string;
@@ -117,30 +118,15 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
   const addSet = () => {
     update((prev) => {
       const currentSets = prev.sets ?? [];
-      const nextOrderIndex = currentSets.length;
-      const now = new Date();
       const last = currentSets[currentSets.length - 1];
 
-      const newSet: SessionSet = {
-        id: generateId(),
+      const newSet = SessionSetFactory.create({
         sessionExerciseId: prev.id,
-        setProgramId: null,
-        setProgram: undefined,
-
-        orderIndex: nextOrderIndex,
-
-        targetQuantity: null,
+        orderIndex: currentSets.length,
         loadUnit: last?.loadUnit ?? "kg",
         loadValue: last?.loadValue ?? null,
         rpe: last?.rpe ?? EFFORT_LEVELS[1].rpe,
-
-        isCompleted: false,
-        isWarmup: false,
-        note: null,
-
-        createdAt: now,
-        updatedAt: now,
-      };
+      });
 
       return {
         ...prev,
@@ -149,6 +135,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
       };
     });
   };
+
 
   const completedCount = sets.filter(isSetDone).length;
   const totalSets = sets.length;
@@ -239,7 +226,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
                 ✓
               </Text>
               <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-neutral-500">
-                Reps
+                Volume
               </Text>
               <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-neutral-500">
                 Load

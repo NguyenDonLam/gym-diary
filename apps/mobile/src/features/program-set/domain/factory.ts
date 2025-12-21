@@ -3,10 +3,6 @@
 import type { SetProgram, SetProgramFormData } from "../domain/type";
 import type { SetProgramRow } from "../data/type";
 
-import type { ExerciseProgram } from "@/src/features/program-exercise/domain/type";
-import type { ExerciseProgramRow } from "@/src/features/program-exercise/data/type";
-import { ExerciseProgramFactory } from "../../program-exercise/data/factory";
-
 const toIso = (d: Date) => d.toISOString();
 const fromIso = (s: string) => new Date(s);
 
@@ -86,18 +82,5 @@ export class SetProgramFactory {
     note?: string | null;
   }): SetProgramRow {
     return this.dbFromDomain(this.domainFromForm(input));
-  }
-
-  static relationsFromDb(row: SetProgramRow): {
-    exerciseProgram?: ExerciseProgram;
-  } {
-    const epRow: ExerciseProgramRow | undefined =
-      row.exerciseProgram ?? undefined;
-
-    return {
-      exerciseProgram: epRow
-        ? ExerciseProgramFactory.domainFromDb(epRow)
-        : undefined,
-    };
   }
 }

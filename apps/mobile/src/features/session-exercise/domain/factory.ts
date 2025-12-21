@@ -8,6 +8,7 @@ import type { SessionExerciseRow } from "@/src/features/session-exercise/data/ty
 import type { SessionSetRow } from "@/src/features/session-set/data/types";
 import type { ExerciseProgramRow } from "@/src/features/program-exercise/data/type";
 import { SessionSetFactory } from "../../session-set/domain/factory";
+import { generateId } from "@/src/lib/id";
 
 export class SessionExerciseFactory {
   static domainFromDb(row: SessionExerciseRow): SessionExercise {

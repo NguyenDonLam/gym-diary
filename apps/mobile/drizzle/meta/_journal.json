@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1764565909121,
-      "tag": "0000_cooing_omega_flight",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1764825415782,
-      "tag": "0001_illegal_lockjaw",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1764998258638,
-      "tag": "0002_parallel_hardball",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1765174402882,
-      "tag": "0003_uneven_gamma_corps",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1765412130035,
-      "tag": "0004_fair_sauron",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1765546475980,
-      "tag": "0005_cool_adam_warlock",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1766068930190,
-      "tag": "0006_narrow_peter_quill",
+      "when": 1766307767527,
+      "tag": "0000_nappy_scarlet_spider",
       "breakpoints": true
     }
   ]

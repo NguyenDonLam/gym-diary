@@ -6,6 +6,7 @@ import type {
 } from "@/src/features/program-set/domain/type";
 import type { SessionSetRow } from "@/src/features/session-set/data/types";
 import type { SetProgramRow } from "@/src/features/program-set/data/type";
+import { generateId } from "@/src/lib/id";
 
 export class SessionSetFactory {
   static domainFromDb(row: SessionSetRow): SessionSet {
@@ -82,6 +83,39 @@ export class SessionSetFactory {
 
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
+    };
+  }
+
+  static create(overrides: Partial<SessionSet>): SessionSet {
+    const now = new Date();
+
+    return {
+      id: generateId(),
+
+      // must be provided via overrides
+      sessionExerciseId: "",
+      orderIndex: 0,
+
+      setProgramId: null,
+
+      targetQuantity: null,
+      quantity: null,
+
+      loadUnit: "kg",
+      loadValue: null,
+      rpe: 10,
+
+      isCompleted: false,
+      isWarmup: false,
+      note: null,
+
+      e1rm: null,
+      e1rmVersion: 1,
+
+      createdAt: now,
+      updatedAt: now,
+
+      ...overrides,
     };
   }
 }

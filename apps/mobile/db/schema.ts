@@ -25,7 +25,9 @@ export const exercises = sqliteTable("exercises", {
   name: text("name").notNull(),
   quantityUnit: text("quantity_unit", {
     enum: QUANTITY_UNITS,
-  }).notNull(),
+  })
+    .notNull()
+    .default("reps"),
 
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
@@ -62,7 +64,9 @@ export const exercisePrograms = sqliteTable("program_exercises", {
     }),
   quantityUnit: text("quantity_unit", {
     enum: QUANTITY_UNITS,
-  }).notNull(),
+  })
+    .notNull()
+    .default("reps"),
   exerciseId: text("exercise_id")
     .notNull()
     .references(() => exercises.id),
@@ -139,7 +143,7 @@ export const sessionExercises = sqliteTable("session_exercises", {
   ),
   quantityUnit: text("quantity_unit", {
     enum: QUANTITY_UNITS,
-  }).notNull(),
+  }).notNull().default("reps"),
 
   exerciseName: text("exercise_name"),
 

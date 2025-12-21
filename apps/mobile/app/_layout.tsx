@@ -1,6 +1,6 @@
 import "../global.css";
-import React, { Suspense, useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, Text, View } from "react-native";
 import { Stack } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
@@ -22,15 +22,44 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 const THEME_KEY = "theme";
 
+function BootScreen({ title, detail }: { title: string; detail?: string }) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+        backgroundColor: "#0B0B0C",
+      }}
+    >
+      <ActivityIndicator size="large" color="#E5E7EB" />
+      <Text style={{ color: "#E5E7EB", marginTop: 12, fontWeight: "600" }}>
+        {title}
+      </Text>
+      {detail ? (
+        <Text
+          selectable
+          style={{ color: "#9CA3AF", marginTop: 8, textAlign: "center" }}
+        >
+          {detail}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 export default function RootLayout() {
   useDrizzleStudio(expoDb);
-  const { success } = useMigrations(db, migrations);
-  const { setColorScheme } = useColorScheme();
 
-  useEffect(() => {
-    if (!success) return;
-    runAllSeeds(db).catch((e) => console.warn("seeding failed", e));
-  }, [success]);
+  const mig = useMigrations(db, migrations) as any;
+  const success: boolean = !!mig?.success;
+  const migErrorMsg: string | null = mig?.error
+    ? String(mig.error?.message ?? mig.error)
+    : null;
+
+  const { setColorScheme } = useColorScheme();
+  const [seedErr, setSeedErr] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -43,12 +72,26 @@ export default function RootLayout() {
     })();
   }, [setColorScheme]);
 
-  if (!success) return <ActivityIndicator size="large" />;
+  useEffect(() => {
+    if (!success) return;
+    (async () => {
+      try {
+        await runAllSeeds(db);
+      } catch (e: any) {
+        console.warn("seeding failed", e);
+        setSeedErr(String(e?.message ?? e));
+      }
+    })();
+  }, [success]);
+
+  if (migErrorMsg)
+    return <BootScreen title="Migration failed" detail={migErrorMsg} />;
+  if (!success) return <BootScreen title="Migrating database…" />;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <Suspense fallback={<ActivityIndicator size="large" />}>
+        <Suspense fallback={<BootScreen title="Loading…" />}>
           <SQLiteProvider
             databaseName={DATABASE_NAME}
             options={{ enableChangeListener: true }}
@@ -66,6 +109,30 @@ export default function RootLayout() {
                       <Stack.Screen name="program-workout/[id]" />
                       <Stack.Screen name="session-workout/[id]" />
                     </Stack>
+
+                    {seedErr ? (
+                      <View
+                        style={{
+                          position: "absolute",
+                          left: 12,
+                          right: 12,
+                          bottom: 12,
+                          backgroundColor: "#111827",
+                          padding: 12,
+                          borderRadius: 12,
+                        }}
+                      >
+                        <Text style={{ color: "#E5E7EB", fontWeight: "600" }}>
+                          Seeding failed
+                        </Text>
+                        <Text
+                          selectable
+                          style={{ color: "#9CA3AF", marginTop: 6 }}
+                        >
+                          {seedErr}
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                 </SafeAreaView>
               </View>
