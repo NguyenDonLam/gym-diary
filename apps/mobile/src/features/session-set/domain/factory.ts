@@ -21,6 +21,7 @@ export class SessionSetFactory {
       orderIndex: row.orderIndex,
 
       targetQuantity: row.targetQuantity ?? null,
+      quantity: row.quantity,
       loadUnit: row.loadUnit,
       loadValue: row.loadValue ?? null,
       rpe: row.rpe ?? null,
@@ -29,6 +30,9 @@ export class SessionSetFactory {
       isWarmup: row.isWarmup,
 
       note: row.note ?? null,
+
+      e1rm: row.e1rm,
+      e1rmVersion: row.e1rmVersion,
 
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
@@ -45,6 +49,7 @@ export class SessionSetFactory {
       orderIndex: domain.orderIndex,
 
       targetQuantity: domain.targetQuantity ?? null,
+      quantity: domain.quantity,
       loadUnit: domain.loadUnit,
       loadValue: domain.loadValue ?? null,
       rpe: domain.rpe ?? null,
@@ -53,6 +58,9 @@ export class SessionSetFactory {
       isWarmup: domain.isWarmup,
 
       note: domain.note ?? null,
+
+      e1rm: domain.e1rm,
+      e1rmVersion: domain.e1rmVersion,
 
       createdAt: domain.createdAt.toISOString(),
       updatedAt: domain.updatedAt.toISOString(),

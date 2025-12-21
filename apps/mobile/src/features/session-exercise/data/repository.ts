@@ -7,7 +7,7 @@ import { BaseRepository } from "@/src/lib/base-repository";
 import { sessionExercises } from "@/db/schema";
 import { db } from "@/db";
 import { generateId } from "@/src/lib/id";
-import { SessionExerciseFactory } from "./factory";
+import { SessionExerciseFactory } from "../domain/factory";
 
 type SessionExerciseRow = InferSelectModel<typeof sessionExercises>;
 type NewSessionExerciseRow = InferInsertModel<typeof sessionExercises>;
@@ -28,12 +28,12 @@ export class SessionExerciseRepository extends BaseRepository<SessionExercise> {
     if (!row) return null;
 
     // no relations here, so just row -> domain
-    return SessionExerciseFactory.toDomain(row);
+    return SessionExerciseFactory.domainFromDb(row);
   }
 
   async getAll(): Promise<SessionExercise[]> {
     const rows: SessionExerciseRow[] = await db.select().from(sessionExercises);
-    return rows.map((row) => SessionExerciseFactory.toDomain(row));
+    return rows.map((row) => SessionExerciseFactory.domainFromDb(row));
   }
 
   protected async insert(
@@ -42,7 +42,7 @@ export class SessionExerciseRepository extends BaseRepository<SessionExercise> {
     const id = entity.id ?? generateId();
     const withId: SessionExercise = { ...(entity as SessionExercise), id };
 
-    const row: NewSessionExerciseRow = SessionExerciseFactory.toRow(
+    const row: NewSessionExerciseRow = SessionExerciseFactory.dbFromDomain(
       withId
     ) as NewSessionExerciseRow;
 
@@ -58,7 +58,7 @@ export class SessionExerciseRepository extends BaseRepository<SessionExercise> {
       throw new Error("Cannot update SessionExercise without id");
     }
 
-    const row: NewSessionExerciseRow = SessionExerciseFactory.toRow(
+    const row: NewSessionExerciseRow = SessionExerciseFactory.dbFromDomain(
       entity as SessionExercise
     ) as NewSessionExerciseRow;
 

@@ -26,30 +26,34 @@ export class SessionWorkoutFactory {
     const sessionExercises: SessionExercise[] = (program.exercises ?? [])
       .slice()
       .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
-      .map((tplEx, exIndex) => {
+      .map((exProgram, exIndex) => {
         const sessionExerciseId = generateId();
 
-        const sets: SessionSet[] = (tplEx.sets ?? [])
+        const sets: SessionSet[] = (exProgram.sets ?? [])
           .slice()
           .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
-          .map((tplSet, setIndex) => ({
+          .map((setProgram, setIndex) => ({
             id: generateId(),
 
             sessionExerciseId,
-            setProgramId: tplSet.id,
-            setProgram: tplSet,
+            setProgramId: setProgram.id,
+            setProgram: setProgram,
 
-            orderIndex: tplSet.orderIndex ?? setIndex,
+            orderIndex: setProgram.orderIndex ?? setIndex,
 
             targetQuantity: null,
-            loadUnit: tplSet.loadUnit,
-            loadValue: tplSet.loadValue,
-            rpe: tplSet.targetRpe,
+            quantity: null,
+            loadUnit: setProgram.loadUnit,
+            loadValue: setProgram.loadValue,
+            rpe: setProgram.targetRpe,
 
             isCompleted: false,
             isWarmup: false,
 
-            note: tplSet.note ?? null,
+            note: setProgram.note ?? null,
+
+            e1rm: null,
+            e1rmVersion: -1,
 
             createdAt: now,
             updatedAt: now,
@@ -59,14 +63,18 @@ export class SessionWorkoutFactory {
           id: sessionExerciseId,
           workoutSessionId: sessionId,
 
-          exerciseId: tplEx.exerciseId ?? null,
-          exerciseProgramId: tplEx.id,
-          exerciseProgram: tplEx,
+          exerciseId: exProgram.exerciseId ?? null,
+          quantityUnit: exProgram.quantityUnit,
+          exerciseProgramId: exProgram.id,
+          exerciseProgram: exProgram,
 
-          exerciseName: tplEx.exercise?.name ?? "Unnamed Exercise",
+          exerciseName: exProgram.exercise?.name ?? "Unnamed Exercise",
 
-          orderIndex: tplEx.orderIndex ?? exIndex,
-          note: tplEx.note ?? null,
+          orderIndex: exProgram.orderIndex ?? exIndex,
+          note: exProgram.note ?? null,
+
+          strengthScore: null,
+          strengthScoreVersion: -1,
 
           createdAt: now,
           updatedAt: now,
@@ -87,6 +95,8 @@ export class SessionWorkoutFactory {
 
       status: "in_progress",
       note: null,
+      strengthScore: null,
+      strengthScoreVersion: -1,
 
       createdAt: now,
       updatedAt: now,
@@ -118,6 +128,7 @@ export class SessionWorkoutFactory {
           orderIndex: s.orderIndex,
 
           targetQuantity: s.targetQuantity ?? null,
+          quantity: s.quantity,
           loadUnit: s.loadUnit,
           loadValue: s.loadValue,
           rpe: s.rpe,
@@ -126,6 +137,8 @@ export class SessionWorkoutFactory {
           isWarmup: s.isWarmup,
 
           note: s.note,
+          e1rm: s.e1rm,
+          e1rmVersion: s.e1rmVersion,
 
           createdAt: new Date(s.createdAt),
           updatedAt: new Date(s.updatedAt),
@@ -136,6 +149,7 @@ export class SessionWorkoutFactory {
           workoutSessionId: ex.workoutSessionId,
 
           exerciseId: ex.exerciseId,
+          quantityUnit: ex.quantityUnit,
           exerciseProgramId: ex.exerciseProgramId,
           exerciseProgram: undefined,
 
@@ -143,6 +157,8 @@ export class SessionWorkoutFactory {
 
           orderIndex: ex.orderIndex,
           note: ex.note,
+          strengthScore: ex.strengthScore,
+          strengthScoreVersion: ex.strengthScoreVersion,
 
           createdAt: new Date(ex.createdAt),
           updatedAt: new Date(ex.updatedAt),
@@ -166,6 +182,8 @@ export class SessionWorkoutFactory {
       ) : undefined,
 
       note: row.note,
+      strengthScore: row.strengthScore,
+      strengthScoreVersion: row.strengthScoreVersion,
 
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
@@ -196,6 +214,8 @@ export class SessionWorkoutFactory {
       sourceProgramId: domain.sourceProgramId,
 
       note: domain.note,
+      strengthScore: domain.strengthScore,
+      strengthScoreVersion: domain.strengthScoreVersion,
 
       createdAt: domain.createdAt.toISOString(),
       updatedAt: domain.updatedAt.toISOString(),
@@ -210,11 +230,14 @@ export class SessionWorkoutFactory {
         workoutSessionId: ex.workoutSessionId,
 
         exerciseId: ex.exerciseId,
+        quantityUnit: ex.quantityUnit,
         exerciseProgramId: ex.exerciseProgramId,
         exerciseName: ex.exerciseName,
 
         orderIndex: ex.orderIndex,
         note: ex.note,
+        strengthScore: ex.strengthScore,
+        strengthScoreVersion: ex.strengthScoreVersion,
 
         createdAt: ex.createdAt.toISOString(),
         updatedAt: ex.updatedAt.toISOString(),
@@ -230,6 +253,7 @@ export class SessionWorkoutFactory {
           orderIndex: s.orderIndex,
 
           targetQuantity: s.targetQuantity ?? null,
+          quantity: s.quantity,
           loadUnit: s.loadUnit,
           loadValue: s.loadValue,
           rpe: s.rpe,
@@ -238,6 +262,8 @@ export class SessionWorkoutFactory {
           isWarmup: s.isWarmup,
 
           note: s.note,
+          e1rm: s.e1rm,
+          e1rmVersion: s.e1rmVersion,
 
           createdAt: s.createdAt.toISOString(),
           updatedAt: s.updatedAt.toISOString(),

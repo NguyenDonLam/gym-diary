@@ -11,6 +11,7 @@ export type SessionSet = {
   orderIndex: number;
 
   targetQuantity: number | null;
+  quantity: number | null;
   loadUnit: LoadUnit;
   loadValue: string | null;
   rpe: number | null;
