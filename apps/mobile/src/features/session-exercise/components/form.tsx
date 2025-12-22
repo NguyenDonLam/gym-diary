@@ -101,11 +101,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
 
   const sets = value.sets ?? [];
   const lastSets = value.lastSessionSets ?? [];
-  const isSetDone = (s: SessionSet) =>
-    s.targetQuantity !== null &&
-    s.loadValue !== null &&
-    s.loadValue.trim() !== "" &&
-    s.rpe !== null;
+  const isSetDone = (s: SessionSet) => s.isCompleted === true;
 
   const update = (
     updater: (prev: SessionExerciseView) => SessionExerciseView

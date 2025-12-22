@@ -177,9 +177,9 @@ export class SessionWorkoutFactory {
       endedAt: row.endedAt ? new Date(row.endedAt) : null,
 
       sourceProgramId: row.sourceProgramId ?? null,
-      sourceProgram: row.sourceProgram ? WorkoutProgramFactory.domainFromDb(
-        row.sourceProgram
-      ) : undefined,
+      sourceProgram: row.sourceProgram
+        ? WorkoutProgramFactory.domainFromDb(row.sourceProgram)
+        : undefined,
 
       note: row.note,
       strengthScore: row.strengthScore,
@@ -272,6 +272,25 @@ export class SessionWorkoutFactory {
     }
 
     return { workout, exercises, sets };
+  }
+
+  static create(overrides?: Partial<SessionWorkout>): SessionWorkout {
+    const now = new Date();
+    return {
+      id: generateId(),
+      name: "",
+      startedAt: now,
+      endedAt: null,
+      status: "in_progress",
+      strengthScore: null,
+      strengthScoreVersion: -1,
+      sourceProgramId: null,
+      note: "",
+      createdAt: now,
+      updatedAt: now,
+      exercises: [],
+      ...overrides
+    };
   }
 
   // -----------------------------

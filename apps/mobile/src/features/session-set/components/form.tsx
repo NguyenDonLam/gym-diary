@@ -14,7 +14,7 @@ const EFFORT_LEVELS = [
 ] as const;
 
 function getEffortFromRpe(rpe: number | null | undefined) {
-  if (!rpe) return EFFORT_LEVELS[1];
+  if (rpe == null) return EFFORT_LEVELS[1];
   const found = EFFORT_LEVELS.find((lvl) => lvl.rpe === rpe);
   return found ?? EFFORT_LEVELS[1];
 }
@@ -32,7 +32,7 @@ function renderEffortIcon(
 type Props = {
   value: SessionSet;
   setValue: (next: SessionSet) => void;
-  onSetCommit?: (set: SessionSet) => void; // this should persist the set to DB
+  onSetCommit?: (set: SessionSet) => void;
 };
 
 export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
@@ -41,136 +41,116 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
   const activeIcon = colorScheme === "dark" ? "#F9FAFB" : "#111827";
   const shellBg = colorScheme === "dark" ? "bg-neutral-900/80" : "bg-white";
 
-  const repsRef = React.useRef<TextInput | null>(null);
+  const repsRef = useRef<TextInput | null>(null);
+
+  // always mutate from latest to avoid stale overwrites
+  const latestRef = useRef<SessionSet>(value);
+  useEffect(() => {
+    latestRef.current = value;
+  }, [value]);
 
   const tpl = value.setProgram;
 
-  const programTargetReps =
-    tpl && tpl.targetQuantity != null ? tpl.targetQuantity : null;
+  const programTarget =
+    tpl && tpl.targetQuantity != null && tpl.targetQuantity > 0
+      ? tpl.targetQuantity
+      : null;
 
-  const rawPrevWeight = tpl?.loadValue ?? null;
+  const repsPlaceholder = programTarget != null ? String(programTarget) : "...";
+
   const prevWeightStr =
-    rawPrevWeight !== null && rawPrevWeight !== undefined
-      ? String(rawPrevWeight)
+    tpl?.loadValue != null && String(tpl.loadValue).trim() !== ""
+      ? String(tpl.loadValue).trim()
       : "";
+  const weightPlaceholder = prevWeightStr !== "" ? prevWeightStr : "...";
 
-  const repsValue =
-    value.targetQuantity === null ? "" : String(value.targetQuantity);
+  const repsValue = value.quantity == null ? "" : String(value.quantity);
   const loadValue = value.loadValue ?? "";
 
-  const repsPlaceholder =
-    programTargetReps && programTargetReps > 0
-      ? String(programTargetReps)
-      : "...";
+  // IMPORTANT: placeholders do NOT count. Only real loadValue counts.
+  const isValid = (v: SessionSet) =>
+    v.quantity != null &&
+    v.loadValue != null &&
+    v.loadValue.trim() !== "" &&
+    v.rpe != null;
 
-  const weightPlaceholder =
-    prevWeightStr && prevWeightStr.length > 0 ? prevWeightStr : "...";
+  const showCompleted = value.isCompleted === true;
 
-  const isDone =
-    value.targetQuantity !== null &&
-    value.loadValue !== null &&
-    value.loadValue.trim() !== "" &&
-    value.rpe !== null;
+  const apply = (patch: Partial<SessionSet>) => {
+    const next: SessionSet = { ...latestRef.current, ...patch };
+    latestRef.current = next;
+    setValue(next);
+    return next;
+  };
 
-  // one effect: debounce-save ONLY when the row is done
-  const skipFirstRef = useRef(true);
-  const tRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ensure rpe is real (UI shows a default, but state might still be null)
+  const ensureRpeDefault = (v: SessionSet): SessionSet => {
+    if (v.rpe != null) return v;
+    const next: SessionSet = { ...v, rpe: EFFORT_LEVELS[1].rpe };
+    latestRef.current = next;
+    setValue(next);
+    return next;
+  };
 
-  useEffect(() => {
-    if (skipFirstRef.current) {
-      skipFirstRef.current = false;
-      return;
+  // marks completed ONLY when fields are actually filled (esp. loadValue)
+  const commitIfValid = () => {
+    const v0 = latestRef.current;
+    const v = ensureRpeDefault(v0);
+
+    if (!isValid(v)) return;
+
+    const finalSet = v.isCompleted ? v : { ...v, isCompleted: true };
+
+    if (!v.isCompleted) {
+      latestRef.current = finalSet;
+      setValue(finalSet);
     }
 
-    // cancel any pending save
-    if (tRef.current) {
-      clearTimeout(tRef.current);
-      tRef.current = null;
-    }
+    onSetCommit?.(finalSet);
+  };
 
-    // only commit when done
-    if (!isDone) return;
-
-    tRef.current = setTimeout(() => {
-      onSetCommit?.(value);
-      tRef.current = null;
-    }, 500);
-
-    return () => {
-      if (tRef.current) {
-        clearTimeout(tRef.current);
-        tRef.current = null;
-      }
-    };
-  }, [
-    isDone,
-    value.targetQuantity,
-    value.loadValue,
-    value.rpe,
-    value.isWarmup,
-    value.note,
-    value.id,
-    onSetCommit,
-  ]);
-
-  const fillRepsFromProgram = () => {
-    if (programTargetReps == null || programTargetReps <= 0) return;
-    setValue({ ...value, targetQuantity: programTargetReps });
+  const fillFromTarget = () => {
+    if (programTarget == null) return;
+    apply({ quantity: programTarget });
+    // If weight already filled, this should complete immediately.
+    setTimeout(commitIfValid, 0);
   };
 
   const onChangeReps = (raw: string) => {
     const trimmed = raw.trim();
     const num = trimmed === "" ? null : Number(trimmed);
-    setValue({
-      ...value,
-      targetQuantity: num === null || Number.isNaN(num) ? null : num,
-    });
+    apply({ quantity: num === null || Number.isNaN(num) ? null : num });
   };
 
   const onChangeLoad = (raw: string) => {
     const trimmed = raw.trim();
-    setValue({ ...value, loadValue: trimmed === "" ? null : raw });
+    apply({ loadValue: trimmed === "" ? null : trimmed });
   };
 
   const cycleEffort = () => {
-    const currentRpe = value.rpe ?? EFFORT_LEVELS[1].rpe;
+    const v = latestRef.current;
+    const currentRpe = v.rpe ?? EFFORT_LEVELS[1].rpe;
     const idx = EFFORT_LEVELS.findIndex((lvl) => lvl.rpe === currentRpe);
     const nextIdx = idx === -1 ? 1 : (idx + 1) % EFFORT_LEVELS.length;
-    const next = EFFORT_LEVELS[nextIdx];
-    setValue({ ...value, rpe: next.rpe });
+    const nextLvl = EFFORT_LEVELS[nextIdx];
+
+    apply({ rpe: nextLvl.rpe });
+    // effort change should only complete if weight/reps are already real values
+    setTimeout(commitIfValid, 0);
   };
 
   const effort = getEffortFromRpe(value.rpe);
 
-  let clamped = 0;
-  let barClass = "bg-neutral-300 dark:bg-neutral-700";
-
-  if (programTargetReps && programTargetReps > 0) {
-    const goal = programTargetReps + 1;
-    const current = value.targetQuantity ?? 0;
-
-    let ratio = current / goal;
-    if (!isFinite(ratio) || ratio < 0) ratio = 0;
-    clamped = Math.max(0, Math.min(ratio, 1));
-
-    if (current === 0) barClass = "bg-neutral-300 dark:bg-neutral-700";
-    else if (current < programTargetReps)
-      barClass = "bg-amber-400 dark:bg-amber-500";
-    else if (current === programTargetReps)
-      barClass = "bg-sky-500 dark:bg-sky-500";
-    else barClass = "bg-emerald-500 dark:bg-emerald-500";
-  }
-
   return (
     <View className={`mb-1.5 rounded-xl px-2 py-1.5 ${shellBg}`}>
       <View className="flex-row items-center gap-2">
-        {/* Left status icon: tap to autofill reps from program target */}
+        {/* Left status icon: tap to autofill reps with target (does NOT force complete) */}
         <Pressable
-          onPress={fillRepsFromProgram}
+          onPress={fillFromTarget}
           hitSlop={10}
           className="w-5 items-center"
         >
-          {isDone ? (
+          {showCompleted ? (
             <CheckCircle2 width={18} height={18} color="#16A34A" />
           ) : (
             <Circle width={18} height={18} color={circleIdleColor} />
@@ -190,7 +170,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
             placeholderTextColor="#9CA3AF"
             value={repsValue}
             onChangeText={onChangeReps}
-            onEndEditing={() => onSetCommit?.(value)} // still commit edits after done
+            onEndEditing={commitIfValid}
           />
         </Pressable>
 
@@ -203,7 +183,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
             placeholderTextColor="#9CA3AF"
             value={loadValue}
             onChangeText={onChangeLoad}
-            onEndEditing={() => onSetCommit?.(value)}
+            onEndEditing={commitIfValid}
           />
         </View>
 
@@ -219,17 +199,6 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
           </Text>
         </Pressable>
       </View>
-
-      {programTargetReps && programTargetReps > 0 && (
-        <View className="mt-1 flex-row items-center">
-          <View className="flex-1 h-1.5 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
-            <View
-              className={`h-full ${barClass}`}
-              style={{ width: `${clamped * 100}%` }}
-            />
-          </View>
-        </View>
-      )}
     </View>
   );
 }
