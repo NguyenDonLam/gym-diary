@@ -67,8 +67,8 @@ export class ScoreAggregateV1<
   // --------------------
   // Cached scores (computed values)
   // --------------------
-  private readonly setScoresById = new Map<string, MaybeScore>();
-  private readonly exerciseScoresById = new Map<string, MaybeScore>();
+  private readonly lookupSetScore = new Map<string, MaybeScore>();
+  private readonly lookupExerciseScore = new Map<string, MaybeScore>();
   private workoutScore: MaybeScore = null;
 
   // --------------------
@@ -170,7 +170,7 @@ export class ScoreAggregateV1<
 
     // score set
     const setScore = this.setStrategy.scoreSet(set, ctx);
-    this.setScoresById.set(setId, setScore);
+    this.lookupSetScore.set(setId, setScore);
 
     // score exercise session
     const exerciseScore = this.recomputeExerciseScore(exId);
@@ -206,7 +206,7 @@ export class ScoreAggregateV1<
 
     // remove stored state
     this.setsById.delete(setId);
-    this.setScoresById.delete(setId);
+    this.lookupSetScore.delete(setId);
     this.ctxBySetId.delete(setId);
 
     const bucket = this.setIdsByExerciseSessionId.get(exId);
@@ -229,11 +229,11 @@ export class ScoreAggregateV1<
   }
 
   getSetScore(setId: string): MaybeScore | undefined {
-    return this.setScoresById.get(setId);
+    return this.lookupSetScore.get(setId);
   }
 
   getExerciseScore(exerciseSessionId: string): MaybeScore | undefined {
-    return this.exerciseScoresById.get(exerciseSessionId);
+    return this.lookupExerciseScore.get(exerciseSessionId);
   }
 
   getWorkoutScore(): MaybeScore {
@@ -243,7 +243,7 @@ export class ScoreAggregateV1<
   private recomputeExerciseScore(exerciseSessionId: string): MaybeScore {
     const ex = this.exerciseSessionsById.get(exerciseSessionId);
     if (!ex) {
-      this.exerciseScoresById.set(exerciseSessionId, null);
+      this.lookupExerciseScore.set(exerciseSessionId, null);
       return null;
     }
 
@@ -254,7 +254,7 @@ export class ScoreAggregateV1<
 
     const score = this.exerciseStrategy.scoreExerciseSession(ex, exSets, ctx);
     
-    this.exerciseScoresById.set(exerciseSessionId, score);
+    this.lookupExerciseScore.set(exerciseSessionId, score);
     return score;
   }
 

@@ -37,4 +37,16 @@ export class ExerciseStatFactory {
       updatedAt: entity.updatedAt,
     };
   }
+
+  static create(
+    overrides: Partial<ExerciseStat> & { exerciseId: string }
+  ): ExerciseStat {
+    return {
+      baselineExerciseStrengthScore: null,
+      baselineSetE1rm: null,
+      sampleCount: -1,
+      updatedAt: new Date(),
+      ...overrides
+    };
+  }
 }

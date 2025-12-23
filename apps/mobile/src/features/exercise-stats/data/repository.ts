@@ -53,6 +53,14 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
       .delete(exerciseStats)
       .where(eq(exerciseStats.exerciseId, exerciseId));
   }
+
+  async save(entity: ExerciseStat): Promise<ExerciseStat> {
+    const existing = await this.get(entity.exerciseId);
+    if (existing) {
+      return this.update(entity);
+    }
+    return this.insert(entity);
+  }
 }
 
 export const exerciseStatRepository = new ExerciseStatRepository();

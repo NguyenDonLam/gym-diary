@@ -19,8 +19,11 @@ import { CurrentSessionBanner } from "@/src/components/current-session-banner";
 import { OngoingSessionProvider } from "@/src/features/session-workout/hooks/use-ongoing-session";
 
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const THEME_KEY = "theme";
+
+const queryClient = new QueryClient();
 
 function BootScreen({ title, detail }: { title: string; detail?: string }) {
   return (
@@ -89,57 +92,59 @@ export default function RootLayout() {
   if (!success) return <BootScreen title="Migrating database…" />;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <Suspense fallback={<BootScreen title="Loading…" />}>
-          <SQLiteProvider
-            databaseName={DATABASE_NAME}
-            options={{ enableChangeListener: true }}
-            useSuspense
-          >
-            <OngoingSessionProvider>
-              <View className="flex-1 bg-white dark:bg-slate-950">
-                <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
-                  <View style={{ flex: 1 }}>
-                    <CurrentSessionBanner dbReady={success} />
-                    <Stack screenOptions={{ headerShown: false }}>
-                      <Stack.Screen name="(tabs)" />
-                      <Stack.Screen name="program-workout" />
-                      <Stack.Screen name="program-workout/new" />
-                      <Stack.Screen name="program-workout/[id]" />
-                      <Stack.Screen name="session-workout/[id]" />
-                    </Stack>
+    <QueryClientProvider client={queryClient}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <Suspense fallback={<BootScreen title="Loading…" />}>
+            <SQLiteProvider
+              databaseName={DATABASE_NAME}
+              options={{ enableChangeListener: true }}
+              useSuspense
+            >
+              <OngoingSessionProvider>
+                <View className="flex-1 bg-white dark:bg-slate-950">
+                  <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+                    <View style={{ flex: 1 }}>
+                      <CurrentSessionBanner dbReady={success} />
+                      <Stack screenOptions={{ headerShown: false }}>
+                        <Stack.Screen name="(tabs)" />
+                        <Stack.Screen name="program-workout" />
+                        <Stack.Screen name="program-workout/new" />
+                        <Stack.Screen name="program-workout/[id]" />
+                        <Stack.Screen name="session-workout/[id]" />
+                      </Stack>
 
-                    {seedErr ? (
-                      <View
-                        style={{
-                          position: "absolute",
-                          left: 12,
-                          right: 12,
-                          bottom: 12,
-                          backgroundColor: "#111827",
-                          padding: 12,
-                          borderRadius: 12,
-                        }}
-                      >
-                        <Text style={{ color: "#E5E7EB", fontWeight: "600" }}>
-                          Seeding failed
-                        </Text>
-                        <Text
-                          selectable
-                          style={{ color: "#9CA3AF", marginTop: 6 }}
+                      {seedErr ? (
+                        <View
+                          style={{
+                            position: "absolute",
+                            left: 12,
+                            right: 12,
+                            bottom: 12,
+                            backgroundColor: "#111827",
+                            padding: 12,
+                            borderRadius: 12,
+                          }}
                         >
-                          {seedErr}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                </SafeAreaView>
-              </View>
-            </OngoingSessionProvider>
-          </SQLiteProvider>
-        </Suspense>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+                          <Text style={{ color: "#E5E7EB", fontWeight: "600" }}>
+                            Seeding failed
+                          </Text>
+                          <Text
+                            selectable
+                            style={{ color: "#9CA3AF", marginTop: 6 }}
+                          >
+                            {seedErr}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </SafeAreaView>
+                </View>
+              </OngoingSessionProvider>
+            </SQLiteProvider>
+          </Suspense>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </QueryClientProvider>
   );
 }
