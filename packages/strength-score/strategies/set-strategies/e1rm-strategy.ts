@@ -9,9 +9,7 @@ import type { ISetScoreStrategy } from "../set-session-score-strategy";
  * - Mid reps: Epley
  * - High reps: Wathan (more stable for higher reps than linear)
  */
-export class SetE1rmScoreStrategy<
-  TSet,
-> implements ISetScoreStrategy<TSet> {
+export class SetE1rmScoreStrategy<TSet> implements ISetScoreStrategy<TSet> {
   constructor(
     private readonly getLoad: (set: TSet) => number | null | undefined,
     private readonly getReps: (set: TSet) => number | null | undefined,
@@ -30,6 +28,7 @@ export class SetE1rmScoreStrategy<
 
     let reps = repsPerformed;
 
+    // RIR -> effective reps (optionally clamp RIR so high-rep sets don't inflate)
     if (this.getRir) {
       const rirRaw = this.getRir(set);
       if (rirRaw != null) {
@@ -39,19 +38,27 @@ export class SetE1rmScoreStrategy<
       }
     }
 
+    // ---- NERF WITHOUT EVER DECREASING WITH MORE REPS ----
+    // Compress reps after a threshold so gains diminish but stay monotonic.
+    // Tune these two numbers.
+    const START = 6;
+    const K = 0.6; // bigger => less nerf; smaller => more nerf
+
+    const effReps = reps <= START ? reps : START + Math.sqrt(reps - START) * K;
+    // (Alternative: use log for milder compression)
+    // const effReps =
+    //   reps <= START ? reps : START + Math.log1p(reps - START) * K;
+
     let e1rm: number;
 
-    if (reps <= 5) {
-      // Brzycki: e1RM = load * 36 / (37 - reps)
-      const denom = 37 - reps;
+    if (effReps <= 5) {
+      const denom = 37 - effReps;
       if (denom <= 0) return null;
       e1rm = (load * 36) / denom;
-    } else if (reps <= 10) {
-      // Epley: e1RM = load * (1 + reps/30)
-      e1rm = load * (1 + reps / 30);
+    } else if (effReps <= 10) {
+      e1rm = load * (1 + effReps / 30);
     } else {
-      // Wathan: 1RM = (100 * load) / (48.8 + 53.8 * e^(-0.075 * reps))
-      const denom = 48.8 + 53.8 * Math.exp(-0.075 * reps);
+      const denom = 48.8 + 53.8 * Math.exp(-0.075 * effReps);
       if (!Number.isFinite(denom) || denom <= 0) return null;
       e1rm = (100 * load) / denom;
     }

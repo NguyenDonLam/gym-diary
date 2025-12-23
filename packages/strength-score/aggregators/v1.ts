@@ -1,10 +1,35 @@
 // packages/metrics/src/strength-score/aggregate/strength-score-aggregate.ts
 
-import type { ExerciseMeanScoreStrategy, MaybeScore, SetE1rmScoreStrategy, StrengthScoreContext, WorkoutNormalizedScoreStrategy } from "../strategies";
+import type {
+  ExerciseMeanScoreStrategy,
+  MaybeScore,
+  SetE1rmScoreStrategy,
+  StrengthScoreContext,
+  WorkoutNormalizedScoreStrategy,
+} from "../strategies";
 import type { ISetScoreStrategy } from "../strategies/set-session-score-strategy";
 import type { IExerciseScoreStrategy } from "../strategies/exercise-session-score-strategy";
 import type { IWorkoutScoreStrategy } from "../strategies/workout-session-score-strategy";
 import { IStrengthScoreAggregate, StrengthScoreUpdate } from ".";
+
+/**
+ * ScoreAggregateV1
+ *
+ * Incremental aggregator that:
+ * - Stores the current session's exercise-sessions and sets (in maps).
+ * - Maintains indexes so it can quickly find all sets for an exercise-session.
+ * - Computes and caches:
+ *   - each set score
+ *   - each exercise-session score (based on its sets)
+ *   - the overall workout score (based on all exercises + sets)
+ *
+ * "Upsert" means: insert if missing, replace if present.
+ *
+ * Generics:
+ * - TSetSession: your "set" shape for a session (e.g. reps/load/rpe/isCompleted/etc.)
+ * - TExerciseSession: your "exercise entry" inside a session (e.g. exerciseId, order, name snapshot, etc.)
+ * - TSession: the workout session object itself
+ */
 export class ScoreAggregateV1<
   TSetSession,
   TExerciseSession,
@@ -31,25 +56,38 @@ export class ScoreAggregateV1<
   private readonly getSetExerciseSessionId: (set: TSetSession) => string;
   private readonly getExerciseSessionId: (ex: TExerciseSession) => string;
 
-  // Stored state
+  // --------------------
+  // Stored state (the "database" inside this aggregate)
+  // --------------------
+
   private readonly exerciseSessionsById = new Map<string, TExerciseSession>();
   private readonly setsById = new Map<string, TSetSession>();
   private readonly setIdsByExerciseSessionId = new Map<string, Set<string>>();
 
-  // Cached scores
+  // --------------------
+  // Cached scores (computed values)
+  // --------------------
   private readonly setScoresById = new Map<string, MaybeScore>();
   private readonly exerciseScoresById = new Map<string, MaybeScore>();
   private workoutScore: MaybeScore = null;
 
-  // Keep the latest ctx we saw (useful for workout scoring)
-  private lastCtx: StrengthScoreContext | null = null;
+  // --------------------
+  // Context tracking
+  // --------------------
 
-  // Keep the ctx used for each set (so removeSet can still have a ctx if needed)
+  /**
+   * lastCtx:
+   * Last context seen in any upsertSet call.
+   * Useful because some strategies need extra info (units, bodyweight, etc.).
+   * Also used as fallback when we need a ctx but none is directly provided.
+   */
+  private lastCtx: StrengthScoreContext | null = null;
   private readonly ctxBySetId = new Map<string, StrengthScoreContext>();
 
   constructor(args: {
     session: TSession;
 
+    // Concrete strategies the caller chooses (scoring only).
     setStrategy: SetE1rmScoreStrategy<TSetSession>;
     exerciseStrategy: ExerciseMeanScoreStrategy<TExerciseSession, TSetSession>;
     workoutStrategy: WorkoutNormalizedScoreStrategy<
@@ -58,6 +96,11 @@ export class ScoreAggregateV1<
       TSetSession
     >;
 
+    // Data extractors (NOT strategies).
+    getExerciseSessions: (session: TSession) => readonly TExerciseSession[];
+    getSets: (session: TSession) => readonly TSetSession[];
+
+    // ID extractors.
     getSetId: (set: TSetSession) => string;
     getSetExerciseSessionId: (set: TSetSession) => string;
     getExerciseSessionId: (ex: TExerciseSession) => string;
@@ -71,6 +114,30 @@ export class ScoreAggregateV1<
     this.getSetId = args.getSetId;
     this.getSetExerciseSessionId = args.getSetExerciseSessionId;
     this.getExerciseSessionId = args.getExerciseSessionId;
+
+    const exerciseSessions = args.getExerciseSessions(this.session) ?? [];
+    const sets = args.getSets(this.session) ?? [];
+
+    for (const ex of exerciseSessions) {
+      const exId = this.getExerciseSessionId(ex);
+      this.exerciseSessionsById.set(exId, ex);
+      if (!this.setIdsByExerciseSessionId.has(exId)) {
+        this.setIdsByExerciseSessionId.set(exId, new Set<string>());
+      }
+    }
+
+    for (const s of sets) {
+      const setId = this.getSetId(s);
+      this.setsById.set(setId, s);
+
+      const exId = this.getSetExerciseSessionId(s);
+      let bucket = this.setIdsByExerciseSessionId.get(exId);
+      if (!bucket) {
+        bucket = new Set<string>();
+        this.setIdsByExerciseSessionId.set(exId, bucket);
+      }
+      bucket.add(setId);
+    }
   }
 
   upsertExerciseSession(ex: TExerciseSession): void {
@@ -107,9 +174,9 @@ export class ScoreAggregateV1<
 
     // score exercise session
     const exerciseScore = this.recomputeExerciseScore(exId);
-
     // score workout session
     const workoutScore = this.recomputeWorkoutScore(ctx);
+    this.workoutScore = workoutScore;
 
     return {
       setId,
@@ -186,6 +253,7 @@ export class ScoreAggregateV1<
     const ctx = this.pickCtxForExerciseSession(exerciseSessionId);
 
     const score = this.exerciseStrategy.scoreExerciseSession(ex, exSets, ctx);
+    
     this.exerciseScoresById.set(exerciseSessionId, score);
     return score;
   }

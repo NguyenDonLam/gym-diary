@@ -6,6 +6,7 @@ import { CheckCircle2, Circle, Wind, Gauge, Flame } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
 import { SessionSet } from "@/src/features/session-set/domain/types";
+import { useOngoingSession } from "../../session-workout/hooks/use-ongoing-session";
 
 const EFFORT_LEVELS = [
   { id: "light", label: "Light", rpe: 5 },
@@ -40,6 +41,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
   const circleIdleColor = colorScheme === "dark" ? "#6B7280" : "#9CA3AF";
   const activeIcon = colorScheme === "dark" ? "#F9FAFB" : "#111827";
   const shellBg = colorScheme === "dark" ? "bg-neutral-900/80" : "bg-white";
+  const { aggregate, getContextForSet } = useOngoingSession();
 
   const repsRef = useRef<TextInput | null>(null);
 
@@ -101,12 +103,27 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
 
     const finalSet = v.isCompleted ? v : { ...v, isCompleted: true };
 
-    if (!v.isCompleted) {
-      latestRef.current = finalSet;
-      setValue(finalSet);
+    // use the real context you score with (units, bw, etc)
+    const update = aggregate?.upsertSet(finalSet, getContextForSet(finalSet));
+    console.log(JSON.stringify(update, null, 2));
+
+    // update local set with computed score (only if aggregate returned one)
+    const nextSet: SessionSet =
+      update?.setScore == null
+        ? finalSet
+        : {
+            ...finalSet,
+            e1rm: update.setScore,
+            e1rmVersion: aggregate?.version ?? -1,
+          };
+
+    // prevent redundant state writes
+    if (!v.isCompleted || nextSet !== v0) {
+      latestRef.current = nextSet;
+      setValue(nextSet);
     }
 
-    onSetCommit?.(finalSet);
+    onSetCommit?.(nextSet);
   };
 
   const fillFromTarget = () => {

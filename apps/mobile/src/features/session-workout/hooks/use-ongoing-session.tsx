@@ -26,6 +26,7 @@ import { sessionWorkoutRepository } from "@/src/features/session-workout/data/re
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
 import { WorkoutProgramFactory } from "@/src/features/program-workout/domain/factory";
 import { SessionWorkoutFactory } from "../domain/factory";
+import { useExerciseStats } from "../../exercise-stats/hooks/use-exercise-stats";
 
 const KEY = "ongoing";
 const LB_TO_KG = 0.45359237;
@@ -45,6 +46,7 @@ type OngoingSessionContextValue = {
 
   // scoring
   aggregate: Aggregate | null;
+  getContextForSet: (set: SessionSet) => StrengthScoreContext
 };
 
 const OngoingSessionContext = createContext<OngoingSessionContextValue | null>(
@@ -68,15 +70,22 @@ function createAggregate(session: SessionWorkout): Aggregate {
       if (s.loadUnit === "lb") return raw * LB_TO_KG;
       return raw;
     },
-    (s) => s.targetQuantity,
+    (s) => s.quantity,
     (s) => 10 - (s.rpe ?? 10)
   );
+
+  // two-phase: strategies can consult aggregate caches after agg is assigned
+  let agg: Aggregate | null = null;
 
   const exerciseStrategy = new ExerciseMeanScoreStrategy<
     SessionExercise,
     SessionSet
   >(
-    (s) => setStrategy.scoreSet(s, EMPTY_CTX),
+    (s) => {
+      // prefer aggregate cache (updated during upsertSet), fallback to persisted field
+      const v = agg?.getSetScore(s.id);
+      return v !== undefined ? v : s.e1rm;
+    },
     (s) => s.isCompleted
   );
 
@@ -88,19 +97,41 @@ function createAggregate(session: SessionWorkout): Aggregate {
     (exSession, allSets) =>
       allSets.filter((s) => s.sessionExerciseId === exSession.id),
     () => ({}),
-    (exSession) => exSession.strengthScore
+    (exSession) => {
+      // prefer aggregate cache (updated when any set changes), fallback to persisted field
+      const v = agg?.getExerciseScore(exSession.id);
+      return v !== undefined ? v : exSession.strengthScore;
+    }
   );
 
-  return new ScoreAggregateV1<SessionSet, SessionExercise, SessionWorkout>({
+  const built = new ScoreAggregateV1<
+    SessionSet,
+    SessionExercise,
+    SessionWorkout
+  >({
     session,
     setStrategy,
     exerciseStrategy,
     workoutStrategy,
+    getExerciseSessions: (s) => s.exercises ?? [],
+    getSets: (s) => {
+      const out: SessionSet[] = [];
+      const exercises = s.exercises ?? [];
+      for (const ex of exercises) {
+        const sets = ex.sets ?? [];
+        for (const set of sets) out.push(set);
+      }
+      return out;
+    },
     getSetId: (s) => s.id,
     getSetExerciseSessionId: (s) => s.sessionExerciseId,
     getExerciseSessionId: (ex) => ex.id,
   });
+
+  agg = built;
+  return built;
 }
+
 
 export function OngoingSessionProvider({
   children,
@@ -111,6 +142,25 @@ export function OngoingSessionProvider({
   const [ongoingSession, setOngoingSession] = useState<SessionWorkout | null>(
     null
   );
+  const { byExerciseId: exerciseStatByExerciseId } = useExerciseStats();
+
+  const exerciseBaselineByExerciseId = useMemo(() => {
+    const out: Record<
+      string,
+      { baselineExerciseStrengthScore: number | null; sampleCount?: number }
+    > = {};
+
+    for (const exerciseId of Object.keys(exerciseStatByExerciseId)) {
+      const stat = exerciseStatByExerciseId[exerciseId];
+      out[exerciseId] = {
+        baselineExerciseStrengthScore:
+          stat.baselineExerciseStrengthScore ?? null,
+        sampleCount: stat.sampleCount,
+      };
+    }
+
+    return out;
+  }, [exerciseStatByExerciseId]);
 
   // load ongoing id from storage on boot
   useEffect(() => {
@@ -259,6 +309,28 @@ export function OngoingSessionProvider({
     return createAggregate(ongoingSession);
   }, [ongoingSession]);
 
+function getContextForSet(set: SessionSet): StrengthScoreContext {
+  const exSession =
+    ongoingSession?.exercises?.find((ex) => ex.id === set.sessionExerciseId) ??
+    null;
+
+  const exerciseId = exSession?.exerciseId ?? null;
+
+  const baseline = exerciseId
+    ? exerciseBaselineByExerciseId[exerciseId]
+    : undefined;
+
+  return {
+    baselineExerciseStrengthScore:
+      baseline?.baselineExerciseStrengthScore ?? null,
+    sampleCount: baseline?.sampleCount,
+    baselineSetE1rm: null,
+    baselineWorkoutStrengthScore: null,
+  };
+}
+
+
+
   return (
     <OngoingSessionContext.Provider
       value={{
@@ -268,6 +340,7 @@ export function OngoingSessionProvider({
         discardSession,
         refresh,
         aggregate,
+        getContextForSet
       }}
     >
       {children}

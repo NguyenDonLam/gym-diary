@@ -20,6 +20,7 @@ import { SessionSet } from "@/src/features/session-set/domain/types";
 import { generateId } from "@/src/lib/id";
 import { SessionSetRow } from "../../session-set/components/form";
 import { SessionSetFactory } from "../../session-set/domain/factory";
+import { useOngoingSession } from "../../session-workout/hooks/use-ongoing-session";
 
 type LastSetSnapshot = {
   id: string;
@@ -87,7 +88,6 @@ const EFFORT_LEVELS = [
   { id: "intense", label: "Intense", rpe: 10 },
 ];
 
-
 type Props = {
   value: SessionExerciseView;
   onChange: (next: SessionExerciseView) => void;
@@ -102,6 +102,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
   const sets = value.sets ?? [];
   const lastSets = value.lastSessionSets ?? [];
   const isSetDone = (s: SessionSet) => s.isCompleted === true;
+  const { aggregate } = useOngoingSession();
 
   const update = (
     updater: (prev: SessionExerciseView) => SessionExerciseView
@@ -131,7 +132,6 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
       };
     });
   };
-
 
   const completedCount = sets.filter(isSetDone).length;
   const totalSets = sets.length;
@@ -246,7 +246,20 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
                     ),
                   }))
                 }
-                onSetCommit={onSetCommit}
+                onSetCommit={(nextSet) => {
+                  const exScore = aggregate?.getExerciseScore(value.id) ?? null;
+
+                  update((prev) => ({
+                    ...prev,
+                    sets: (prev.sets ?? []).map((s) =>
+                      s.id === nextSet.id ? nextSet : s
+                    ),
+                    strengthScore: exScore,
+                    strengthScoreVersion: aggregate?.version ?? -1,
+                  }));
+
+                  onSetCommit?.(nextSet);
+                }}
               />
             ))}
           </View>
