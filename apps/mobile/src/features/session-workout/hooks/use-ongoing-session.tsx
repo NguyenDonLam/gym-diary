@@ -60,7 +60,10 @@ const OngoingSessionContext = createContext<OngoingSessionContextValue | null>(
 
 const EMPTY_CTX: StrengthScoreContext = {};
 
-function createAggregate(session: SessionWorkout): Aggregate {
+function createAggregate(
+  session: SessionWorkout,
+  lookupExerciseStat: Record<string, ExerciseStat>
+): Aggregate {
   const setStrategy = new SetE1rmScoreStrategy<SessionSet>(
     (s) => {
       if (s.loadUnit === "band" || s.loadUnit === "custom") return null;
@@ -101,7 +104,29 @@ function createAggregate(session: SessionWorkout): Aggregate {
   >(
     (exSession, allSets) =>
       allSets.filter((s) => s.sessionExerciseId === exSession.id),
-    () => ({}),
+    (exSession, ctx) => {
+      const hit = lookupExerciseStat[exSession.exerciseId ?? ""];
+
+      console.log("[strength-score ctx] exSession.id =", exSession.id);
+      console.log(
+        "[strength-score ctx] lookupExerciseStat keys =",
+        Object.keys(lookupExerciseStat)
+      );
+      console.log(
+        "[strength-score ctx] lookupExerciseStat[exSession.id] =",
+        hit
+      );
+      console.log(
+        "[strength-score ctx] baselineExerciseStrengthScore =",
+        hit?.baselineExerciseStrengthScore ?? null
+      );
+
+      return {
+        baselineExerciseStrengthScore:
+          hit?.baselineExerciseStrengthScore ?? null,
+      };
+    },
+
     (exSession) => {
       // prefer aggregate cache (updated when any set changes), fallback to persisted field
       const v = agg?.getExerciseScore(exSession.id);
@@ -150,7 +175,7 @@ export function OngoingSessionProvider({
 
   const aggregate = useMemo<Aggregate | null>(() => {
     if (!ongoingSession) return null;
-    return createAggregate(ongoingSession);
+    return createAggregate(ongoingSession, lookupExerciseStat);
   }, [ongoingSession]);
 
   // load ongoing id from storage on boot
@@ -282,22 +307,24 @@ export function OngoingSessionProvider({
       endedAt: now,
       updatedAt: now,
       strengthScore: aggregate.getWorkoutScore(),
+      strengthScoreVersion: aggregate.version,
       exercises: (ongoingSession.exercises ?? []).map((ex) => {
         return {
           ...ex,
           updatedAt: now,
           strengthScore: aggregate.getExerciseScore(ex.id) ?? null,
+          strengthScoreVersion: aggregate.version,
           sets: (ex.sets ?? []).map((set) => {
             return {
               ...set,
               updatedAt: now,
               e1rm: aggregate.getSetScore(set.id) ?? null,
+              e1rmVersion: aggregate.version,
             };
           }),
         };
       }),
     };
-    console.log(JSON.stringify(ended, null, 2));
 
     // 2) persist completed session (with scores)
     await sessionWorkoutRepository.save(ended);
