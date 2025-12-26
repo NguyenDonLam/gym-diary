@@ -1,23 +1,12 @@
 // apps/mobile/app/session-workout/session-exercise-card.tsx
 
 import React from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
-import {
-  ChevronDown,
-  ChevronRight,
-  CheckCircle2,
-  Circle,
-  Wind,
-  Gauge,
-  Flame,
-  Clock3,
-  Target,
-} from "lucide-react-native";
+import { View, Text, Pressable } from "react-native";
+import { ChevronDown, ChevronRight, Clock3 } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
 import { SessionExercise } from "@/src/features/session-exercise/domain/types";
 import { SessionSet } from "@/src/features/session-set/domain/types";
-import { generateId } from "@/src/lib/id";
 import { SessionSetRow } from "../../session-set/components/form";
 import { SessionSetFactory } from "../../session-set/domain/factory";
 import { useOngoingSession } from "../../session-workout/hooks/use-ongoing-session";
@@ -25,7 +14,7 @@ import { useOngoingSession } from "../../session-workout/hooks/use-ongoing-sessi
 type LastSetSnapshot = {
   id: string;
   reps: number | null;
-  load: string | null; // e.g. "80", "80kg", "BW"
+  load: string | null;
 };
 
 export type SessionExerciseView = SessionExercise & {
@@ -81,63 +70,63 @@ function getExerciseCardColors(
   };
 }
 
-// Effort presets mapped to RPE
-const EFFORT_LEVELS = [
-  { id: "light", label: "Light", rpe: 5 },
-  { id: "medium", label: "Medium", rpe: 7 },
-  { id: "intense", label: "Intense", rpe: 10 },
-];
+function replaceSet(sets: SessionSet[] | undefined, next: SessionSet) {
+  const xs = sets ?? [];
+  return xs.map((s) => (s.id === next.id ? next : s));
+}
 
 type Props = {
   value: SessionExerciseView;
   onChange: (next: SessionExerciseView) => void;
   onSetCommit?: (set: SessionSet) => void;
+  readOnly?: boolean;
 };
 
-export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
+export function SessionExerciseCard({
+  value,
+  onChange,
+  onSetCommit,
+  readOnly = false,
+}: Props) {
   const { colorScheme } = useColorScheme();
   const chevronColor = colorScheme === "dark" ? "#E5E7EB" : "#4B5563";
   const subtleIcon = colorScheme === "dark" ? "#9CA3AF" : "#6B7280";
 
   const sets = value.sets ?? [];
   const lastSets = value.lastSessionSets ?? [];
-  const isSetDone = (s: SessionSet) => s.isCompleted === true;
-  const { aggregate } = useOngoingSession();
 
-  const update = (
-    updater: (prev: SessionExerciseView) => SessionExerciseView
-  ) => onChange(updater(value));
-
-  const toggleOpen = () => {
-    update((prev) => ({ ...prev, isOpen: !prev.isOpen }));
-  };
-
-  const addSet = () => {
-    update((prev) => {
-      const currentSets = prev.sets ?? [];
-      const last = currentSets[currentSets.length - 1];
-
-      const newSet = SessionSetFactory.create({
-        sessionExerciseId: prev.id,
-        orderIndex: currentSets.length,
-        loadUnit: last?.loadUnit ?? "kg",
-        loadValue: last?.loadValue ?? null,
-        rpe: last?.rpe ?? EFFORT_LEVELS[1].rpe,
-      });
-
-      return {
-        ...prev,
-        isOpen: true,
-        sets: [...currentSets, newSet],
-      };
-    });
-  };
-
-  const completedCount = sets.filter(isSetDone).length;
+  const completedCount = sets.reduce(
+    (acc, s) => acc + (s.isCompleted === true ? 1 : 0),
+    0
+  );
   const totalSets = sets.length;
   const colors = getExerciseCardColors(completedCount, totalSets);
 
-  const exerciseLabel = value.exerciseName;
+  const { aggregate } = useOngoingSession();
+
+  const toggleOpen = () => {
+    onChange({ ...value, isOpen: !value.isOpen });
+  };
+
+  const addSet = () => {
+    if (readOnly) return;
+
+    const last = sets[sets.length - 1];
+
+    const newSet = SessionSetFactory.create({
+      sessionExerciseId: value.id,
+      orderIndex: sets.length,
+      loadUnit: last?.loadUnit ?? "kg",
+      loadValue: last?.loadValue ?? null,
+      rpe: last?.rpe ?? 7,
+    });
+
+    onChange({
+      ...value,
+      isOpen: true,
+      sets: [...sets, newSet],
+    });
+  };
 
   return (
     <View
@@ -159,7 +148,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
               className="text-sm font-semibold text-neutral-900 dark:text-neutral-50"
               numberOfLines={1}
             >
-              {exerciseLabel}
+              {value.exerciseName}
             </Text>
 
             <View className="mt-0.5 flex-row items-center">
@@ -169,7 +158,7 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
                 <Text
                   className={`text-[10px] font-medium ${colors.statusText}`}
                 >
-                  {completedCount}/{totalSets || 0} sets
+                  {completedCount}/{totalSets} sets
                 </Text>
               </View>
             </View>
@@ -185,14 +174,15 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
 
                 <View className="flex-1 flex-row flex-wrap justify-end gap-1">
                   {lastSets.map((s, idx) => {
-                    const reps = s.reps ?? 0;
-                    const load = s.load ?? "";
+                    const repsLabel =
+                      s.reps != null && s.reps > 0 ? String(s.reps) : "?";
+                    const load = (s.load ?? "").trim();
                     const label =
-                      load !== "" ? `${load}×${reps || "?"}` : `${reps || "?"}`;
+                      load !== "" ? `${load}×${repsLabel}` : repsLabel;
 
                     return (
                       <View
-                        key={s.id ?? idx}
+                        key={s.id ?? String(idx)}
                         className="rounded-full bg-neutral-100 px-2 py-0.5 dark:bg-neutral-800"
                       >
                         <Text className="text-[9px] text-neutral-700 dark:text-neutral-200">
@@ -238,25 +228,27 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
               <SessionSetRow
                 key={set.id}
                 value={set}
-                setValue={(next) =>
-                  update((prev) => ({
-                    ...prev,
-                    sets: (prev.sets ?? []).map((s) =>
-                      s.id === set.id ? next : s
-                    ),
-                  }))
-                }
+                readOnly={readOnly}
+                setValue={(next) => {
+                  if (readOnly) return;
+                  onChange({
+                    ...value,
+                    sets: replaceSet(value.sets, next),
+                  });
+                }}
                 onSetCommit={(nextSet) => {
-                  const exScore = aggregate?.getExerciseScore(value.id) ?? null;
+                  if (readOnly) return;
 
-                  update((prev) => ({
-                    ...prev,
-                    sets: (prev.sets ?? []).map((s) =>
-                      s.id === nextSet.id ? nextSet : s
-                    ),
+                  const exScore =
+                    aggregate?.getExerciseScore(nextSet.sessionExerciseId) ??
+                    null;
+
+                  onChange({
+                    ...value,
+                    sets: replaceSet(value.sets, nextSet),
                     strengthScore: exScore,
                     strengthScoreVersion: aggregate?.version ?? -1,
-                  }));
+                  });
 
                   onSetCommit?.(nextSet);
                 }}
@@ -264,14 +256,16 @@ export function SessionExerciseCard({ value, onChange, onSetCommit }: Props) {
             ))}
           </View>
 
-          <Pressable
-            onPress={addSet}
-            className="mt-2 self-end h-6 w-6 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800"
-          >
-            <Text className="text-[14px] text-neutral-700 dark:text-neutral-200">
-              +
-            </Text>
-          </Pressable>
+          {!readOnly && (
+            <Pressable
+              onPress={addSet}
+              className="mt-2 self-end h-6 w-6 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800"
+            >
+              <Text className="text-[14px] text-neutral-700 dark:text-neutral-200">
+                +
+              </Text>
+            </Pressable>
+          )}
         </View>
       )}
     </View>

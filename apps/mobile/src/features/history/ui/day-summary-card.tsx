@@ -10,6 +10,7 @@ import {
 
 import { formatDuration, minutesBetween } from "../ui/date";
 import { SessionRow } from "../components/session-row";
+import { router } from "expo-router";
 
 type Props = {
   selectedDateKey: string;
@@ -59,7 +60,7 @@ export const DaySummaryCard = memo(function DaySummaryCard({
                 <SessionRow
                   key={s.id}
                   session={s}
-                  onPress={() => onSessionPress?.(s)}
+                  onPress={() => router.push(`/session-workout/${s.id}`)}
                   onDeletePress={
                     onSessionDeletePress
                       ? () => onSessionDeletePress(s)

@@ -34,9 +34,15 @@ type Props = {
   value: SessionSet;
   setValue: (next: SessionSet) => void;
   onSetCommit?: (set: SessionSet) => void;
+  readOnly?: boolean;
 };
 
-export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
+export function SessionSetRow({
+  value,
+  setValue,
+  onSetCommit,
+  readOnly = false,
+}: Props) {
   const { colorScheme } = useColorScheme();
   const circleIdleColor = colorScheme === "dark" ? "#6B7280" : "#9CA3AF";
   const activeIcon = colorScheme === "dark" ? "#F9FAFB" : "#111827";
@@ -79,6 +85,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
   const showCompleted = value.isCompleted === true;
 
   const apply = (patch: Partial<SessionSet>) => {
+    if (readOnly) return latestRef.current;
     const next: SessionSet = { ...latestRef.current, ...patch };
     latestRef.current = next;
     setValue(next);
@@ -88,6 +95,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
   // ensure rpe is real (UI shows a default, but state might still be null)
   const ensureRpeDefault = (v: SessionSet): SessionSet => {
     if (v.rpe != null) return v;
+    if (readOnly) return v; // do not mutate in readOnly mode
     const next: SessionSet = { ...v, rpe: EFFORT_LEVELS[1].rpe };
     latestRef.current = next;
     setValue(next);
@@ -96,6 +104,8 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
 
   // marks completed ONLY when fields are actually filled (esp. loadValue)
   const commitIfValid = () => {
+    if (readOnly) return;
+
     const v0 = latestRef.current;
     const v = ensureRpeDefault(v0);
 
@@ -103,10 +113,8 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
 
     const finalSet = v.isCompleted ? v : { ...v, isCompleted: true };
 
-    // use the real context you score with (units, bw, etc)
     const update = aggregate?.upsertSet(finalSet, getContextForSet(finalSet));
-    
-    // update local set with computed score (only if aggregate returned one)
+
     const nextSet: SessionSet =
       update?.setScore == null
         ? finalSet
@@ -116,7 +124,6 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
             e1rmVersion: aggregate?.version ?? -1,
           };
 
-    // prevent redundant state writes
     if (!v.isCompleted || nextSet !== v0) {
       latestRef.current = nextSet;
       setValue(nextSet);
@@ -126,24 +133,28 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
   };
 
   const fillFromTarget = () => {
+    if (readOnly) return;
     if (programTarget == null) return;
     apply({ quantity: programTarget });
-    // If weight already filled, this should complete immediately.
     setTimeout(commitIfValid, 0);
   };
 
   const onChangeReps = (raw: string) => {
+    if (readOnly) return;
     const trimmed = raw.trim();
     const num = trimmed === "" ? null : Number(trimmed);
     apply({ quantity: num === null || Number.isNaN(num) ? null : num });
   };
 
   const onChangeLoad = (raw: string) => {
+    if (readOnly) return;
     const trimmed = raw.trim();
     apply({ loadValue: trimmed === "" ? null : trimmed });
   };
 
   const cycleEffort = () => {
+    if (readOnly) return;
+
     const v = latestRef.current;
     const currentRpe = v.rpe ?? EFFORT_LEVELS[1].rpe;
     const idx = EFFORT_LEVELS.findIndex((lvl) => lvl.rpe === currentRpe);
@@ -151,17 +162,19 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
     const nextLvl = EFFORT_LEVELS[nextIdx];
 
     apply({ rpe: nextLvl.rpe });
-    // effort change should only complete if weight/reps are already real values
     setTimeout(commitIfValid, 0);
   };
 
   const effort = getEffortFromRpe(value.rpe);
 
   return (
-    <View className={`mb-1.5 rounded-xl px-2 py-1.5 ${shellBg}`}>
+    <View
+      className={`mb-1.5 rounded-xl px-2 py-1.5 ${shellBg} ${readOnly ? "opacity-70" : ""}`}
+    >
       <View className="flex-row items-center gap-2">
-        {/* Left status icon: tap to autofill reps with target (does NOT force complete) */}
+        {/* Left status icon: tap to autofill reps with target */}
         <Pressable
+          disabled={readOnly}
           onPress={fillFromTarget}
           hitSlop={10}
           className="w-5 items-center"
@@ -175,6 +188,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
 
         {/* Reps */}
         <Pressable
+          disabled={readOnly}
           onPress={() => repsRef.current?.focus()}
           className="flex-1 rounded-xl bg-neutral-50 dark:bg-neutral-900 px-2 py-0.5"
         >
@@ -182,6 +196,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
             ref={repsRef}
             className="text-center text-[11px] text-neutral-900 dark:text-neutral-50"
             keyboardType="numeric"
+            editable={!readOnly}
             placeholder={repsPlaceholder}
             placeholderTextColor="#9CA3AF"
             value={repsValue}
@@ -195,6 +210,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
           <TextInput
             className="text-center text-[11px] text-neutral-900 dark:text-neutral-50"
             keyboardType="numeric"
+            editable={!readOnly}
             placeholder={weightPlaceholder}
             placeholderTextColor="#9CA3AF"
             value={loadValue}
@@ -205,6 +221,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
 
         {/* Effort */}
         <Pressable
+          disabled={readOnly}
           onPress={cycleEffort}
           hitSlop={8}
           className="w-20 flex-row items-center justify-center gap-1 rounded-xl bg-neutral-50 dark:bg-neutral-900 px-1.5 py-0.5"
