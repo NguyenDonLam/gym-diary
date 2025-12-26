@@ -16,6 +16,7 @@ import {
 import { CalendarMonth } from "@/src/features/history/ui/calendar-month";
 import { DaySummaryCard } from "@/src/features/history/ui/day-summary-card";
 import { LoadUnit } from "@/db/enums";
+import { router } from "expo-router";
 
 function parseLoadKg(
   loadValue: string | null | undefined,
@@ -129,8 +130,6 @@ function WorkoutSessionStat({
     </View>
   );
 }
-
-
 
 export default function History() {
   const { colorScheme } = useColorScheme();
@@ -282,6 +281,9 @@ export default function History() {
         <DaySummaryCard
           selectedDateKey={selectedDateKey}
           sessions={selectedSessions}
+          onSessionPress={(s) => {
+            router.push(`/session-workout/${s.id}`);
+          }}
         />
       </View>
     </View>
