@@ -107,20 +107,6 @@ function createAggregate(
     (exSession, ctx) => {
       const hit = lookupExerciseStat[exSession.exerciseId ?? ""];
 
-      console.log("[strength-score ctx] exSession.id =", exSession.id);
-      console.log(
-        "[strength-score ctx] lookupExerciseStat keys =",
-        Object.keys(lookupExerciseStat)
-      );
-      console.log(
-        "[strength-score ctx] lookupExerciseStat[exSession.id] =",
-        hit
-      );
-      console.log(
-        "[strength-score ctx] baselineExerciseStrengthScore =",
-        hit?.baselineExerciseStrengthScore ?? null
-      );
-
       return {
         baselineExerciseStrengthScore:
           hit?.baselineExerciseStrengthScore ?? null,
@@ -314,14 +300,7 @@ export function OngoingSessionProvider({
           updatedAt: now,
           strengthScore: aggregate.getExerciseScore(ex.id) ?? null,
           strengthScoreVersion: aggregate.version,
-          sets: (ex.sets ?? []).map((set) => {
-            return {
-              ...set,
-              updatedAt: now,
-              e1rm: aggregate.getSetScore(set.id) ?? null,
-              e1rmVersion: aggregate.version,
-            };
-          }),
+          sets: undefined
         };
       }),
     };

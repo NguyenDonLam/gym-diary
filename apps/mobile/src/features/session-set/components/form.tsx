@@ -105,8 +105,7 @@ export function SessionSetRow({ value, setValue, onSetCommit }: Props) {
 
     // use the real context you score with (units, bw, etc)
     const update = aggregate?.upsertSet(finalSet, getContextForSet(finalSet));
-    console.log(JSON.stringify(update, null, 2));
-
+    
     // update local set with computed score (only if aggregate returned one)
     const nextSet: SessionSet =
       update?.setScore == null

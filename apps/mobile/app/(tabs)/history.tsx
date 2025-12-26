@@ -91,7 +91,6 @@ function WorkoutSessionStat({
     return { setCount, volumeKg, avgGrowthPct };
   }, [sessions]);
 
-
   return (
     <View className="mb-3 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
       <Text className="text-sm font-semibold text-zinc-900 dark:text-white">
@@ -130,6 +129,8 @@ function WorkoutSessionStat({
     </View>
   );
 }
+
+
 
 export default function History() {
   const { colorScheme } = useColorScheme();
@@ -184,6 +185,34 @@ export default function History() {
       cancelled = true;
     };
   }, [monthDate]);
+
+    const totalMonthStat = useMemo(() => {
+      const byTime = [...sessions].sort(
+        (a, b) => a.startedAt.getTime() - b.startedAt.getTime()
+      );
+
+      let totalSetCount = 0;
+      let totalVolumeKg = 0;
+
+      for (const s of byTime) {
+        for (const ex of s.exercises ?? []) {
+          for (const set of ex.sets ?? []) {
+            if (!(set.isCompleted ?? true)) continue;
+
+            const reps = set.quantity ?? 0;
+            if (!Number.isFinite(reps) || reps <= 0) continue;
+
+            totalSetCount += 1;
+
+            const loadKg = parseLoadKg(set.loadValue, set.loadUnit);
+            if (loadKg != null) totalVolumeKg += loadKg * reps;
+          }
+        }
+      }
+
+      return { totalSetCount, totalVolumeKg };
+    }, [sessions]);
+
 
   const sessionsByDate = useMemo(() => {
     const map: Record<string, SessionWorkout[]> = {};
@@ -277,6 +306,7 @@ export default function History() {
           sessions={selectedSessions}
           growthBySessionId={growthBySessionId}
         />
+
         <DaySummaryCard
           selectedDateKey={selectedDateKey}
           sessions={selectedSessions}

@@ -200,8 +200,8 @@ export class SessionWorkoutFactory {
   // -----------------------------
   static dbFromDomain(domain: SessionWorkout): {
     workout: SessionWorkoutRow;
-    exercises: SessionExerciseRow[];
-    sets: SessionSetRow[];
+    exercises: SessionExerciseRow[] | undefined;
+    sets: SessionSetRow[] | undefined;
   } {
     const workout: SessionWorkoutRow = {
       id: domain.id,
@@ -221,8 +221,31 @@ export class SessionWorkoutFactory {
       updatedAt: domain.updatedAt.toISOString(),
     };
 
+    // If caller didn't provide exercises, don't materialize children.
+    if (domain.exercises === undefined) {
+      return { workout, exercises: undefined, sets: undefined };
+    }
+
     const exercises: SessionExerciseRow[] = [];
-    const sets: SessionSetRow[] = [];
+
+    // Pass 1: decide how to return "sets"
+    // - all sets are undefined => sets === undefined
+    // - all sets are [] or undefined (and at least one is []) => sets === []
+    // - otherwise => include all sets (flatten)
+    let sawSetsDefined = false; // true if any ex.sets !== undefined
+    let sawNonEmpty = false; // true if any ex.sets has length > 0
+
+    for (const ex of domain.exercises ?? []) {
+      if (ex.sets !== undefined) {
+        sawSetsDefined = true;
+        if ((ex.sets ?? []).length > 0) sawNonEmpty = true;
+      }
+    }
+
+    const shouldReturnUndefinedSets = !sawSetsDefined; // all undefined
+    const shouldReturnEmptySetsArray = sawSetsDefined && !sawNonEmpty; // only [] or undefined, and at least one defined (could be [])
+
+    const setsOut: SessionSetRow[] = [];
 
     for (const ex of domain.exercises ?? []) {
       exercises.push({
@@ -243,8 +266,11 @@ export class SessionWorkoutFactory {
         updatedAt: ex.updatedAt.toISOString(),
       });
 
+      // Only flatten sets when we decided to "include all sets"
+      if (shouldReturnUndefinedSets || shouldReturnEmptySetsArray) continue;
+
       for (const s of ex.sets ?? []) {
-        sets.push({
+        setsOut.push({
           id: s.id,
 
           sessionExerciseId: s.sessionExerciseId,
@@ -271,6 +297,12 @@ export class SessionWorkoutFactory {
       }
     }
 
+    const sets: SessionSetRow[] | undefined = shouldReturnUndefinedSets
+      ? undefined
+      : shouldReturnEmptySetsArray
+        ? []
+        : setsOut;
+
     return { workout, exercises, sets };
   }
 
@@ -289,7 +321,7 @@ export class SessionWorkoutFactory {
       createdAt: now,
       updatedAt: now,
       exercises: [],
-      ...overrides
+      ...overrides,
     };
   }
 
