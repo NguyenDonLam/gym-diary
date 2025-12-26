@@ -39,17 +39,15 @@ const LB_TO_KG = 0.45359237;
 type Aggregate = ScoreAggregateV1<SessionSet, SessionExercise, SessionWorkout>;
 
 type OngoingSessionContextValue = {
-  ongoingSession: SessionWorkout | null;
+  mutationVersion: number;
+  bumpMutationVersion: () => void;
 
-  // lifecycle
+  ongoingSession: SessionWorkout | null;
   startSession: (programId?: string) => Promise<SessionWorkout>;
   endSession: () => Promise<void>;
   discardSession: () => Promise<void>;
-
-  // helpers
   refresh: () => Promise<void>;
 
-  // scoring
   aggregate: Aggregate | null;
   getContextForSet: (set: SessionSet) => StrengthScoreContext;
 };
@@ -158,6 +156,10 @@ export function OngoingSessionProvider({
     null
   );
   const { lookupExerciseStat } = useExerciseStats();
+  const [mutationVersion, setMutationVersion] = useState(0);
+  const bumpMutationVersion = useCallback(() => {
+    setMutationVersion((v) => v + 1);
+  }, []);
 
   const aggregate = useMemo<Aggregate | null>(() => {
     if (!ongoingSession) return null;
@@ -255,6 +257,7 @@ export function OngoingSessionProvider({
       await sessionWorkoutRepository.save(session);
 
       await setOngoingId(session.id);
+      bumpMutationVersion();
       setOngoingSession(session);
 
       return session;
@@ -280,6 +283,7 @@ export function OngoingSessionProvider({
       };
       await sessionWorkoutRepository.save(endedNoScores);
       setOngoingSession(endedNoScores);
+      bumpMutationVersion();
       await setOngoingId(null);
       return;
     }
@@ -300,7 +304,7 @@ export function OngoingSessionProvider({
           updatedAt: now,
           strengthScore: aggregate.getExerciseScore(ex.id) ?? null,
           strengthScoreVersion: aggregate.version,
-          sets: undefined
+          sets: undefined,
         };
       }),
     };
@@ -331,7 +335,8 @@ export function OngoingSessionProvider({
 
     // 4) clear ongoing
     await setOngoingId(null);
-  }, [ongoingSession, aggregate, setOngoingId]);
+    bumpMutationVersion();
+  }, [ongoingSession, aggregate, setOngoingId, bumpMutationVersion]);
 
   /**
    * discardSession()
@@ -385,6 +390,8 @@ export function OngoingSessionProvider({
         refresh,
         aggregate,
         getContextForSet,
+        mutationVersion,
+        bumpMutationVersion
       }}
     >
       {children}

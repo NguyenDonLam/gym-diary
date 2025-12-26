@@ -1,49 +1,47 @@
-// apps/mobile/app/session-workout/[id].tsx
+// apps/mobile/app/session-workout/ongoing.tsx
 
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
-import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
+import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
 import {
   SessionExerciseCard,
   SessionExerciseView,
 } from "@/src/features/session-exercise/components/form";
-import { SessionStatus } from "@/src/features/session-workout/domain/types";
+import type { SessionStatus } from "@/src/features/session-workout/domain/types";
+import type { SessionSet } from "@/src/features/session-set/domain/types";
+import { sessionSetRepository } from "@/src/features/session-set/data/repository";
 
-// Load a stored session from DB and project into view-model
-async function getInitialSessionData(sessionId: string): Promise<{
+function projectToView(session: {
+  name?: string | null;
+  status?: SessionStatus | null;
+  exercises?: SessionExerciseView[] | null;
+}): {
   name: string | null;
   status: SessionStatus | null;
   exercises: SessionExerciseView[];
-}> {
-  const session = await sessionWorkoutRepository.get(sessionId);
-
-  if (!session || !session.exercises) {
-    return {
-      name: session?.name ?? null,
-      status: session?.status ?? null,
-      exercises: [],
-    };
-  }
+} {
+  const exercises = (session.exercises ?? []).map((ex: SessionExerciseView) => ({
+    ...ex,
+    isOpen: true,
+  })) as SessionExerciseView[];
 
   return {
-    name: session.name ?? null,
-    status: session.status ?? null,
-    exercises: session.exercises.map((ex) => ({
-      ...ex,
-      isOpen: true,
-    })),
+    name: (session.name as string | null) ?? null,
+    status: (session.status as SessionStatus | null) ?? null,
+    exercises,
   };
 }
 
-export default function SessionWorkoutPage() {
+export default function OngoingSessionPage() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string | string[] }>();
   const { colorScheme } = useColorScheme();
   const iconColor = colorScheme === "dark" ? "#F9FAFB" : "#111827";
+
+  const { ongoingSession, refresh } = useOngoingSession();
 
   const [sessionName, setSessionName] = useState<string | null>(null);
   const [sessionStatus, setSessionStatus] = useState<SessionStatus | null>(
@@ -53,39 +51,27 @@ export default function SessionWorkoutPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const rawId = params.id;
-    const sessionId = Array.isArray(rawId) ? rawId[0] : rawId;
+    refresh().finally(() => setLoading(false));
+  }, [refresh]);
 
-    if (!sessionId) {
-      setLoading(false);
+  useEffect(() => {
+    if (!ongoingSession) {
+      setSessionName(null);
+      setSessionStatus(null);
+      setExercises([]);
       return;
     }
 
-    let cancelled = false;
+    const v = projectToView(ongoingSession);
+    setSessionName(v.name);
+    setSessionStatus(v.status);
+    setExercises(v.exercises);
+  }, [ongoingSession]);
 
-    (async () => {
-      try {
-        const { name, status, exercises } =
-          await getInitialSessionData(sessionId);
-        if (cancelled) return;
-        setSessionName(name ?? null);
-        setSessionStatus(status ?? null);
-        setExercises(exercises);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [params.id]);
-
-  const readOnly = true;
+  const readOnly = false;
 
   return (
     <View className="flex-1 bg-white dark:bg-neutral-950">
-      {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-3 pb-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
         <Pressable onPress={() => router.back()} hitSlop={10} className="mr-2">
           <ChevronLeft width={20} height={20} color={iconColor} />
@@ -96,7 +82,7 @@ export default function SessionWorkoutPage() {
             className="text-base font-semibold text-neutral-900 dark:text-neutral-50 text-center"
             numberOfLines={1}
           >
-            {sessionName ?? "Session"}
+            {sessionName ?? "Ongoing session"}
           </Text>
 
           <View className="mt-0.5 flex-row items-center">
@@ -117,7 +103,6 @@ export default function SessionWorkoutPage() {
         <View style={{ width: 20, marginLeft: 8 }} />
       </View>
 
-      {/* Body */}
       <ScrollView
         className="flex-1 bg-white dark:bg-neutral-950"
         contentContainerStyle={{
@@ -132,7 +117,13 @@ export default function SessionWorkoutPage() {
           </Text>
         )}
 
-        {!loading && exercises.length === 0 && (
+        {!loading && !ongoingSession && (
+          <Text className="mt-4 text-center text-[12px] text-neutral-500 dark:text-neutral-400">
+            No ongoing session.
+          </Text>
+        )}
+
+        {!loading && ongoingSession && exercises.length === 0 && (
           <Text className="mt-4 text-center text-[12px] text-neutral-500 dark:text-neutral-400">
             No exercises in this session.
           </Text>
@@ -148,6 +139,13 @@ export default function SessionWorkoutPage() {
                 prev.map((e) => (e.id === next.id ? next : e))
               )
             }
+            onSetCommit={async (set: SessionSet) => {
+              try {
+                await sessionSetRepository.save(set);
+              } catch (err) {
+                console.error("Failed to save session set", err);
+              }
+            }}
           />
         ))}
       </ScrollView>

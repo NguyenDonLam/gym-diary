@@ -17,6 +17,7 @@ import { CalendarMonth } from "@/src/features/history/ui/calendar-month";
 import { DaySummaryCard } from "@/src/features/history/ui/day-summary-card";
 import { LoadUnit } from "@/db/enums";
 import { router } from "expo-router";
+import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
 
 function parseLoadKg(
   loadValue: string | null | undefined,
@@ -139,6 +140,7 @@ export default function History() {
   const [selectedDateKey, setSelectedDateKey] = useState<string>(() =>
     toKey(new Date())
   );
+  const { mutationVersion } = useOngoingSession();
 
   const [sessions, setSessions] = useState<SessionWorkout[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -183,7 +185,7 @@ export default function History() {
     return () => {
       cancelled = true;
     };
-  }, [monthDate]);
+  }, [monthDate, mutationVersion]);
 
   const sessionsByDate = useMemo(() => {
     const map: Record<string, SessionWorkout[]> = {};

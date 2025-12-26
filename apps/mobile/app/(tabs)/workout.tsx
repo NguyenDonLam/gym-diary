@@ -90,11 +90,10 @@ export default function Workout() {
 
   async function handleStartFromTemplate(template: WorkoutProgram) {
     const startNewSession = async () => {
-      const session = await startSession(template.id);
+      await startSession(template.id);
 
       router.push({
-        pathname: "/session-workout/[id]",
-        params: { id: session.id },
+        pathname: "/session-workout/ongoing"
       });
     };
 
