@@ -2,11 +2,13 @@
 
 import { SessionExercise } from "../../session-exercise/domain/types";
 import { WorkoutProgram } from "../../program-workout/domain/type";
+import { ProgramColor } from "@/db/enums";
 
 export type SessionWorkout = {
   id: string;
 
   name: string | null;
+  color: ProgramColor
 
   startedAt: Date;
   endedAt: Date | null;

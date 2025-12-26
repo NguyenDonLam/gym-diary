@@ -86,6 +86,7 @@ export class SessionWorkoutFactory {
     return {
       id: sessionId,
       name: program.name,
+      color: program.color,
 
       startedAt: now,
       endedAt: null,
@@ -171,6 +172,7 @@ export class SessionWorkoutFactory {
     return {
       id: row.id,
       name: row.name,
+      color: row.color,
       status: row.status,
 
       startedAt: new Date(row.startedAt),
@@ -206,6 +208,7 @@ export class SessionWorkoutFactory {
     const workout: SessionWorkoutRow = {
       id: domain.id,
       name: domain.name,
+      color: domain.color,
       status: domain.status,
 
       startedAt: domain.startedAt.toISOString(),
@@ -311,6 +314,7 @@ export class SessionWorkoutFactory {
     return {
       id: generateId(),
       name: "",
+      color: "neutral",
       startedAt: now,
       endedAt: null,
       status: "in_progress",

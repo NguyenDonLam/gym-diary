@@ -8,7 +8,7 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
-import { LOAD_UNITS, QUANTITY_UNITS } from "./enums";
+import { LOAD_UNITS, PROGRAM_COLORS, QUANTITY_UNITS } from "./enums";
 /**
  * meta
  */
@@ -49,7 +49,7 @@ export const workoutPrograms = sqliteTable("program_workouts", {
   folderId: text("folder_id").references(() => programFolders.id, {
     onDelete: "set null",
   }),
-  color: text("color").notNull().default("neutral"),
+  color: text("color", { enum: PROGRAM_COLORS }).notNull().default("neutral"),
   description: text("description"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
@@ -102,6 +102,7 @@ export const setPrograms = sqliteTable("program_sets", {
 export const workoutSessions = sqliteTable("workout_sessions", {
   id: text("id").primaryKey(), // UUID
   name: text("name"),
+  color: text("color", { enum: PROGRAM_COLORS }).notNull().default("neutral"),
   startedAt: text("started_at").notNull(),
   endedAt: text("ended_at"),
   status: text("status", {

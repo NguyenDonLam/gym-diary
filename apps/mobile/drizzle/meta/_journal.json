@@ -8,6 +8,13 @@
       "when": 1766307767527,
       "tag": "0000_nappy_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1766724218054,
+      "tag": "0001_foamy_giant_girl",
+      "breakpoints": true
     }
   ]
 }

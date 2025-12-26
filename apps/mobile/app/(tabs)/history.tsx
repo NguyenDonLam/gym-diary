@@ -201,13 +201,34 @@ export default function History() {
 
   const dayBackgrounds = useMemo(() => {
     const map: Record<string, ProgramColor> = {};
+
+    const durationMs = (s: SessionWorkout) => {
+      const start = s.startedAt?.getTime?.() ?? NaN;
+      const end = s.endedAt?.getTime?.() ?? NaN;
+      const d = end - start;
+      return Number.isFinite(d) && d > 0 ? d : 0;
+    };
+
     for (const [dateKey, list] of Object.entries(sessionsByDate)) {
-      const winner = list[list.length - 1];
-      const color = winner?.sourceProgram?.color ?? null;
-      if (color) map[dateKey] = color as ProgramColor;
+      let winner: SessionWorkout | null = null;
+      let best = -1;
+
+      for (const s of list) {
+        const d = durationMs(s);
+        if (d > best) {
+          best = d;
+          winner = s;
+        }
+      }
+
+      // direct color stored on the session row (no join needed)
+      const color = winner?.color ?? null;
+      if (color) map[dateKey] = color;
     }
+
     return map;
   }, [sessionsByDate]);
+
 
   // Growth is computed across the entire loaded month range (chronological),
   // so a day with 1 session can still have a growth value vs the prior session.
