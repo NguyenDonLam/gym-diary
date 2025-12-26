@@ -5,7 +5,6 @@ import { useColorScheme } from "nativewind";
 import type { SessionWorkout } from "@/src/features/session-workout/domain/types";
 import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
 
-import type { ProgramColor } from "@/src/features/program-workout/domain/type";
 import {
   addDaysLocal,
   buildMonthMatrix,
@@ -15,7 +14,7 @@ import {
 } from "@/src/features/history/ui/date";
 import { CalendarMonth } from "@/src/features/history/ui/calendar-month";
 import { DaySummaryCard } from "@/src/features/history/ui/day-summary-card";
-import { LoadUnit } from "@/db/enums";
+import { LoadUnit, ProgramColor } from "@/db/enums";
 import { router } from "expo-router";
 import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
 
