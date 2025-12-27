@@ -15,6 +15,13 @@
       "when": 1766724218054,
       "tag": "0001_foamy_giant_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1766801184730,
+      "tag": "0002_short_infant_terrible",
+      "breakpoints": true
     }
   ]
 }
