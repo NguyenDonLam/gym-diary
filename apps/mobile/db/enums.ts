@@ -16,3 +16,6 @@ export const PROGRAM_COLORS = [
   "pink",
 ] as const;
 export type ProgramColor = (typeof PROGRAM_COLORS)[number];
+
+export const PERIOD_TYPES = ["week", "month", "year"] as const;
+export type PeriodType = (typeof PERIOD_TYPES)[number];
