@@ -1,3 +1,4 @@
+import { PeriodType } from "@/db/enums";
 import type { Exercise } from "@packages/exercise";
 
 export type ExercisePeriodStat = {
@@ -23,5 +24,3 @@ export type ExercisePeriodStat = {
   // relations
   exercise?: Exercise;
 };
-
-export type PeriodType = "week" | "month" | "year"

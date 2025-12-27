@@ -6,6 +6,7 @@ import {
   exerciseStats,
   programFolders,
   programPeriodStats,
+  programStats,
   sessionExercises,
   sessionSets,
   setPrograms,
@@ -80,6 +81,8 @@ export const workoutProgramsRelations = relations(
     }),
     exercises: many(exercisePrograms),
     sessions: many(workoutSessions),
+    stats: one(programStats),
+    periodStats: many(programPeriodStats),
   })
 );
 
@@ -175,3 +178,29 @@ export const programPeriodStatsIndexes = {
     programPeriodStats.periodStart
   ),
 };
+
+export const programStatsRelations = relations(programStats, ({ one }) => ({
+  program: one(workoutPrograms, {
+    fields: [programStats.programId],
+    references: [workoutPrograms.id],
+  }),
+}));
+
+
+export const programStatsIndexes = {
+  // Fast joins / lookups by program
+  program: index("program_stats_program_idx").on(programStats.programId),
+
+  // Useful if you sort or filter by recency
+  updatedAt: index("program_stats_updated_at_idx").on(programStats.updatedAt),
+};
+
+export const programPeriodStatsRelations = relations(
+  programPeriodStats,
+  ({ one }) => ({
+    program: one(workoutPrograms, {
+      fields: [programPeriodStats.programId],
+      references: [workoutPrograms.id],
+    }),
+  })
+);
