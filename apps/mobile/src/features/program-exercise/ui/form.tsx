@@ -9,7 +9,6 @@ import { useColorScheme } from "nativewind";
 
 type ExerciseProgramFormProps = {
   formData: ExerciseProgramFormData;
-  index: number; // kept for parent use, no longer rendered
   setFormData: (next: ExerciseProgramFormData) => void;
   onRemove: () => void;
   onDrag?: () => void;
@@ -17,7 +16,6 @@ type ExerciseProgramFormProps = {
 
 export default function ExerciseProgramForm({
   formData,
-  index,
   setFormData,
   onRemove,
   onDrag,
@@ -142,7 +140,7 @@ export default function ExerciseProgramForm({
       {formData.sets.length > 0 && (
         <View className="mt-1 mb-0.5 flex-row items-center gap-2 px-1">
           <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-neutral-400">
-            Reps
+            Target Volume
           </Text>
           <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-neutral-400">
             Load

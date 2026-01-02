@@ -26,30 +26,34 @@ export class SessionWorkoutFactory {
     const sessionExercises: SessionExercise[] = (program.exercises ?? [])
       .slice()
       .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
-      .map((tplEx, exIndex) => {
+      .map((exProgram, exIndex) => {
         const sessionExerciseId = generateId();
 
-        const sets: SessionSet[] = (tplEx.sets ?? [])
+        const sets: SessionSet[] = (exProgram.sets ?? [])
           .slice()
           .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
-          .map((tplSet, setIndex) => ({
+          .map((setProgram, setIndex) => ({
             id: generateId(),
 
             sessionExerciseId,
-            setProgramId: tplSet.id,
-            setProgram: tplSet,
+            setProgramId: setProgram.id,
+            setProgram: setProgram,
 
-            orderIndex: tplSet.orderIndex ?? setIndex,
+            orderIndex: setProgram.orderIndex ?? setIndex,
 
             targetQuantity: null,
-            loadUnit: tplSet.loadUnit,
-            loadValue: tplSet.loadValue,
-            rpe: tplSet.targetRpe,
+            quantity: null,
+            loadUnit: setProgram.loadUnit,
+            loadValue: setProgram.loadValue,
+            rpe: setProgram.targetRpe,
 
             isCompleted: false,
             isWarmup: false,
 
-            note: tplSet.note ?? null,
+            note: setProgram.note ?? null,
+
+            e1rm: null,
+            e1rmVersion: -1,
 
             createdAt: now,
             updatedAt: now,
@@ -59,14 +63,18 @@ export class SessionWorkoutFactory {
           id: sessionExerciseId,
           workoutSessionId: sessionId,
 
-          exerciseId: tplEx.exerciseId ?? null,
-          exerciseProgramId: tplEx.id,
-          exerciseProgram: tplEx,
+          exerciseId: exProgram.exerciseId ?? null,
+          quantityUnit: exProgram.quantityUnit,
+          exerciseProgramId: exProgram.id,
+          exerciseProgram: exProgram,
 
-          exerciseName: tplEx.exercise?.name ?? "Unnamed Exercise",
+          exerciseName: exProgram.exercise?.name ?? "Unnamed Exercise",
 
-          orderIndex: tplEx.orderIndex ?? exIndex,
-          note: tplEx.note ?? null,
+          orderIndex: exProgram.orderIndex ?? exIndex,
+          note: exProgram.note ?? null,
+
+          strengthScore: null,
+          strengthScoreVersion: -1,
 
           createdAt: now,
           updatedAt: now,
@@ -78,6 +86,7 @@ export class SessionWorkoutFactory {
     return {
       id: sessionId,
       name: program.name,
+      color: program.color,
 
       startedAt: now,
       endedAt: null,
@@ -87,6 +96,8 @@ export class SessionWorkoutFactory {
 
       status: "in_progress",
       note: null,
+      strengthScore: null,
+      strengthScoreVersion: -1,
 
       createdAt: now,
       updatedAt: now,
@@ -118,6 +129,7 @@ export class SessionWorkoutFactory {
           orderIndex: s.orderIndex,
 
           targetQuantity: s.targetQuantity ?? null,
+          quantity: s.quantity,
           loadUnit: s.loadUnit,
           loadValue: s.loadValue,
           rpe: s.rpe,
@@ -126,6 +138,8 @@ export class SessionWorkoutFactory {
           isWarmup: s.isWarmup,
 
           note: s.note,
+          e1rm: s.e1rm,
+          e1rmVersion: s.e1rmVersion,
 
           createdAt: new Date(s.createdAt),
           updatedAt: new Date(s.updatedAt),
@@ -136,6 +150,7 @@ export class SessionWorkoutFactory {
           workoutSessionId: ex.workoutSessionId,
 
           exerciseId: ex.exerciseId,
+          quantityUnit: ex.quantityUnit,
           exerciseProgramId: ex.exerciseProgramId,
           exerciseProgram: undefined,
 
@@ -143,6 +158,8 @@ export class SessionWorkoutFactory {
 
           orderIndex: ex.orderIndex,
           note: ex.note,
+          strengthScore: ex.strengthScore,
+          strengthScoreVersion: ex.strengthScoreVersion,
 
           createdAt: new Date(ex.createdAt),
           updatedAt: new Date(ex.updatedAt),
@@ -155,17 +172,20 @@ export class SessionWorkoutFactory {
     return {
       id: row.id,
       name: row.name,
+      color: row.color,
       status: row.status,
 
       startedAt: new Date(row.startedAt),
       endedAt: row.endedAt ? new Date(row.endedAt) : null,
 
       sourceProgramId: row.sourceProgramId ?? null,
-      sourceProgram: row.sourceProgram ? WorkoutProgramFactory.domainFromDb(
-        row.sourceProgram
-      ) : undefined,
+      sourceProgram: row.sourceProgram
+        ? WorkoutProgramFactory.domainFromDb(row.sourceProgram)
+        : undefined,
 
       note: row.note,
+      strengthScore: row.strengthScore,
+      strengthScoreVersion: row.strengthScoreVersion,
 
       createdAt: new Date(row.createdAt),
       updatedAt: new Date(row.updatedAt),
@@ -182,12 +202,13 @@ export class SessionWorkoutFactory {
   // -----------------------------
   static dbFromDomain(domain: SessionWorkout): {
     workout: SessionWorkoutRow;
-    exercises: SessionExerciseRow[];
-    sets: SessionSetRow[];
+    exercises: SessionExerciseRow[] | undefined;
+    sets: SessionSetRow[] | undefined;
   } {
     const workout: SessionWorkoutRow = {
       id: domain.id,
       name: domain.name,
+      color: domain.color,
       status: domain.status,
 
       startedAt: domain.startedAt.toISOString(),
@@ -196,13 +217,38 @@ export class SessionWorkoutFactory {
       sourceProgramId: domain.sourceProgramId,
 
       note: domain.note,
+      strengthScore: domain.strengthScore,
+      strengthScoreVersion: domain.strengthScoreVersion,
 
       createdAt: domain.createdAt.toISOString(),
       updatedAt: domain.updatedAt.toISOString(),
     };
 
+    // If caller didn't provide exercises, don't materialize children.
+    if (domain.exercises === undefined) {
+      return { workout, exercises: undefined, sets: undefined };
+    }
+
     const exercises: SessionExerciseRow[] = [];
-    const sets: SessionSetRow[] = [];
+
+    // Pass 1: decide how to return "sets"
+    // - all sets are undefined => sets === undefined
+    // - all sets are [] or undefined (and at least one is []) => sets === []
+    // - otherwise => include all sets (flatten)
+    let sawSetsDefined = false; // true if any ex.sets !== undefined
+    let sawNonEmpty = false; // true if any ex.sets has length > 0
+
+    for (const ex of domain.exercises ?? []) {
+      if (ex.sets !== undefined) {
+        sawSetsDefined = true;
+        if ((ex.sets ?? []).length > 0) sawNonEmpty = true;
+      }
+    }
+
+    const shouldReturnUndefinedSets = !sawSetsDefined; // all undefined
+    const shouldReturnEmptySetsArray = sawSetsDefined && !sawNonEmpty; // only [] or undefined, and at least one defined (could be [])
+
+    const setsOut: SessionSetRow[] = [];
 
     for (const ex of domain.exercises ?? []) {
       exercises.push({
@@ -210,18 +256,24 @@ export class SessionWorkoutFactory {
         workoutSessionId: ex.workoutSessionId,
 
         exerciseId: ex.exerciseId,
+        quantityUnit: ex.quantityUnit,
         exerciseProgramId: ex.exerciseProgramId,
         exerciseName: ex.exerciseName,
 
         orderIndex: ex.orderIndex,
         note: ex.note,
+        strengthScore: ex.strengthScore,
+        strengthScoreVersion: ex.strengthScoreVersion,
 
         createdAt: ex.createdAt.toISOString(),
         updatedAt: ex.updatedAt.toISOString(),
       });
 
+      // Only flatten sets when we decided to "include all sets"
+      if (shouldReturnUndefinedSets || shouldReturnEmptySetsArray) continue;
+
       for (const s of ex.sets ?? []) {
-        sets.push({
+        setsOut.push({
           id: s.id,
 
           sessionExerciseId: s.sessionExerciseId,
@@ -230,6 +282,7 @@ export class SessionWorkoutFactory {
           orderIndex: s.orderIndex,
 
           targetQuantity: s.targetQuantity ?? null,
+          quantity: s.quantity,
           loadUnit: s.loadUnit,
           loadValue: s.loadValue,
           rpe: s.rpe,
@@ -238,6 +291,8 @@ export class SessionWorkoutFactory {
           isWarmup: s.isWarmup,
 
           note: s.note,
+          e1rm: s.e1rm,
+          e1rmVersion: s.e1rmVersion,
 
           createdAt: s.createdAt.toISOString(),
           updatedAt: s.updatedAt.toISOString(),
@@ -245,7 +300,33 @@ export class SessionWorkoutFactory {
       }
     }
 
+    const sets: SessionSetRow[] | undefined = shouldReturnUndefinedSets
+      ? undefined
+      : shouldReturnEmptySetsArray
+        ? []
+        : setsOut;
+
     return { workout, exercises, sets };
+  }
+
+  static create(overrides?: Partial<SessionWorkout>): SessionWorkout {
+    const now = new Date();
+    return {
+      id: generateId(),
+      name: "",
+      color: "neutral",
+      startedAt: now,
+      endedAt: null,
+      status: "in_progress",
+      strengthScore: null,
+      strengthScoreVersion: -1,
+      sourceProgramId: null,
+      note: "",
+      createdAt: now,
+      updatedAt: now,
+      exercises: [],
+      ...overrides,
+    };
   }
 
   // -----------------------------

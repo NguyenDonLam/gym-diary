@@ -1,42 +1,10 @@
 // src/features/history/components/session-row.tsx
-import React, { memo, useMemo } from "react";
+import React, { memo } from "react";
 import { Pressable, Text, View } from "react-native";
-import {
-  ChevronRight,
-  Clock3,
-  Timer,
-  Dumbbell,
-  Flame,
-  Check,
-} from "lucide-react-native";
+import { ChevronRight, Clock3, Timer, Flame, Check } from "lucide-react-native";
 
 import type { SessionWorkout } from "@/src/features/session-workout/domain/types";
-import {
-  COLOR_STRIP_MAP,
-  type ProgramColor,
-} from "@/src/features/program-workout/domain/type";
-
-import {
-  getSessionInsightsWithBaseline,
-  type SessionExtractors,
-} from "../ui/session-insights";
-
-/**
- * TEMP / DUMMY extractors
- * Replace these with real field paths once SessionWorkout is fully hydrated
- */
-const extractors: SessionExtractors<SessionWorkout, any, any> = {
-  getStartedAt: (s) => s.startedAt,
-  getEndedAt: (s) => s.endedAt ?? null,
-
-  getExercises: (s: any) => s.exercises ?? [],
-  getSets: (ex: any) => ex.sets ?? [],
-
-  getLoad: (set: any) => set.loadValue ?? null,
-  getReps: (set: any) => set.targetQuantity ?? null,
-
-  isCountableSet: (set: any) => !set.isWarmup,
-};
+import { COLOR_STRIP_MAP } from "@/src/features/program-workout/domain/type";
 
 type Props = {
   session: SessionWorkout;
@@ -45,31 +13,37 @@ type Props = {
   onDeletePress?: () => void;
 };
 
+const CHIP_STYLES = {
+  neutral: {
+    bg: "bg-zinc-100 dark:bg-zinc-800",
+    text: "text-zinc-700 dark:text-zinc-200",
+  },
+  good: {
+    bg: "bg-emerald-100 dark:bg-emerald-900/30",
+    text: "text-emerald-800 dark:text-emerald-200",
+  },
+  bad: {
+    bg: "bg-rose-100 dark:bg-rose-900/25",
+    text: "text-rose-800 dark:text-rose-200",
+  },
+} as const;
+
 const Chip = memo(function Chip({
   icon,
   label,
-  variant,
+  variant = "neutral",
 }: {
   icon: React.ReactNode;
   label?: string;
-  variant?: "neutral" | "good";
+  variant?: keyof typeof CHIP_STYLES;
 }) {
-  const bg =
-    variant === "good"
-      ? "bg-emerald-100 dark:bg-emerald-900/30"
-      : "bg-zinc-100 dark:bg-zinc-800";
-
-  const text =
-    variant === "good"
-      ? "text-emerald-800 dark:text-emerald-200"
-      : "text-zinc-700 dark:text-zinc-200";
-
+  const s = CHIP_STYLES[variant];
   return (
     <View
-      className={`flex-row items-center gap-1 px-2 py-1 rounded-full ${bg}`}
+      className={`flex-row items-center gap-1 px-2 py-1 rounded-full ${s.bg}`}
     >
       {icon}
-      {label ? <Text className={`text-[11px] ${text}`}>{label}</Text> : null}
+      {label ? <Text className={`text-[11px] ${s.text}`}>{label}</Text> : null}
     </View>
   );
 });
@@ -79,63 +53,49 @@ export const SessionRow = memo(function SessionRow({
   isActive,
   onPress,
 }: Props) {
-  const color = (session.sourceProgram?.color ?? "neutral") as ProgramColor;
+  const ICON = "#9CA3AF";
+  const handleTap = onPress;
+
+  const color = session.sourceProgram?.color ?? "neutral";
   const stripClass = COLOR_STRIP_MAP[color];
 
-  /**
-   * TEMP / DUMMY baseline session
-   * Simulates a weaker previous session for visual comparison
-   */
-  const baselineSession = useMemo(() => {
-    const cloned: any = JSON.parse(JSON.stringify(session));
-    const weekMs = 7 * 24 * 60 * 60 * 1000;
+  const startedAt = session.startedAt;
+  const endedAt = session.endedAt ?? null;
 
-    cloned.startedAt = new Date(session.startedAt.getTime() - weekMs);
-    cloned.endedAt = session.endedAt
-      ? new Date(session.endedAt.getTime() - weekMs)
-      : null;
+  const startLabel = startedAt.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-    // if no exercises exist on session, inject dummy ones so comparisons render
-    if (!Array.isArray(cloned.exercises) || cloned.exercises.length === 0) {
-      cloned.exercises = [
-        {
-          sets: [
-            { loadValue: 40, targetQuantity: 8, isWarmup: false },
-            { loadValue: 40, targetQuantity: 8, isWarmup: false },
-            { loadValue: 40, targetQuantity: 8, isWarmup: false },
-          ],
-        },
-      ];
-      return cloned;
+  let durationLabel = "—";
+  if (endedAt) {
+    const ms = endedAt.getTime() - startedAt.getTime();
+    if (Number.isFinite(ms) && ms > 0) {
+      const mins = Math.round(ms / 60000);
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      durationLabel = h <= 0 ? `${m}m` : m === 0 ? `${h}h` : `${h}h ${m}m`;
     }
+  }
 
-    // otherwise scale down existing sets
-    for (const ex of cloned.exercises) {
-      for (const set of ex?.sets ?? []) {
-        if (typeof set.loadValue === "number")
-          set.loadValue = Math.round(set.loadValue * 0.9);
-        if (typeof set.targetQuantity === "number")
-          set.targetQuantity = Math.max(
-            1,
-            Math.round(set.targetQuantity * 0.9)
-          );
-      }
+  let growthLabel = "SS —";
+  let growthVariant: "neutral" | "good" | "bad" = "neutral";
+  const norm = session.strengthScore;
+  if (norm != null && Number.isFinite(norm) && norm > 0) {
+    const pct = (norm - 1) * 100;
+    if (Number.isFinite(pct)) {
+      const sign = pct >= 0 ? "+" : "";
+      growthLabel = `${sign}${pct.toFixed(2)}%`;
+      growthVariant = pct > 0.0001 ? "good" : pct < -0.0001 ? "bad" : "neutral";
     }
+  }
 
-    return cloned;
-  }, [session]);
-
-
-  const insights = useMemo(() => {
-    return getSessionInsightsWithBaseline(session, baselineSession, extractors);
-  }, [session, baselineSession]);
+  const isCompleted = session.status === "completed";
 
   return (
     <Pressable
-      className={`mb-2 rounded-xl bg-neutral-50 px-3 py-2 dark:bg-slate-900 ${
-        isActive ? "opacity-80" : ""
-      }`}
-      onPress={onPress}
+      className={`mb-2 rounded-xl bg-neutral-50 px-3 py-2 dark:bg-slate-900 ${isActive ? "opacity-80" : ""}`}
+      onPress={handleTap}
       hitSlop={2}
     >
       <View className="flex-row items-center justify-between">
@@ -149,32 +109,29 @@ export const SessionRow = memo(function SessionRow({
 
             <View className="mt-1 flex-row flex-wrap gap-2">
               <Chip
-                icon={<Clock3 width={14} height={14} color="#9CA3AF" />}
-                label={insights.startLabel}
+                icon={<Clock3 width={14} height={14} color={ICON} />}
+                label={startLabel}
               />
               <Chip
-                icon={<Timer width={14} height={14} color="#9CA3AF" />}
-                label={insights.durationLabel}
+                icon={<Timer width={14} height={14} color={ICON} />}
+                label={durationLabel}
               />
               <Chip
-                icon={<Dumbbell width={14} height={14} color="#9CA3AF" />}
-                label={insights.setDeltaPctLabel}
+                variant={growthVariant}
+                icon={<Flame width={14} height={14} color={ICON} />}
+                label={growthLabel}
               />
-              <Chip
-                icon={<Flame width={14} height={14} color="#9CA3AF" />}
-                label={insights.volumeDeltaPctLabel}
-              />
-              {insights.isCompleted && (
+              {isCompleted ? (
                 <Chip
                   variant="good"
                   icon={<Check width={14} height={14} color="#059669" />}
                 />
-              )}
+              ) : null}
             </View>
           </View>
         </View>
 
-        <ChevronRight width={16} height={16} color="#9CA3AF" />
+        <ChevronRight width={16} height={16} color={ICON} />
       </View>
     </Pressable>
   );

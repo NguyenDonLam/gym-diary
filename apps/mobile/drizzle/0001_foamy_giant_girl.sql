@@ -1,0 +1,1 @@
+ALTER TABLE `workout_sessions` ADD `color` text DEFAULT 'neutral' NOT NULL;

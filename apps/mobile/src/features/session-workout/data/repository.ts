@@ -71,7 +71,17 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
         ),
       with: {
         sourceProgram: true,
+        sessionExercises: {
+          // if nested orderBy is unsupported in your drizzle version, delete these orderBy blocks
+          orderBy: (se, { asc }) => [asc(se.orderIndex)],
+          with: {
+            sessionSets: {
+              orderBy: (ss, { asc }) => [asc(ss.orderIndex)],
+            },
+          },
+        },
       },
+      orderBy: (ws, { asc }) => [asc(ws.startedAt)],
     });
 
     return rows.map((row) => SessionWorkoutFactory.domainFromDb(row));
@@ -89,11 +99,11 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
     await db.transaction(async (tx) => {
       await tx.insert(workoutSessions).values(workout);
 
-      if (exercises.length > 0) {
+      if (exercises !== undefined && exercises.length > 0) {
         await tx.insert(sessionExercises).values(exercises);
       }
 
-      if (sets.length > 0) {
+      if (sets !== undefined && sets.length > 0) {
         await tx.insert(sessionSets).values(sets);
       }
     });
@@ -108,8 +118,7 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
       throw new Error("Cannot update SessionWorkout without id");
     }
 
-    const withId = entity as SessionWorkout;
-
+    const withId = entity;
     const { workout, exercises, sets } =
       SessionWorkoutFactory.dbFromDomain(withId);
 
@@ -118,37 +127,39 @@ export class SessionWorkoutRepository extends BaseRepository<SessionWorkout> {
       await tx
         .update(workoutSessions)
         .set(workout)
-        .where(eq(workoutSessions.id, withId.id));
+        .where(eq(workoutSessions.id, withId.id!));
+
+      // GUARD: if caller did not provide exercises, don't touch children
+      if (withId.exercises === undefined) return;
 
       // 2. delete existing children
       const existingExercises = await tx
         .select({ id: sessionExercises.id })
         .from(sessionExercises)
-        .where(eq(sessionExercises.workoutSessionId, withId.id));
+        .where(eq(sessionExercises.workoutSessionId, withId.id!));
 
       const existingExerciseIds = existingExercises.map((r) => r.id);
 
-      if (existingExerciseIds.length > 0) {
-        await tx
-          .delete(sessionSets)
-          .where(inArray(sessionSets.sessionExerciseId, existingExerciseIds));
-
-        await tx
-          .delete(sessionExercises)
-          .where(eq(sessionExercises.workoutSessionId, withId.id));
-      }
-
       // 3. insert new children
-      if (exercises.length > 0) {
+      if (exercises !== undefined && exercises.length > 0) {
+        if (existingExerciseIds.length > 0) {
+          await tx
+            .delete(sessionExercises)
+            .where(eq(sessionExercises.workoutSessionId, withId.id!));
+        }
         await tx.insert(sessionExercises).values(exercises);
       }
 
-      if (sets.length > 0) {
+      if (sets !== undefined && sets.length > 0) {
+        await tx
+          .delete(sessionSets)
+          .where(inArray(sessionSets.sessionExerciseId, existingExerciseIds));
+        
         await tx.insert(sessionSets).values(sets);
       }
     });
 
-    return withId;
+    return withId as SessionWorkout;
   }
 
   async delete(id: string): Promise<void> {

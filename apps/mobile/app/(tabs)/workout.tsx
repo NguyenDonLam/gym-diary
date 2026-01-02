@@ -12,7 +12,6 @@ import { WorkoutProgram } from "@/src/features/program-workout/domain/type";
 import { templateFolderRepository } from "@/src/features/template-folder/data/repository";
 import type { TemplateFolder } from "@/src/features/template-folder/domain/types";
 import FolderRow from "@/src/features/template-folder/components/folder-row";
-import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
 import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
 import { ProgramRow } from "@/src/features/program-workout/ui/template-row";
@@ -35,8 +34,9 @@ export default function Workout() {
 
   const [unassignedOpen, setUnassignedOpen] = useState(true);
   const [openFolderIds, setOpenFolderIds] = useState<string[]>([]);
-  const { ongoing, setOngoing, clearOngoing } = useOngoingSession();
-  const [checkedOngoing, setCheckedOngoing] = useState(false);
+
+  const { ongoingSession, startSession, endSession, discardSession } =
+    useOngoingSession();
 
   // keep layout in sync with source templates (initial + external changes)
   useEffect(() => {
@@ -90,25 +90,15 @@ export default function Workout() {
 
   async function handleStartFromTemplate(template: WorkoutProgram) {
     const startNewSession = async () => {
-      const fullProgram = await workoutProgramRepository.get(template.id);
-      if (!fullProgram) {
-        console.log("error when fetching full program");
-        return;
-      }
-
-      const session =
-        await sessionWorkoutRepository.createFromTemplate(fullProgram);
-      await setOngoing(session);
+      await startSession(template.id);
 
       router.push({
-        pathname: "/session-workout/[id]",
-        params: { id: session.id },
+        pathname: "/session-workout/ongoing"
       });
     };
 
-    // If there is an ongoing session, gate the action
-    if (ongoing) {
-      const sessionName = ongoing.name ?? "Current session";
+    if (ongoingSession) {
+      const sessionName = ongoingSession.name ?? "Current session";
 
       Alert.alert(
         "Session in progress",
@@ -120,7 +110,7 @@ export default function Workout() {
             onPress: () => {
               router.push({
                 pathname: "/session-workout/[id]",
-                params: { id: ongoing.id },
+                params: { id: ongoingSession.id },
               });
             },
           },
@@ -128,8 +118,7 @@ export default function Workout() {
             text: "Finish",
             onPress: async () => {
               try {
-                await sessionWorkoutRepository.finish(ongoing.id);
-                await clearOngoing();
+                await endSession();
                 await startNewSession();
               } catch (err) {
                 console.warn("[workout] failed to finish ongoing session", err);
@@ -141,8 +130,7 @@ export default function Workout() {
             style: "destructive",
             onPress: async () => {
               try {
-                await sessionWorkoutRepository.discard(ongoing.id);
-                await clearOngoing();
+                await discardSession();
                 await startNewSession();
               } catch (err) {
                 console.warn(
@@ -159,7 +147,6 @@ export default function Workout() {
       return;
     }
 
-    // No ongoing session: just start new
     await startNewSession();
   }
 
@@ -204,7 +191,6 @@ export default function Workout() {
     try {
       const saved = await templateFolderRepository.save(updated);
 
-      // sync React state
       setFolders((prev) => prev.map((f) => (f.id === saved.id ? saved : f)));
     } catch (err) {
       console.error("Failed to update folder", err);
@@ -226,9 +212,7 @@ export default function Workout() {
     }
   };
 
-  const toggleUnassignedOpen = () => {
-    setUnassignedOpen((prev) => !prev);
-  };
+  const toggleUnassignedOpen = () => setUnassignedOpen((prev) => !prev);
 
   const toggleFolderOpen = (folderId: string) => {
     setOpenFolderIds((prev) =>

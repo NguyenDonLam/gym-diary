@@ -1,14 +1,10 @@
 // src/features/session-workout/components/current-session-banner.tsx
-
 import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, Animated } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { CheckCircle2 } from "lucide-react-native";
-import { eq } from "drizzle-orm";
 
 import { useSessionTimer } from "@/src/features/program-workout/hooks/use-session-timer";
-import { db } from "@/db";
-import { workoutSessions } from "@/db/schema";
 import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
 
 type Props = {
@@ -16,7 +12,7 @@ type Props = {
   onFinish?: (sessionId: string) => void;
 };
 
-const COLLAPSED_OFFSET = -16; // less hidden so bigger tap area
+const COLLAPSED_OFFSET = -16;
 const EXPANDED_OFFSET = 0;
 const HIDDEN_OFFSET = -80;
 const AUTO_COMPACT_MS = 3000;
@@ -24,9 +20,10 @@ const AUTO_COMPACT_MS = 3000;
 export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const { ongoing, clearOngoing } = useOngoingSession();
 
-  const [current, setCurrent] = useState<typeof ongoing>(null);
+  const { ongoingSession, endSession } = useOngoingSession();
+
+  const [current, setCurrent] = useState<typeof ongoingSession>(null);
   const [sessionStartMs, setSessionStartMs] = useState<number | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -66,8 +63,8 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
   useEffect(() => {
     if (!dbReady) return;
 
-    if (ongoing) {
-      const ms = new Date(ongoing.startedAt).getTime();
+    if (ongoingSession) {
+      const ms = new Date(ongoingSession.startedAt).getTime();
       if (Number.isNaN(ms)) {
         setSessionStartMs(null);
         setCurrent(null);
@@ -76,7 +73,7 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
 
       clearAutoCompactTimer();
 
-      setCurrent(ongoing);
+      setCurrent(ongoingSession);
       setSessionStartMs(ms);
       setIsExpanded(true);
 
@@ -91,7 +88,7 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
       return;
     }
 
-    if (!ongoing && current) {
+    if (!ongoingSession && current) {
       clearAutoCompactTimer();
       Animated.parallel([
         Animated.timing(translateY, {
@@ -111,10 +108,8 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
       });
     }
 
-    return () => {
-      clearAutoCompactTimer();
-    };
-  }, [dbReady, ongoing, current, translateY, opacity]);
+    return () => clearAutoCompactTimer();
+  }, [dbReady, ongoingSession, current, translateY, opacity]);
 
   if (!current || !sessionStartMs) return null;
 
@@ -142,18 +137,13 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
     }
 
     const target = `/session-workout/${sessionId}`;
-
-    // If already on this session page, do nothing
-    if (pathname === target) {
-      return;
-    }
+    if (pathname === target) return;
 
     router.push({
       pathname: "/session-workout/[id]",
       params: { id: sessionId },
     });
   };
-
 
   const handleFinishPress = async () => {
     if (!sessionId) return;
@@ -163,37 +153,25 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
       return;
     }
 
-    try {
-      const endedAt = new Date().toISOString();
+    clearAutoCompactTimer();
 
-      clearAutoCompactTimer();
-
-      Animated.parallel([
-        Animated.timing(translateY, {
-          toValue: HIDDEN_OFFSET,
-          duration: 160,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 160,
-          useNativeDriver: true,
-        }),
-      ]).start(async () => {
-        await db
-          .update(workoutSessions)
-          .set({
-            endedAt,
-            status: "completed",
-            updatedAt: endedAt,
-          })
-          .where(eq(workoutSessions.id, sessionId));
-
-        await clearOngoing();
-      });
-    } catch (e) {
-      console.warn("[session-timer] failed to finish session", e);
-    }
+    Animated.parallel([
+      Animated.timing(translateY, {
+        toValue: HIDDEN_OFFSET,
+        duration: 160,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 160,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // provider handles DB write + clearing ongoing
+      endSession().catch((e) =>
+        console.warn("[current-session-banner] failed to finish session", e)
+      );
+    });
   };
 
   return (
@@ -211,7 +189,6 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
     >
       <View className="pt-1 px-4 pb-2" pointerEvents="auto">
         <View className="flex-row items-stretch gap-x-2">
-          {/* banner */}
           <Pressable
             onPress={handleTapBanner}
             hitSlop={16}
@@ -250,7 +227,6 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
             </View>
           </Pressable>
 
-          {/* finish button */}
           <Pressable
             onPress={handleFinishPress}
             hitSlop={16}

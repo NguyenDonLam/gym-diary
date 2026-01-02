@@ -6,21 +6,20 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { WorkoutProgramFormData } from "@/src/features/program-workout/domain/type";
 import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
 import { WorkoutProgramFactory } from "@/src/features/program-workout/domain/factory";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
-export default function TemplateWorkoutCreate() {
+export default function ProgramWorkoutCreate() {
   const router = useRouter();
+  const { folderId } = useLocalSearchParams<{ folderId?: string }>();
 
-  const [formData, setFormData] = useState<WorkoutProgramFormData>({
-    name: "",
-    description: "",
-    color: "neutral",
-    exercises: [],
-    folderId: null,
-  });
+
+  const [formData, setFormData] = useState<WorkoutProgramFormData>(
+    WorkoutProgramFactory.createForm({folderId})
+  );
+
 
   const [isSaving, setIsSaving] = useState(false);
 

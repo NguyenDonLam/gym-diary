@@ -1,4 +1,5 @@
-import { LoadUnit, SetProgram } from "../../program-set/domain/type";
+import { LoadUnit } from "@/db/enums";
+import { SetProgram } from "../../program-set/domain/type";
 
 export type SessionSet = {
   id: string;
@@ -10,6 +11,7 @@ export type SessionSet = {
   orderIndex: number;
 
   targetQuantity: number | null;
+  quantity: number | null;
   loadUnit: LoadUnit;
   loadValue: string | null;
   rpe: number | null;
@@ -18,6 +20,9 @@ export type SessionSet = {
   isWarmup: boolean;
 
   note: string | null;
+
+  e1rm: number | null;
+  e1rmVersion: number;
 
   createdAt: Date;
   updatedAt: Date;

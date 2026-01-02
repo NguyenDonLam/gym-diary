@@ -45,7 +45,7 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
   protected async insert(
     entity: WorkoutProgram & { id?: string | null }
   ): Promise<WorkoutProgram> {
-    const programId = entity.id ?? generateId();
+    const programId = entity.id;
 
     const withId: WorkoutProgram = {
       ...entity,
@@ -71,7 +71,7 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
 
             return {
               ...rest,
-              id: r.id ?? generateId(),
+              id: r.id,
               workoutProgramId: programId, // enforce FK
             };
           });
@@ -87,7 +87,7 @@ export class WorkoutProgramRepository extends BaseRepository<WorkoutProgram> {
 
             return {
               ...rest,
-              id: r.id ?? generateId(),
+              id: r.id,
               // exerciseProgramId already set by factory; keep it
             };
           });

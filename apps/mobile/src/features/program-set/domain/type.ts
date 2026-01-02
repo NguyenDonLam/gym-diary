@@ -1,4 +1,4 @@
-export type LoadUnit = "kg" | "lb" | "band" | "time" | "custom";
+import { LoadUnit } from "@/db/enums";
 
 export type SetProgram = {
   id: string; // UUID

@@ -18,7 +18,7 @@ import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
 import { WorkoutProgramFactory } from "@/src/features/program-workout/domain/factory";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
 
-export default function TemplateWorkoutEditScreen() {
+export default function ProgramWorkoutEditScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
