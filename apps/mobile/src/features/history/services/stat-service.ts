@@ -45,91 +45,29 @@ export class StatService {
     await exerciseStatRepository.computeLifetimeStat();
   }
 
-  async updateProgramStat(programId: string, at: Date): Promise<void> {
-    await programStatRepository.upsertStat(programId);
+  async updateProgramStat(workoutSessionId: string): Promise<void> {
+    await programStatRepository.upsertStat(workoutSessionId);
 
     const periodTypes: PeriodType[] = ["week", "month", "year"];
-    const d = new Date(at);
 
     for (const periodType of periodTypes) {
-      let start: Date;
-      let endExclusive: Date;
-
-      if (periodType === "year") {
-        start = new Date(d.getFullYear(), 0, 1, 0, 0, 0, 0);
-        endExclusive = new Date(d.getFullYear() + 1, 0, 1, 0, 0, 0, 0);
-      } else if (periodType === "month") {
-        start = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
-        endExclusive = new Date(
-          d.getFullYear(),
-          d.getMonth() + 1,
-          1,
-          0,
-          0,
-          0,
-          0
-        );
-      } else {
-        const day = d.getDay(); // 0=Sun..6=Sat
-        const diffToMon = (day + 6) % 7;
-
-        start = new Date(d);
-        start.setDate(d.getDate() - diffToMon);
-        start.setHours(0, 0, 0, 0);
-
-        endExclusive = new Date(start);
-        endExclusive.setDate(start.getDate() + 7);
-      }
-
-      await programPeriodStatRepository.upsertPeriodStat({
-        programId,
-        periodType,
-        periodStart: start,
-      });
+      await programPeriodStatRepository.upsertPeriodStat(
+        workoutSessionId,
+        periodType
+      );
     }
   }
 
-  async updateExerciseStat(exerciseId: string, at: Date): Promise<void> {
-    await exerciseStatRepository.upsertStat(exerciseId);
+  async updateExerciseStat(workoutSessionId: string): Promise<void> {
+    await exerciseStatRepository.upsertStat(workoutSessionId);
 
     const periodTypes: PeriodType[] = ["week", "month", "year"];
-    const d = new Date(at);
 
     for (const periodType of periodTypes) {
-      let start: Date;
-      let endExclusive: Date;
-
-      if (periodType === "year") {
-        start = new Date(d.getFullYear(), 0, 1, 0, 0, 0, 0);
-        endExclusive = new Date(d.getFullYear() + 1, 0, 1, 0, 0, 0, 0);
-      } else if (periodType === "month") {
-        start = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
-        endExclusive = new Date(
-          d.getFullYear(),
-          d.getMonth() + 1,
-          1,
-          0,
-          0,
-          0,
-          0
-        );
-      } else {
-        const day = d.getDay(); // 0=Sun..6=Sat
-        const diffToMon = (day + 6) % 7;
-
-        start = new Date(d);
-        start.setDate(d.getDate() - diffToMon);
-        start.setHours(0, 0, 0, 0);
-
-        endExclusive = new Date(start);
-        endExclusive.setDate(start.getDate() + 7);
-      }
-
-      await exercisePeriodStatRepository.upsertPeriodStat({
-        exerciseId,
-        periodType,
-        periodStart: start,
-      });
+      await exercisePeriodStatRepository.upsertPeriodStat(
+        workoutSessionId,
+        periodType
+      );
     }
   }
 }
