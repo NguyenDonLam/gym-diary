@@ -29,7 +29,21 @@ export const PROGRAM_COLORS = [
 export type ProgramColor = (typeof PROGRAM_COLORS)[number];
 
 type ScopeKey = "overall" | "program" | "exercise";
-type MetricKey = "score" | "volume" | "duration";
+type PeriodKey = "week" | "month" | "year" | "lifetime";
+
+// match what you actually store:
+// program_period_stats: sessionCount, volumeKg, durationSec, averageProgression
+// program_stats: totalSessionCount, totalVolumeKg, totalDurationSec, medianProgression
+// exercise_period_stats: totalSetCount, totalVolumeKg, bestSetE1rm, bestExerciseStrengthScore, sampleCount
+// exercise_stats: totalSetCount, totalVolumeKg, bestSetE1rm, bestExerciseStrengthScore, sampleCount, baselines
+type MetricKey =
+  | "sessions"
+  | "growth"
+  | "volume"
+  | "duration"
+  | "e1rm"
+  | "score"
+  | "sets";
 
 type ProgramChipItem = { id: string; name: string; color: ProgramColor };
 type ExerciseChipItem = { id: string; name: string; group?: string | null };
@@ -44,16 +58,14 @@ type SummaryTile = {
   icon?: React.ReactNode;
 };
 
+type MiniStat = { label: string; value: string };
+
 type ProgressRow = {
   id: string;
   title: string;
   subtitle?: string | null;
-
-  last?: string | null;
-  delta?: string | null;
-  baseline?: string | null;
-
   trend?: "up" | "down" | "flat" | "none";
+  stats: MiniStat[];
 };
 
 const COLOR_STYLES: Record<
@@ -276,36 +288,29 @@ function ProgressRowCard({ row }: { row: ProgressRow }) {
 
         <View className="flex-row items-center gap-2">
           <TrendIcon trend={row.trend} />
-          <View className="w-16 items-end">
-            <Text className="text-[10px] text-neutral-500 dark:text-neutral-400">
-              last
-            </Text>
-            <Text className="text-[12px] font-semibold text-neutral-900 dark:text-neutral-50">
-              {row.last ?? "—"}
-            </Text>
-          </View>
-
-          <View className="w-16 items-end">
-            <Text className="text-[10px] text-neutral-500 dark:text-neutral-400">
-              Δ
-            </Text>
-            <Text className="text-[12px] font-semibold text-neutral-700 dark:text-neutral-200">
-              {row.delta ?? "—"}
-            </Text>
-          </View>
-
-          <View className="w-16 items-end">
-            <Text className="text-[10px] text-neutral-500 dark:text-neutral-400">
-              base
-            </Text>
-            <Text className="text-[12px] font-semibold text-neutral-900 dark:text-neutral-50">
-              {row.baseline ?? "—"}
-            </Text>
+          <View className="flex-row items-end gap-2">
+            {row.stats.slice(0, 3).map((s, i) => (
+              <View key={`${row.id}-${i}`} className="w-20 items-end">
+                <Text className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                  {s.label}
+                </Text>
+                <Text className="text-[12px] font-semibold text-neutral-900 dark:text-neutral-50">
+                  {s.value}
+                </Text>
+              </View>
+            ))}
           </View>
         </View>
       </View>
     </View>
   );
+}
+
+function periodLabel(p: PeriodKey) {
+  if (p === "lifetime") return "Lifetime";
+  if (p === "week") return "Week";
+  if (p === "month") return "Month";
+  return "Year";
 }
 
 export default function ProgressionScreen() {
@@ -318,7 +323,9 @@ export default function ProgressionScreen() {
   const exercises: ExerciseChipItem[] = [];
 
   const [scope, setScope] = useState<ScopeKey>("overall");
-  const [metric, setMetric] = useState<MetricKey>("score");
+  const [period, setPeriod] = useState<PeriodKey>("week");
+
+  const [metric, setMetric] = useState<MetricKey>("growth");
 
   const [query, setQuery] = useState("");
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(
@@ -335,191 +342,370 @@ export default function ProgressionScreen() {
         ? "Program progression"
         : "Exercise progression";
 
-  const scopeSubtitle =
+  const scopeSubtitleBase =
     scope === "overall"
-      ? "All sessions combined"
+      ? "All sessions"
       : scope === "program"
-        ? "Only sessions from the selected program"
-        : "Only sets for the selected exercise";
+        ? "Program sessions only"
+        : "Sets for selected exercise";
+
+  const scopeSubtitle = `${periodLabel(period)} · ${scopeSubtitleBase}`;
+
+  const programMetricPills: { key: MetricKey; label: string }[] = [
+    { key: "sessions", label: "Sessions" },
+    { key: "growth", label: "Growth" },
+    { key: "volume", label: "Volume" },
+    { key: "duration", label: "Duration" },
+  ];
+
+  const exerciseMetricPills: { key: MetricKey; label: string }[] = [
+    { key: "e1rm", label: "e1RM" },
+    { key: "score", label: "Score" },
+    { key: "volume", label: "Volume" },
+    { key: "sets", label: "Sets" },
+  ];
+
+  const metricPills =
+    scope === "exercise" ? exerciseMetricPills : programMetricPills;
+
+  // keep metric valid when scope changes
+  useMemo(() => {
+    if (scope === "exercise") {
+      if (!["e1rm", "score", "volume", "sets"].includes(metric))
+        setMetric("e1rm");
+    } else {
+      if (!["sessions", "growth", "volume", "duration"].includes(metric))
+        setMetric("growth");
+    }
+  }, [scope]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const summaryTiles: SummaryTile[] = useMemo(() => {
+    const p = periodLabel(period);
+
     if (scope === "overall") {
       return [
         {
           label: "Sessions",
           value: "—",
+          sub: period === "lifetime" ? null : "lifetime —",
           icon: <Dumbbell size={14} color={iconColor} />,
         },
         {
-          label: "Avg growth",
+          label: period === "lifetime" ? "Median growth" : "Avg growth",
           value: "—",
+          sub: period === "lifetime" ? null : "median life —",
           icon: <BarChart3 size={14} color={iconColor} />,
         },
         {
-          label: "Avg duration",
+          label: "Volume",
           value: "—",
+          sub: period === "lifetime" ? null : "lifetime —",
+          icon: <Dumbbell size={14} color={iconColor} />,
+        },
+        {
+          label: "Duration",
+          value: "—",
+          sub: period === "lifetime" ? null : "lifetime —",
           icon: <Clock3 size={14} color={iconColor} />,
-        },
-        {
-          label: "Streak",
-          value: "—",
-          sub: "days",
-          icon: <BarChart3 size={14} color={iconColor} />,
         },
       ];
     }
+
     if (scope === "program") {
       return [
         {
-          label: "Program",
-          value: selectedProgramId ? "Selected" : "None",
+          label: `Sessions (${p})`,
+          value: "—",
+          sub: period === "lifetime" ? null : "lifetime —",
           icon: <Dumbbell size={14} color={iconColor} />,
         },
         {
-          label: "Sessions",
+          label: `Volume (${p})`,
           value: "—",
+          sub: period === "lifetime" ? null : "lifetime —",
           icon: <Dumbbell size={14} color={iconColor} />,
         },
         {
-          label: "Avg growth",
+          label: `Duration (${p})`,
           value: "—",
-          icon: <BarChart3 size={14} color={iconColor} />,
-        },
-        {
-          label: "Consistency",
-          value: "—",
-          sub: "per week",
+          sub: period === "lifetime" ? null : "lifetime —",
           icon: <Clock3 size={14} color={iconColor} />,
+        },
+        {
+          label: period === "lifetime" ? "Median growth" : "Avg growth",
+          value: "—",
+          sub: period === "lifetime" ? null : "median life —",
+          icon: <BarChart3 size={14} color={iconColor} />,
         },
       ];
     }
+
+    // exercise
     return [
       {
-        label: "Exercise",
-        value: selectedExerciseId ? "Selected" : "None",
-        icon: <Dumbbell size={14} color={iconColor} />,
-      },
-      {
-        label: "Best e1RM",
+        label: "Best set e1RM",
         value: "—",
+        sub: "baseline —",
         icon: <BarChart3 size={14} color={iconColor} />,
       },
       {
-        label: "Volume",
+        label: "Best exercise score",
         value: "—",
+        sub: "baseline —",
+        icon: <BarChart3 size={14} color={iconColor} />,
+      },
+      {
+        label: `Volume (${p})`,
+        value: "—",
+        sub: period === "lifetime" ? null : "lifetime —",
         icon: <Dumbbell size={14} color={iconColor} />,
       },
       {
-        label: "Recent delta",
+        label: `Sets (${p})`,
         value: "—",
-        icon: <BarChart3 size={14} color={iconColor} />,
+        sub: period === "lifetime" ? null : "lifetime —",
+        icon: <Dumbbell size={14} color={iconColor} />,
       },
     ];
-  }, [scope, selectedProgramId, selectedExerciseId, iconColor]);
+  }, [scope, period, selectedProgramId, selectedExerciseId, iconColor]);
 
   const series: TrendSeries | null = useMemo(() => {
     const unitLabel =
-      metric === "score"
-        ? "score"
+      metric === "growth"
+        ? "%"
         : metric === "volume"
           ? "kg·reps"
-          : "minutes";
+          : metric === "duration"
+            ? "min"
+            : metric === "sessions"
+              ? "sessions"
+              : metric === "e1rm"
+                ? "kg"
+                : metric === "sets"
+                  ? "sets"
+                  : "score";
     return { points: [], unitLabel };
   }, [metric]);
 
   const rows: ProgressRow[] = useMemo(() => {
+    const p = periodLabel(period);
+
     if (scope === "overall") {
       return [
         {
-          id: "p1",
-          title: "Overall strength score",
-          subtitle: "session-level",
-          last: "—",
-          delta: "—",
-          baseline: "—",
+          id: "o1",
+          title: `Sessions (${p})`,
+          subtitle:
+            period === "lifetime"
+              ? "from program_stats.totalSessionCount (summed)"
+              : "from program_period_stats.sessionCount (summed)",
           trend: "none",
+          stats:
+            period === "lifetime"
+              ? [{ label: "total", value: "—" }]
+              : [
+                  { label: "period", value: "—" },
+                  { label: "lifetime", value: "—" },
+                ],
         },
         {
-          id: "p2",
-          title: "Overall volume",
-          subtitle: "all exercises",
-          last: "—",
-          delta: "—",
-          baseline: "—",
+          id: "o2",
+          title: `Volume (${p})`,
+          subtitle:
+            period === "lifetime"
+              ? "from program_stats.totalVolumeKg (summed)"
+              : "from program_period_stats.volumeKg (summed)",
           trend: "none",
+          stats:
+            period === "lifetime"
+              ? [{ label: "total", value: "—" }]
+              : [
+                  { label: "period", value: "—" },
+                  { label: "lifetime", value: "—" },
+                ],
         },
         {
-          id: "p3",
-          title: "Overall duration",
-          subtitle: "time in session",
-          last: "—",
-          delta: "—",
-          baseline: "—",
+          id: "o3",
+          title: `Duration (${p})`,
+          subtitle:
+            period === "lifetime"
+              ? "from program_stats.totalDurationSec (summed)"
+              : "from program_period_stats.durationSec (summed)",
           trend: "none",
+          stats:
+            period === "lifetime"
+              ? [{ label: "total", value: "—" }]
+              : [
+                  { label: "period", value: "—" },
+                  { label: "lifetime", value: "—" },
+                ],
+        },
+        {
+          id: "o4",
+          title: period === "lifetime" ? "Median growth" : `Avg growth (${p})`,
+          subtitle:
+            period === "lifetime"
+              ? "from program_stats.medianProgression (summary)"
+              : "from program_period_stats.averageProgression (summary)",
+          trend: "none",
+          stats:
+            period === "lifetime"
+              ? [{ label: "median", value: "—" }]
+              : [
+                  { label: "avg", value: "—" },
+                  { label: "median life", value: "—" },
+                ],
         },
       ];
     }
+
     if (scope === "program") {
       return [
         {
-          id: "r1",
-          title: "Program strength score",
-          subtitle: "within program only",
-          last: "—",
-          delta: "—",
-          baseline: "—",
+          id: "p1",
+          title: `Sessions (${p})`,
+          subtitle:
+            period === "lifetime"
+              ? "program_stats.totalSessionCount"
+              : "program_period_stats.sessionCount",
           trend: "none",
+          stats:
+            period === "lifetime"
+              ? [{ label: "total", value: "—" }]
+              : [
+                  { label: "period", value: "—" },
+                  { label: "lifetime", value: "—" },
+                ],
         },
         {
-          id: "r2",
-          title: "Program volume",
-          subtitle: "within program only",
-          last: "—",
-          delta: "—",
-          baseline: "—",
+          id: "p2",
+          title: `Volume (${p})`,
+          subtitle:
+            period === "lifetime"
+              ? "program_stats.totalVolumeKg"
+              : "program_period_stats.volumeKg",
           trend: "none",
+          stats:
+            period === "lifetime"
+              ? [{ label: "total", value: "—" }]
+              : [
+                  { label: "period", value: "—" },
+                  { label: "lifetime", value: "—" },
+                ],
         },
         {
-          id: "r3",
-          title: "Program duration",
-          subtitle: "within program only",
-          last: "—",
-          delta: "—",
-          baseline: "—",
+          id: "p3",
+          title: `Duration (${p})`,
+          subtitle:
+            period === "lifetime"
+              ? "program_stats.totalDurationSec"
+              : "program_period_stats.durationSec",
           trend: "none",
+          stats:
+            period === "lifetime"
+              ? [{ label: "total", value: "—" }]
+              : [
+                  { label: "period", value: "—" },
+                  { label: "lifetime", value: "—" },
+                ],
+        },
+        {
+          id: "p4",
+          title: period === "lifetime" ? "Median growth" : `Avg growth (${p})`,
+          subtitle:
+            period === "lifetime"
+              ? "program_stats.medianProgression"
+              : "program_period_stats.averageProgression + program_stats.medianProgression",
+          trend: "none",
+          stats:
+            period === "lifetime"
+              ? [{ label: "median", value: "—" }]
+              : [
+                  { label: "avg", value: "—" },
+                  { label: "median life", value: "—" },
+                ],
         },
       ];
     }
+
+    // exercise
     return [
       {
         id: "e1",
-        title: "Exercise e1RM",
-        subtitle: "best set (estimated)",
-        last: "—",
-        delta: "—",
-        baseline: "—",
+        title: "Best set e1RM",
+        subtitle:
+          period === "lifetime"
+            ? "exercise_stats.bestSetE1rm"
+            : "exercise_period_stats.bestSetE1rm + baseline from exercise_stats",
         trend: "none",
+        stats: [
+          { label: "best", value: "—" },
+          { label: "baseline", value: "—" },
+        ],
       },
       {
         id: "e2",
-        title: "Exercise volume",
-        subtitle: "total kg·reps",
-        last: "—",
-        delta: "—",
-        baseline: "—",
+        title: "Best exercise score",
+        subtitle:
+          period === "lifetime"
+            ? "exercise_stats.bestExerciseStrengthScore"
+            : "exercise_period_stats.bestExerciseStrengthScore + baseline from exercise_stats",
         trend: "none",
+        stats: [
+          { label: "best", value: "—" },
+          { label: "baseline", value: "—" },
+        ],
       },
       {
         id: "e3",
-        title: "Exercise consistency",
-        subtitle: "sessions containing exercise",
-        last: "—",
-        delta: "—",
-        baseline: "—",
+        title: `Volume (${p})`,
+        subtitle:
+          period === "lifetime"
+            ? "exercise_stats.totalVolumeKg"
+            : "exercise_period_stats.totalVolumeKg + exercise_stats.totalVolumeKg",
         trend: "none",
+        stats:
+          period === "lifetime"
+            ? [{ label: "total", value: "—" }]
+            : [
+                { label: "period", value: "—" },
+                { label: "lifetime", value: "—" },
+              ],
+      },
+      {
+        id: "e4",
+        title: `Sets (${p})`,
+        subtitle:
+          period === "lifetime"
+            ? "exercise_stats.totalSetCount"
+            : "exercise_period_stats.totalSetCount + exercise_stats.totalSetCount",
+        trend: "none",
+        stats:
+          period === "lifetime"
+            ? [{ label: "total", value: "—" }]
+            : [
+                { label: "period", value: "—" },
+                { label: "lifetime", value: "—" },
+              ],
+      },
+      {
+        id: "e5",
+        title: `Samples (${p})`,
+        subtitle:
+          period === "lifetime"
+            ? "exercise_stats.sampleCount"
+            : "exercise_period_stats.sampleCount + exercise_stats.sampleCount",
+        trend: "none",
+        stats:
+          period === "lifetime"
+            ? [{ label: "total", value: "—" }]
+            : [
+                { label: "period", value: "—" },
+                { label: "lifetime", value: "—" },
+              ],
       },
     ];
-  }, [scope]);
+  }, [scope, period]);
 
   const filteredPrograms = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -597,6 +783,35 @@ export default function ProgressionScreen() {
           </View>
         </View>
 
+        {/* Period selector */}
+        <View className="mb-3">
+          <Text className="mb-2 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300">
+            Period
+          </Text>
+          <View className="flex-row gap-2">
+            <Pill
+              label="Week"
+              active={period === "week"}
+              onPress={() => setPeriod("week")}
+            />
+            <Pill
+              label="Month"
+              active={period === "month"}
+              onPress={() => setPeriod("month")}
+            />
+            <Pill
+              label="Year"
+              active={period === "year"}
+              onPress={() => setPeriod("year")}
+            />
+            <Pill
+              label="Lifetime"
+              active={period === "lifetime"}
+              onPress={() => setPeriod("lifetime")}
+            />
+          </View>
+        </View>
+
         {/* Context picker (program/exercise) */}
         {scope !== "overall" && (
           <View className="mb-3 rounded-2xl border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-950">
@@ -651,7 +866,9 @@ export default function ProgressionScreen() {
                             className={`h-2.5 w-2.5 rounded-full ${st.dot}`}
                           />
                           <Text
-                            className={`text-[11px] font-semibold ${isOn ? st.textOn : st.textOff}`}
+                            className={`text-[11px] font-semibold ${
+                              isOn ? st.textOn : st.textOff
+                            }`}
                           >
                             {p.name}
                           </Text>
@@ -713,27 +930,20 @@ export default function ProgressionScreen() {
           </View>
         )}
 
-        {/* Metric selector */}
+        {/* Metric selector (matches stored stat families) */}
         <View className="mb-3">
           <Text className="mb-2 text-[11px] font-semibold text-neutral-700 dark:text-neutral-300">
             Metric
           </Text>
           <View className="flex-row gap-2">
-            <Pill
-              label="Score"
-              active={metric === "score"}
-              onPress={() => setMetric("score")}
-            />
-            <Pill
-              label="Volume"
-              active={metric === "volume"}
-              onPress={() => setMetric("volume")}
-            />
-            <Pill
-              label="Duration"
-              active={metric === "duration"}
-              onPress={() => setMetric("duration")}
-            />
+            {metricPills.map((m) => (
+              <Pill
+                key={m.key}
+                label={m.label}
+                active={metric === m.key}
+                onPress={() => setMetric(m.key)}
+              />
+            ))}
           </View>
         </View>
 
@@ -763,7 +973,7 @@ export default function ProgressionScreen() {
           </View>
 
           <Text className="mt-0.5 text-[10px] text-neutral-500 dark:text-neutral-400">
-            Placeholder chart (wire later)
+            Placeholder chart (period stats + lifetime stats)
           </Text>
 
           <MiniBars series={series} />
@@ -776,7 +986,7 @@ export default function ProgressionScreen() {
               Breakdown
             </Text>
             <Text className="text-[10px] text-neutral-500 dark:text-neutral-400">
-              last / Δ / baseline
+              period / lifetime / baseline
             </Text>
           </View>
 
@@ -793,13 +1003,12 @@ export default function ProgressionScreen() {
             Notes
           </Text>
           <Text className="mt-1 text-[11px] text-neutral-600 dark:text-neutral-300">
-            Overall: aggregates across all sessions.
+            Program: period rows from program_period_stats (week/month/year),
+            lifetime from program_stats.
           </Text>
           <Text className="mt-1 text-[11px] text-neutral-600 dark:text-neutral-300">
-            Program: aggregates only sessions with a matching programId.
-          </Text>
-          <Text className="mt-1 text-[11px] text-neutral-600 dark:text-neutral-300">
-            Exercise: aggregates only sets belonging to an exerciseId.
+            Exercise: period rows from exercise_period_stats, lifetime +
+            baselines from exercise_stats.
           </Text>
         </View>
       </ScrollView>
