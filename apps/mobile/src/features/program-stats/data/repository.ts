@@ -221,6 +221,103 @@ export class ProgramStatRepository extends BaseRepository<ProgramStat> {
         });
     }
   }
+
+  async upsertStat(workoutSessionId: string): Promise<void> {
+    const now = new Date();
+
+    await db.transaction(async (tx) => {
+      const [sess] = await tx
+        .select({
+          programId: workoutSessions.sourceProgramId,
+          status: workoutSessions.status,
+          startedAt: workoutSessions.startedAt,
+          endedAt: workoutSessions.endedAt,
+        })
+        .from(workoutSessions)
+        .where(eq(workoutSessions.id, workoutSessionId))
+        .limit(1);
+
+      if (!sess?.programId) return;
+      if (sess.status !== "completed") return;
+      if (!sess.endedAt) return;
+
+      const durationSecDelta = Math.floor(
+        (+new Date(sess.endedAt) - +new Date(sess.startedAt)) / 1000
+      );
+      if (!(durationSecDelta > 0)) return;
+
+      const deltas = (
+        await tx
+          .select({
+            isCompleted: sessionSets.isCompleted,
+            isWarmup: sessionSets.isWarmup,
+            quantity: sessionSets.quantity,
+            loadUnit: sessionSets.loadUnit,
+            loadValue: sessionSets.loadValue,
+          })
+          .from(sessionSets)
+          .innerJoin(
+            sessionExercises,
+            eq(sessionExercises.id, sessionSets.sessionExerciseId)
+          )
+          .where(eq(sessionExercises.workoutSessionId, workoutSessionId))
+      ).reduce(
+        (a, r) => {
+          if (!r.isCompleted || r.isWarmup) return a;
+
+          a.set += 1;
+
+          const reps = r.quantity ?? null;
+          if (reps == null || !Number.isFinite(reps) || reps <= 0) return a;
+          a.rep += reps;
+
+          const rawStr = (r.loadValue ?? "").trim();
+          if (!rawStr) return a;
+
+          const raw = Number.parseFloat(rawStr);
+          if (!Number.isFinite(raw) || raw <= 0) return a;
+
+          const loadKg =
+            r.loadUnit === "kg"
+              ? raw
+              : r.loadUnit === "lb"
+                ? raw * LB_TO_KG
+                : null;
+
+          if (loadKg == null || !Number.isFinite(loadKg) || loadKg <= 0)
+            return a;
+
+          a.vol += loadKg * reps;
+          return a;
+        },
+        { set: 0, rep: 0, vol: 0 }
+      );
+
+      const [cur] = await tx
+        .select()
+        .from(programStats)
+        .where(eq(programStats.programId, sess.programId))
+        .limit(1);
+
+      const next = {
+        totalSessionCount: (cur?.totalSessionCount ?? 0) + 1,
+        totalSetCount: (cur?.totalSetCount ?? 0) + deltas.set,
+        totalRepCount: (cur?.totalRepCount ?? 0) + deltas.rep,
+        totalVolumeKg: (cur?.totalVolumeKg ?? 0) + deltas.vol,
+        totalDurationSec: (cur?.totalDurationSec ?? 0) + durationSecDelta,
+        medianProgression: cur?.medianProgression ?? null,
+        updatedAt: now,
+      };
+
+      await tx
+        .insert(programStats)
+        .values({ programId: sess.programId, ...next })
+        .onConflictDoUpdate({
+          target: programStats.programId,
+          set: next,
+        });
+    });
+  }
 }
 
 export const programStatRepository = new ProgramStatRepository();

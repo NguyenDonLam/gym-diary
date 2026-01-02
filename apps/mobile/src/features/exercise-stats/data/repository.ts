@@ -2,7 +2,7 @@
 
 import type { ExerciseStat } from "../domain/types";
 
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, eq, isNotNull, or, sql } from "drizzle-orm";
 import { BaseRepository } from "@/src/lib/base-repository";
 import {
   exercises,
@@ -80,11 +80,9 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
   async computeLifetimeStat(): Promise<void> {
     const now = new Date();
 
-    // all exercise's id
     const exRows = await db.select({ id: exercises.id }).from(exercises);
 
-    // existing stats
-    const existing = await db
+    const baselines = await db
       .select({
         exerciseId: exerciseStats.exerciseId,
         baselineExerciseStrengthScore:
@@ -93,14 +91,8 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
       })
       .from(exerciseStats);
 
-    const scoreLookup = new Map<
-      string,
-      {
-        baselineExerciseStrengthScore: number | null;
-        baselineSetE1rm: number | null;
-      }
-    >(
-      existing.map((r) => [
+    const baselineById = new Map(
+      baselines.map((r) => [
         r.exerciseId,
         {
           baselineExerciseStrengthScore:
@@ -110,32 +102,13 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
       ])
     );
 
-    const accumulator: Record<
-      string,
-      {
-        setCount: number;
-        vol: number;
-        bestE1rm: number | null;
-        bestStrength: number | null;
-        sampleCount: number;
-      }
-    > = {};
-
-    for (const e of exRows) {
-      accumulator[e.id] = {
-        setCount: 0,
-        vol: 0,
-        bestE1rm: null,
-        bestStrength: null,
-        sampleCount: 0,
-      };
-    }
-
-    // session-exercise samples + best exercise strength score
-    const se = await db
+    const seAgg = await db
       .select({
         exerciseId: sessionExercises.exerciseId,
-        strengthScore: sessionExercises.strengthScore,
+        sampleCount: sql<number>`count(*)`,
+        bestStrength: sql<
+          number | null
+        >`max(${sessionExercises.strengthScore})`,
       })
       .from(sessionExercises)
       .innerJoin(
@@ -147,38 +120,21 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
           eq(workoutSessions.status, "completed"),
           isNotNull(sessionExercises.exerciseId)
         )
-      );
+      )
+      .groupBy(sessionExercises.exerciseId);
 
-    for (const r of se) {
-      const exerciseId = r.exerciseId;
-      if (!exerciseId) continue;
+    const seById = new Map(
+      seAgg.map((r) => [
+        r.exerciseId!,
+        { sampleCount: r.sampleCount, bestStrength: r.bestStrength ?? null },
+      ])
+    );
 
-      const a = accumulator[exerciseId];
-      if (!a) continue;
-
-      a.sampleCount += 1;
-
-      if (
-        typeof r.strengthScore === "number" &&
-        Number.isFinite(r.strengthScore)
-      ) {
-        a.bestStrength =
-          a.bestStrength == null
-            ? r.strengthScore
-            : Math.max(a.bestStrength, r.strengthScore);
-      }
-    }
-
-    // sets: count/volume/best e1rm (scoped to completed sessions)
-    const sets = await db
+    const setAgg = await db
       .select({
         exerciseId: sessionExercises.exerciseId,
-        isCompleted: sessionSets.isCompleted,
-        isWarmup: sessionSets.isWarmup,
-        quantity: sessionSets.quantity,
-        loadUnit: sessionSets.loadUnit,
-        loadValue: sessionSets.loadValue,
-        e1rm: sessionSets.e1rm,
+        setCount: sql<number>`count(*)`,
+        bestE1rm: sql<number | null>`max(${sessionSets.e1rm})`,
       })
       .from(sessionSets)
       .innerJoin(
@@ -192,72 +148,77 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
       .where(
         and(
           eq(workoutSessions.status, "completed"),
-          isNotNull(sessionExercises.exerciseId)
+          isNotNull(sessionExercises.exerciseId),
+          eq(sessionSets.isCompleted, true),
+          eq(sessionSets.isWarmup, false)
         )
-      );
+      )
+      .groupBy(sessionExercises.exerciseId);
 
-    for (const set of sets) {
-      const exerciseId = set.exerciseId;
-      if (!exerciseId) continue;
+    const setById = new Map(
+      setAgg.map((r) => [
+        r.exerciseId!,
+        { setCount: r.setCount, bestE1rm: r.bestE1rm ?? null },
+      ])
+    );
 
-      const a = accumulator[exerciseId];
-      if (!a) continue;
+    const volAgg = await db
+      .select({
+        exerciseId: sessionExercises.exerciseId,
+        vol: sql<number>`coalesce(sum(
+        (case
+          when ${sessionSets.loadUnit} = 'kg'
+            then cast(${sessionSets.loadValue} as real)
+          else cast(${sessionSets.loadValue} as real) * ${LB_TO_KG}
+        end) * ${sessionSets.quantity}
+      ), 0)`,
+      })
+      .from(sessionSets)
+      .innerJoin(
+        sessionExercises,
+        eq(sessionExercises.id, sessionSets.sessionExerciseId)
+      )
+      .innerJoin(
+        workoutSessions,
+        eq(workoutSessions.id, sessionExercises.workoutSessionId)
+      )
+      .where(
+        and(
+          eq(workoutSessions.status, "completed"),
+          isNotNull(sessionExercises.exerciseId),
+          eq(sessionSets.isCompleted, true),
+          eq(sessionSets.isWarmup, false),
+          sql`${sessionSets.quantity} > 0`,
+          isNotNull(sessionSets.loadValue),
+          sql`trim(${sessionSets.loadValue}) <> ''`,
+          sql`cast(${sessionSets.loadValue} as real) > 0`,
+          or(eq(sessionSets.loadUnit, "kg"), eq(sessionSets.loadUnit, "lb"))
+        )
+      )
+      .groupBy(sessionExercises.exerciseId);
 
-      if (!set.isCompleted) continue;
-      if (set.isWarmup) continue;
-
-      a.setCount += 1;
-
-      if (typeof set.e1rm === "number" && Number.isFinite(set.e1rm)) {
-        a.bestE1rm = a.bestE1rm == null ? set.e1rm : Math.max(a.bestE1rm, set.e1rm);
-      }
-
-      const reps = set.quantity ?? null;
-      if (reps == null || !Number.isFinite(reps) || reps <= 0) continue;
-
-      const rawStr = (set.loadValue ?? "").trim();
-      if (!rawStr) continue;
-
-      const raw = Number.parseFloat(rawStr);
-      if (!Number.isFinite(raw) || raw <= 0) continue;
-
-      const loadKg =
-        set.loadUnit === "kg" ? raw : set.loadUnit === "lb" ? raw * LB_TO_KG : null;
-
-      if (loadKg == null || !Number.isFinite(loadKg) || loadKg <= 0) continue;
-
-      a.vol += loadKg * reps;
-    }
+    const volById = new Map(volAgg.map((r) => [r.exerciseId!, r.vol]));
 
     for (const e of exRows) {
-      const a = accumulator[e.id] ?? {
-        setCount: 0,
-        vol: 0,
-        bestE1rm: null,
-        bestStrength: null,
-        sampleCount: 0,
-      };
-
-      const b = scoreLookup.get(e.id) ?? {
+      const b = baselineById.get(e.id) ?? {
         baselineExerciseStrengthScore: null,
         baselineSetE1rm: null,
       };
+      const se = seById.get(e.id) ?? { sampleCount: 0, bestStrength: null };
+      const st = setById.get(e.id) ?? { setCount: 0, bestE1rm: null };
+      const vol = volById.get(e.id) ?? 0;
 
       await db
         .insert(exerciseStats)
         .values({
           exerciseId: e.id,
-
           baselineExerciseStrengthScore: b.baselineExerciseStrengthScore,
           baselineSetE1rm: b.baselineSetE1rm,
-
-          bestSetE1rm: a.bestE1rm,
-          bestExerciseStrengthScore: a.bestStrength,
-          totalSetCount: a.setCount,
-          totalVolumeKg: a.vol,
-
-          sampleCount: a.sampleCount,
-
+          bestSetE1rm: st.bestE1rm,
+          bestExerciseStrengthScore: se.bestStrength,
+          totalSetCount: st.setCount,
+          totalVolumeKg: vol,
+          sampleCount: se.sampleCount,
           updatedAt: now,
         })
         .onConflictDoUpdate({
@@ -265,18 +226,160 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
           set: {
             baselineExerciseStrengthScore: b.baselineExerciseStrengthScore,
             baselineSetE1rm: b.baselineSetE1rm,
-
-            bestSetE1rm: a.bestE1rm,
-            bestExerciseStrengthScore: a.bestStrength,
-            totalSetCount: a.setCount,
-            totalVolumeKg: a.vol,
-
-            sampleCount: a.sampleCount,
-
+            bestSetE1rm: st.bestE1rm,
+            bestExerciseStrengthScore: se.bestStrength,
+            totalSetCount: st.setCount,
+            totalVolumeKg: vol,
+            sampleCount: se.sampleCount,
             updatedAt: now,
           },
         });
     }
+  }
+  async upsertStat(workoutSessionId: string): Promise<void> {
+    const now = new Date();
+
+    await db.transaction(async (tx) => {
+      const [sess] = await tx
+        .select({ status: workoutSessions.status })
+        .from(workoutSessions)
+        .where(eq(workoutSessions.id, workoutSessionId))
+        .limit(1);
+
+      if (!sess || sess.status !== "completed") return;
+
+      const seAgg = await tx
+        .select({
+          exerciseId: sessionExercises.exerciseId,
+          sampleCount: sql<number>`count(*)`,
+          bestStrength: sql<
+            number | null
+          >`max(${sessionExercises.strengthScore})`,
+        })
+        .from(sessionExercises)
+        .where(
+          and(
+            eq(sessionExercises.workoutSessionId, workoutSessionId),
+            isNotNull(sessionExercises.exerciseId)
+          )
+        )
+        .groupBy(sessionExercises.exerciseId);
+
+      const setAgg = await tx
+        .select({
+          exerciseId: sessionExercises.exerciseId,
+          setCount: sql<number>`count(*)`,
+          bestE1rm: sql<number | null>`max(${sessionSets.e1rm})`,
+        })
+        .from(sessionSets)
+        .innerJoin(
+          sessionExercises,
+          eq(sessionExercises.id, sessionSets.sessionExerciseId)
+        )
+        .where(
+          and(
+            eq(sessionExercises.workoutSessionId, workoutSessionId),
+            isNotNull(sessionExercises.exerciseId),
+            eq(sessionSets.isCompleted, true),
+            eq(sessionSets.isWarmup, false)
+          )
+        )
+        .groupBy(sessionExercises.exerciseId);
+
+      const volAgg = await tx
+        .select({
+          exerciseId: sessionExercises.exerciseId,
+          vol: sql<number>`coalesce(sum(
+          (case
+            when ${sessionSets.loadUnit} = 'kg'
+              then cast(${sessionSets.loadValue} as real)
+            else cast(${sessionSets.loadValue} as real) * ${LB_TO_KG}
+          end) * ${sessionSets.quantity}
+        ), 0)`,
+        })
+        .from(sessionSets)
+        .innerJoin(
+          sessionExercises,
+          eq(sessionExercises.id, sessionSets.sessionExerciseId)
+        )
+        .where(
+          and(
+            eq(sessionExercises.workoutSessionId, workoutSessionId),
+            isNotNull(sessionExercises.exerciseId),
+            eq(sessionSets.isCompleted, true),
+            eq(sessionSets.isWarmup, false),
+            sql`${sessionSets.quantity} > 0`,
+            isNotNull(sessionSets.loadValue),
+            sql`trim(${sessionSets.loadValue}) <> ''`,
+            sql`cast(${sessionSets.loadValue} as real) > 0`,
+            or(eq(sessionSets.loadUnit, "kg"), eq(sessionSets.loadUnit, "lb"))
+          )
+        )
+        .groupBy(sessionExercises.exerciseId);
+
+      const ids = new Set<string>();
+      for (const r of seAgg) ids.add(r.exerciseId!);
+      for (const r of setAgg) ids.add(r.exerciseId!);
+      for (const r of volAgg) ids.add(r.exerciseId!);
+
+      const seById = new Map(
+        seAgg.map((r) => [
+          r.exerciseId!,
+          { sampleCount: r.sampleCount, bestStrength: r.bestStrength ?? null },
+        ])
+      );
+      const setById = new Map(
+        setAgg.map((r) => [
+          r.exerciseId!,
+          { setCount: r.setCount, bestE1rm: r.bestE1rm ?? null },
+        ])
+      );
+      const volById = new Map(volAgg.map((r) => [r.exerciseId!, r.vol]));
+
+      for (const exerciseId of ids) {
+        const se = seById.get(exerciseId) ?? {
+          sampleCount: 0,
+          bestStrength: null,
+        };
+        const st = setById.get(exerciseId) ?? { setCount: 0, bestE1rm: null };
+        const vol = volById.get(exerciseId) ?? 0;
+
+        const bestE1rmExpr = sql<number | null>`case
+        when ${st.bestE1rm} is null then ${exerciseStats.bestSetE1rm}
+        when ${exerciseStats.bestSetE1rm} is null then ${st.bestE1rm}
+        else max(${exerciseStats.bestSetE1rm}, ${st.bestE1rm})
+      end`;
+
+        const bestStrengthExpr = sql<number | null>`case
+        when ${se.bestStrength} is null then ${exerciseStats.bestExerciseStrengthScore}
+        when ${exerciseStats.bestExerciseStrengthScore} is null then ${se.bestStrength}
+        else max(${exerciseStats.bestExerciseStrengthScore}, ${se.bestStrength})
+      end`;
+
+        await tx
+          .insert(exerciseStats)
+          .values({
+            exerciseId,
+            bestSetE1rm: st.bestE1rm,
+            bestExerciseStrengthScore: se.bestStrength,
+            totalSetCount: st.setCount,
+            totalVolumeKg: vol,
+            sampleCount: se.sampleCount,
+            updatedAt: now,
+          })
+          .onConflictDoUpdate({
+            target: exerciseStats.exerciseId,
+            set: {
+              totalSetCount: sql`${exerciseStats.totalSetCount} + ${st.setCount}`,
+              totalVolumeKg: sql`${exerciseStats.totalVolumeKg} + ${vol}`,
+              sampleCount: sql`${exerciseStats.sampleCount} + ${se.sampleCount}`,
+              bestSetE1rm: bestE1rmExpr,
+              bestExerciseStrengthScore: bestStrengthExpr,
+              updatedAt: now,
+            },
+          });
+      }
+    });
   }
 }
 

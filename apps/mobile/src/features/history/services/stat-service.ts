@@ -85,8 +85,6 @@ export class StatService {
         programId,
         periodType,
         periodStart: start,
-        rangeStart: start,
-        rangeEndExclusive: endExclusive,
       });
     }
   }
@@ -131,8 +129,6 @@ export class StatService {
         exerciseId,
         periodType,
         periodStart: start,
-        rangeStart: start,
-        rangeEndExclusive: endExclusive,
       });
     }
   }
