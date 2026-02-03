@@ -61,7 +61,7 @@ export default function InsightsLayout() {
       <Stack.Screen
         name="program/[programId]"
         options={{
-          title: "Program stats",
+          title: "",
           headerLeft: () => <HeaderBack />,
         }}
       />
