@@ -2,45 +2,56 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
-import { WorkoutProgram } from "@/src/features/program-workout/domain/type";
+import { COLOR_STRIP_MAP, WorkoutProgram } from "@/src/features/program-workout/domain/type";
 import { useWorkoutPrograms } from "@/src/features/program-workout/hooks/use-workout-programs";
 
 function ProgramRow(props: {
   title: string;
   subtitle?: string;
   rightValue?: string;
+  color?: string;
   onPress: () => void;
 }) {
   return (
     <Pressable
       onPress={props.onPress}
-      className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950"
+      className="rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 overflow-hidden"
     >
-      <View className="flex-row items-center justify-between gap-3">
-        <View className="flex-1">
-          <Text
-            className="text-base font-semibold text-neutral-900 dark:text-neutral-100"
-            numberOfLines={1}
-          >
-            {props.title}
-          </Text>
-          {props.subtitle ? (
-            <Text
-              className="mt-1 text-xs text-neutral-500 dark:text-neutral-400"
-              numberOfLines={1}
-            >
-              {props.subtitle}
-            </Text>
-          ) : null}
-        </View>
+      <View className="flex-row">
+        {/* Color strip */}
+        {props.color ? (
+          <View className={["w-1.5", props.color].join(" ")} />
+        ) : null}
 
-        <View className="items-end">
-          {props.rightValue ? (
-            <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-              {props.rightValue}
-            </Text>
-          ) : null}
-          <Text className="text-neutral-400 dark:text-neutral-600">›</Text>
+        {/* Content */}
+        <View className="flex-1 p-4">
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="flex-1">
+              <Text
+                className="text-base font-semibold text-neutral-900 dark:text-neutral-100"
+                numberOfLines={1}
+              >
+                {props.title}
+              </Text>
+              {props.subtitle ? (
+                <Text
+                  className="mt-1 text-xs text-neutral-500 dark:text-neutral-400"
+                  numberOfLines={1}
+                >
+                  {props.subtitle}
+                </Text>
+              ) : null}
+            </View>
+
+            <View className="items-end">
+              {props.rightValue ? (
+                <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                  {props.rightValue}
+                </Text>
+              ) : null}
+              <Text className="text-neutral-400 dark:text-neutral-600">›</Text>
+            </View>
+          </View>
         </View>
       </View>
     </Pressable>
@@ -135,6 +146,7 @@ export default function InsightsProgramIndexScreen() {
                 title={title}
                 subtitle={getProgramSubtitle(p)}
                 rightValue={getProgramRightValue(p)}
+                color={COLOR_STRIP_MAP[p.color]}
                 onPress={() => openProgram(id)}
               />
             );
