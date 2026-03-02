@@ -1,7 +1,7 @@
 // app/(tabs)/insights/program/[programId].tsx
 import React, { useEffect, useMemo, useState, useLayoutEffect } from "react";
 import { ScrollView, View, Text, Pressable } from "react-native";
-import { useLocalSearchParams, Stack, useNavigation } from "expo-router";
+import { useLocalSearchParams, useNavigation } from "expo-router";
 
 import type { ProgramPeriodStat } from "@/src/features/program-period-stats/domain/types";
 import type { ProgramStat } from "@/src/features/program-stats/domain/types";
@@ -11,13 +11,23 @@ import { programPeriodStatRepository } from "@/src/features/program-period-stats
 
 import { ProgramStatsView } from "@/src/features/program-stats/components/program-stats-view";
 import { ProgramPeriodStatsView } from "@/src/features/program-period-stats/components/program-period-stats-view";
-import { COLOR_STRIP_MAP, WorkoutProgram } from "@/src/features/program-workout/domain/type";
+import { ProgramPeriodTrendView } from "@/src/features/program-period-stats/components/program-period-trend-view";
+
+import {
+  COLOR_STRIP_MAP,
+  WorkoutProgram,
+} from "@/src/features/program-workout/domain/type";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
+import { ProgramPeriodDeltaView } from "@/src/features/program-period-stats/components/program-period-delta-view";
 
 type PeriodKey = "week" | "month" | "year";
 
+// 🔧 DEBUG SWITCH
+const DEBUG_TREND = true;
+
 export default function ProgramStatsPage() {
   const { programId } = useLocalSearchParams<{ programId: string }>();
+  const navigation = useNavigation();
 
   const [period, setPeriod] = useState<PeriodKey>("week");
   const [program, setProgram] = useState<WorkoutProgram | null>(null);
@@ -26,7 +36,9 @@ export default function ProgramStatsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // data fetch
+  // -----------------------------
+  // Fetch data
+  // -----------------------------
   useEffect(() => {
     if (!programId) return;
     let cancelled = false;
@@ -61,19 +73,17 @@ export default function ProgramStatsPage() {
     };
   }, [programId]);
 
-  const navigation = useNavigation();
-
+  // -----------------------------
+  // Header title
+  // -----------------------------
   useLayoutEffect(() => {
     if (!program) return;
-
-    navigation.setOptions({
-      title: program.name,
-    });
+    navigation.setOptions({ title: program.name });
   }, [navigation, program]);
 
-
-
-
+  // -----------------------------
+  // Real period rows
+  // -----------------------------
   const periodRows = useMemo(() => {
     return allPeriods
       .filter((r) => r.periodType === period)
@@ -86,6 +96,54 @@ export default function ProgramStatsPage() {
 
   const latest = periodRows[periodRows.length - 1] ?? null;
 
+  // -----------------------------
+  // Debug rows (SAFE + TYPED)
+  // -----------------------------
+  const debugPeriodRows = useMemo<ProgramPeriodStat[]>(() => {
+    if (!DEBUG_TREND) return periodRows;
+
+    return [
+      makeDummyPeriodStat({
+        periodType: period,
+        periodStart: new Date("2024-01-01"),
+        averageProgression: -0.04,
+      }),
+      makeDummyPeriodStat({
+        periodType: period,
+        periodStart: new Date("2024-01-08"),
+        averageProgression: 0.02,
+      }),
+      makeDummyPeriodStat({
+        periodType: period,
+        periodStart: new Date("2024-01-15"),
+        averageProgression: 0.06,
+      }),
+      makeDummyPeriodStat({
+        periodType: period,
+        periodStart: new Date("2024-01-22"),
+        averageProgression: 0.01,
+      }),
+      makeDummyPeriodStat({
+        periodType: period,
+        periodStart: new Date("2024-01-29"),
+        averageProgression: 0.09,
+      }),
+      makeDummyPeriodStat({
+        periodType: period,
+        periodStart: new Date("2024-02-05"),
+        averageProgression: -0.02,
+      }),
+      makeDummyPeriodStat({
+        periodType: period,
+        periodStart: new Date("2024-02-12"),
+        averageProgression: 0.12,
+      }),
+    ];
+  }, [DEBUG_TREND, periodRows, period]);
+
+  // -----------------------------
+  // Render
+  // -----------------------------
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: "#000" }}
@@ -106,7 +164,7 @@ export default function ProgramStatsPage() {
         </View>
       ) : null}
 
-      {/* Lifetime stats */}
+      {/* Lifetime */}
       <ProgramStatsView stat={lifetime} className="mb-3" />
 
       {/* Period selector */}
@@ -136,23 +194,38 @@ export default function ProgramStatsPage() {
         })}
       </View>
 
-      {/* Latest period */}
+      {/* Latest */}
       <Text className="text-neutral-300 text-xs mb-2">Latest {period}</Text>
 
       <ProgramPeriodStatsView stat={latest} className="mb-3" />
+      <ProgramPeriodDeltaView rows={periodRows} period={period} />
 
-      {/* History */}
-      <Text className="text-neutral-300 text-xs mb-2">
-        All {period} rows ({periodRows.length})
-      </Text>
-
-      {periodRows.map((r, i) => (
-        <ProgramPeriodStatsView key={i} stat={r} className="mb-3" />
-      ))}
+      {/* Trend */}
+      <ProgramPeriodTrendView rows={periodRows} className="mb-4" />
 
       {loading ? (
         <Text className="text-neutral-500 text-xs mt-2">loading…</Text>
       ) : null}
     </ScrollView>
   );
+}
+
+// --------------------------------
+// Dummy factory (TYPE-SAFE)
+// --------------------------------
+function makeDummyPeriodStat(
+  overrides: Partial<ProgramPeriodStat>,
+): ProgramPeriodStat {
+  return {
+    id: "debug",
+    programId: "debug",
+    periodType: "week",
+    periodStart: new Date("2024-01-01"),
+    sessionCount: 0,
+    volumeKg: 0,
+    durationSec: 0,
+    averageProgression: 0,
+    updatedAt: new Date(),
+    ...overrides,
+  };
 }
