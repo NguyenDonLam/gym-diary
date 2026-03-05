@@ -95,64 +95,68 @@ export default function InsightsProgramIndexScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-neutral-50 dark:bg-black"
-      contentContainerClassName="p-4 gap-4"
+      className="flex-1 bg-white dark:bg-[#2B2D3A]"
+      contentContainerClassName="pb-4"
     >
-      <View>
-        <Text className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+      <View className="border-b border-zinc-200 px-4 pb-3 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
+        <Text className="text-2xl font-semibold text-neutral-900 dark:text-[#F8F8F2]">
           Program
         </Text>
-        <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+        <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
           Select a program to view stats
         </Text>
       </View>
 
-      <View className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950">
-        <TextInput
-          value={q}
-          onChangeText={setQ}
-          placeholder="Search programs"
-          placeholderTextColor="#9CA3AF"
-          autoCapitalize="none"
-          autoCorrect={false}
-          className="text-sm text-neutral-900 dark:text-neutral-100"
-        />
+      <View className="px-4 pt-4 gap-4">
+        <View className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]">
+          <TextInput
+            value={q}
+            onChangeText={setQ}
+            placeholder="Search programs"
+            placeholderTextColor="#9CA3AF"
+            autoCapitalize="none"
+            autoCorrect={false}
+            className="text-sm text-neutral-900 dark:text-[#F8F8F2]"
+          />
+        </View>
+
+        {isLoading ? (
+          <Text className="text-xs text-neutral-500 dark:text-[#6272A4]">
+            Loading…
+          </Text>
+        ) : error ? (
+          <Text className="text-xs text-red-600 dark:text-[#FF5555]">
+            {error.message}
+          </Text>
+        ) : filtered.length === 0 ? (
+          <View className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-[#44475A] dark:bg-[#343746]">
+            <Text className="text-sm font-medium text-neutral-900 dark:text-[#F8F8F2]">
+              No programs
+            </Text>
+            <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
+              Create a program first, then come back.
+            </Text>
+          </View>
+        ) : (
+          <View className="gap-3">
+            {filtered.map((p) => {
+              const id = getProgramId(p);
+              const title = getProgramName(p);
+
+              return (
+                <ProgramRow
+                  key={id}
+                  title={title}
+                  subtitle={getProgramSubtitle(p)}
+                  rightValue={getProgramRightValue(p)}
+                  color={COLOR_STRIP_MAP[p.color]}
+                  onPress={() => openProgram(id)}
+                />
+              );
+            })}
+          </View>
+        )}
       </View>
-
-      {isLoading ? (
-        <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-          Loading…
-        </Text>
-      ) : error ? (
-        <Text className="text-xs text-red-600">{error.message}</Text>
-      ) : filtered.length === 0 ? (
-        <View className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-          <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-            No programs
-          </Text>
-          <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-            Create a program first, then come back.
-          </Text>
-        </View>
-      ) : (
-        <View className="gap-3">
-          {filtered.map((p) => {
-            const id = getProgramId(p);
-            const title = getProgramName(p);
-
-            return (
-              <ProgramRow
-                key={id}
-                title={title}
-                subtitle={getProgramSubtitle(p)}
-                rightValue={getProgramRightValue(p)}
-                color={COLOR_STRIP_MAP[p.color]}
-                onPress={() => openProgram(id)}
-              />
-            );
-          })}
-        </View>
-      )}
     </ScrollView>
   );
 }

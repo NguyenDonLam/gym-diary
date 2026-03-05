@@ -165,11 +165,11 @@ function buildWindowPreview(
 
 function StatTile(props: { label: string; value: string }) {
   return (
-    <View className="flex-1 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-      <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+    <View className="flex-1 rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
+      <Text className="text-xs text-neutral-700 dark:text-[#6272A4]">
         {props.label}
       </Text>
-      <Text className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+      <Text className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-[#F8F8F2]">
         {props.value}
       </Text>
     </View>
@@ -183,7 +183,7 @@ function LensToggle(props: {
   const items: TimeLens[] = ["4W", "12W", "ALL"];
 
   return (
-    <View className="flex-row rounded-2xl border border-neutral-200 bg-white p-1 dark:border-neutral-800 dark:bg-neutral-950">
+    <View className="flex-row rounded-2xl bg-neutral-100 p-1 dark:bg-[#343746]">
       {items.map((it) => {
         const active = it === props.value;
 
@@ -192,16 +192,16 @@ function LensToggle(props: {
             key={it}
             onPress={() => props.onChange(it)}
             className={[
-              "px-3 py-2 rounded-xl",
-              active ? "bg-neutral-900 dark:bg-neutral-100" : "bg-transparent",
+              "rounded-xl px-3 py-2",
+              active ? "bg-neutral-900 dark:bg-[#44475A]" : "bg-transparent",
             ].join(" ")}
           >
             <Text
               className={[
                 "text-xs font-medium",
                 active
-                  ? "text-white dark:text-neutral-900"
-                  : "text-neutral-700 dark:text-neutral-300",
+                  ? "text-white dark:text-[#BD93F9]"
+                  : "text-neutral-700 dark:text-[#6272A4]",
               ].join(" ")}
             >
               {it}
@@ -217,16 +217,16 @@ function WeeklyActivityCard(props: { buckets: WeekBucket[] }) {
   const max = Math.max(1, ...props.buckets.map((b) => b.entries));
 
   return (
-    <View className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-      <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+    <View className="rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
+      <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
         Weekly activity
       </Text>
-      <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+      <Text className="mt-1 text-xs text-neutral-700 dark:text-[#6272A4]">
         Each square is one week. Darker means more exercise entries.
       </Text>
 
       {props.buckets.length === 0 ? (
-        <Text className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+        <Text className="mt-3 text-xs text-neutral-500 dark:text-[#6272A4]">
           No weekly data yet.
         </Text>
       ) : (
@@ -247,7 +247,7 @@ function WeeklyActivityCard(props: { buckets: WeekBucket[] }) {
                 <View
                   key={b.key}
                   className={[
-                    "h-3 w-3 rounded-sm bg-neutral-900 dark:bg-neutral-100",
+                    "h-3 w-3 rounded-sm bg-neutral-900 dark:bg-[#BD93F9]",
                     opacityClass,
                   ].join(" ")}
                   accessibilityLabel={`${b.entries} exercise entries`}
@@ -256,7 +256,7 @@ function WeeklyActivityCard(props: { buckets: WeekBucket[] }) {
             })}
           </View>
 
-          <Text className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+          <Text className="mt-3 text-xs text-neutral-500 dark:text-[#6272A4]">
             Darkest week: {formatCount(max)} exercise entries
           </Text>
         </>
@@ -268,17 +268,17 @@ function WeeklyActivityCard(props: { buckets: WeekBucket[] }) {
 function ExerciseCard(props: { rows: PreviewRow[] }) {
   return (
     <Link href="/(tabs)/insights/exercise" asChild>
-      <Pressable className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+      <Pressable className="rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
         <View className="flex-row items-start justify-between">
           <View className="pr-4">
-            <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+            <Text className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2]">
               Exercise
             </Text>
-            <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            <Text className="mt-1 text-xs text-neutral-700 dark:text-[#6272A4]">
               Most active exercises in this view
             </Text>
           </View>
-          <Text className="text-neutral-400 dark:text-neutral-600">›</Text>
+          <Text className="text-neutral-500 dark:text-[#6272A4]">›</Text>
         </View>
       </Pressable>
     </Link>
@@ -288,17 +288,17 @@ function ExerciseCard(props: { rows: PreviewRow[] }) {
 function ProgramCard() {
   return (
     <Link href="/(tabs)/insights/program" asChild>
-      <Pressable className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+      <Pressable className="rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
         <View className="flex-row items-start justify-between">
           <View className="pr-4">
-            <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+            <Text className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2]">
               Program
             </Text>
-            <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            <Text className="mt-1 text-xs text-neutral-700 dark:text-[#6272A4]">
               View program stats
             </Text>
           </View>
-          <Text className="text-neutral-400 dark:text-neutral-600">›</Text>
+          <Text className="text-neutral-500 dark:text-[#6272A4]">›</Text>
         </View>
       </Pressable>
     </Link>
@@ -397,26 +397,28 @@ export default function InsightsIndexScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-neutral-50 dark:bg-black"
-      contentContainerClassName="p-4 gap-4"
+      className="flex-1 bg-white dark:bg-[#2B2D3A]"
+      contentContainerClassName="gap-4 p-4"
     >
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1">
-          <Text className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+          <Text className="text-2xl font-semibold text-neutral-900 dark:text-[#F8F8F2]">
             Insights
           </Text>
-          <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <Text className="mt-1 text-xs text-neutral-700 dark:text-[#6272A4]">
             {LENS_LABEL[lens]}
           </Text>
 
           {loading ? (
-            <Text className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+            <Text className="mt-2 text-xs text-neutral-500 dark:text-[#6272A4]">
               Loading…
             </Text>
           ) : null}
 
           {error ? (
-            <Text className="mt-2 text-xs text-red-600">{error}</Text>
+            <Text className="mt-2 text-xs text-red-600 dark:text-[#FF5555]">
+              {error}
+            </Text>
           ) : null}
         </View>
 

@@ -45,17 +45,18 @@ export default function ProgramWorkoutCreate() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1"
+      className="flex-1 bg-white dark:bg-[#2B2D3A]"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={0} // adjust in screen if you have a header
     >
-      {/* Top bar */}
-      <View className="flex-row items-center justify-between border-b border-neutral-200 px-4 py-3">
+      {/* Header */}
+      <View className="flex-row items-center justify-between border-b border-zinc-200 dark:border-[#44475A] px-4 py-3 bg-white dark:bg-[#21222C]">
         <Pressable onPress={handleCancel} disabled={isSaving}>
-          <Text className="text-sm text-neutral-500">Cancel</Text>
+          <Text className="text-sm text-neutral-500 dark:text-[#6272A4]">
+            Cancel
+          </Text>
         </Pressable>
 
-        <Text className="text-base font-semibold text-neutral-900">
+        <Text className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2]">
           New template
         </Text>
 
@@ -63,12 +64,16 @@ export default function ProgramWorkoutCreate() {
           onPress={handleSave}
           disabled={!canSave}
           className={`rounded-full px-3 py-1.5 ${
-            canSave ? "bg-black" : "bg-neutral-300"
+            canSave
+              ? "bg-black dark:bg-[#BD93F9]"
+              : "bg-neutral-300 dark:bg-[#44475A]"
           }`}
         >
           <Text
             className={`text-xs font-semibold ${
-              canSave ? "text-white" : "text-neutral-500"
+              canSave
+                ? "text-white dark:text-[#282A36]"
+                : "text-neutral-500 dark:text-[#6272A4]"
             }`}
           >
             Save
@@ -76,8 +81,10 @@ export default function ProgramWorkoutCreate() {
         </Pressable>
       </View>
 
-      {/* Form body */}
-      <WorkoutProgramForm formData={formData} setFormData={setFormData} />
+      {/* Body */}
+      <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
+        <WorkoutProgramForm formData={formData} setFormData={setFormData} />
+      </View>
     </KeyboardAvoidingView>
   );
 }

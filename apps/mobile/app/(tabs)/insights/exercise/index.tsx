@@ -255,127 +255,129 @@ export default function InsightsExerciseIndexScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-neutral-50 dark:bg-black"
-      contentContainerClassName="p-4 gap-4"
+      className="flex-1 bg-white dark:bg-[#2B2D3A]"
+      contentContainerClassName="pb-4"
     >
-      <View>
-        <Text className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+      <View className="border-b border-zinc-200 px-4 pb-3 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
+        <Text className="text-2xl font-semibold text-neutral-900 dark:text-[#F8F8F2]">
           Exercise
         </Text>
-        <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+        <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
           Search is ranked by relevance, recency, and usage
         </Text>
       </View>
 
-      <View className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950">
-        <TextInput
-          value={q}
-          onChangeText={setQ}
-          placeholder="Search exercises"
-          placeholderTextColor="#9CA3AF"
-          autoCapitalize="none"
-          autoCorrect={false}
-          className="text-sm text-neutral-900 dark:text-neutral-100"
-        />
-      </View>
-
-      {error ? (
-        <View className="rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900 dark:bg-rose-950/30">
-          <Text className="text-sm font-medium text-rose-700 dark:text-rose-300">
-            Failed to load exercises
-          </Text>
-          <Text className="mt-1 text-xs text-rose-600 dark:text-rose-400">
-            {error}
-          </Text>
+      <View className="px-4 pt-4 gap-4">
+        <View className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]">
+          <TextInput
+            value={q}
+            onChangeText={setQ}
+            placeholder="Search exercises"
+            placeholderTextColor="#9CA3AF"
+            autoCapitalize="none"
+            autoCorrect={false}
+            className="text-sm text-neutral-900 dark:text-[#F8F8F2]"
+          />
         </View>
-      ) : null}
 
-      {loading ? (
-        <Text className="text-xs text-neutral-500 dark:text-neutral-400">
-          Loading…
-        </Text>
-      ) : query ? (
-        searchResults.length === 0 ? (
-          <View className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-            <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-              No matching exercises
+        {error ? (
+          <View className="rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-[#FF5555] dark:bg-[#3A3D4F]">
+            <Text className="text-sm font-medium text-rose-700 dark:text-[#FF5555]">
+              Failed to load exercises
             </Text>
-            <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              Try another keyword.
+            <Text className="mt-1 text-xs text-rose-600 dark:text-[#F8F8F2]">
+              {error}
             </Text>
           </View>
-        ) : (
-          <>
-            <View>
-              <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                Search results
-              </Text>
-              <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                Prefix matches rank first, then recent and frequent matches
-              </Text>
-            </View>
+        ) : null}
 
-            {renderRows(searchResults)}
-          </>
-        )
-      ) : (
-        <>
-          <View>
-            <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              {relevant.length > 0 ? "Relevant to you" : "Suggested"}
-            </Text>
-            <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              {relevant.length > 0
-                ? "Based on exercises you perform most recently and most often"
-                : "Start with a smaller list instead of the full registry"}
-            </Text>
-          </View>
-
-          {featured.length === 0 ? (
-            <View className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-              <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                No exercises
+        {loading ? (
+          <Text className="text-xs text-neutral-500 dark:text-[#6272A4]">
+            Loading…
+          </Text>
+        ) : query ? (
+          searchResults.length === 0 ? (
+            <View className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-[#44475A] dark:bg-[#343746]">
+              <Text className="text-sm font-medium text-neutral-900 dark:text-[#F8F8F2]">
+                No matching exercises
               </Text>
-              <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                Log a session first, then come back.
+              <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
+                Try another keyword.
               </Text>
             </View>
           ) : (
-            renderRows(featured)
-          )}
-
-          {browseAllRows.length > 0 ? (
-            <Pressable
-              onPress={() => setShowAll((v) => !v)}
-              className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-neutral-800 dark:bg-neutral-950"
-            >
-              <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                {showAll ? "Hide all exercises" : "Browse all exercises"}
-              </Text>
-              <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                {showAll
-                  ? "Collapse the full list"
-                  : "Show the complete registry in A–Z order"}
-              </Text>
-            </Pressable>
-          ) : null}
-
-          {showAll && browseAllRows.length > 0 ? (
             <>
               <View>
-                <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  All exercises
+                <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
+                  Search results
                 </Text>
-                <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                  Full list in alphabetical order
+                <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
+                  Prefix matches rank first, then recent and frequent matches
                 </Text>
               </View>
 
-              {renderRows(browseAllRows)}
+              {renderRows(searchResults)}
             </>
-          ) : null}
-        </>
-      )}
+          )
+        ) : (
+          <>
+            <View>
+              <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
+                {relevant.length > 0 ? "Relevant to you" : "Suggested"}
+              </Text>
+              <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
+                {relevant.length > 0
+                  ? "Based on exercises you perform most recently and most often"
+                  : "Start with a smaller list instead of the full registry"}
+              </Text>
+            </View>
+
+            {featured.length === 0 ? (
+              <View className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-[#44475A] dark:bg-[#343746]">
+                <Text className="text-sm font-medium text-neutral-900 dark:text-[#F8F8F2]">
+                  No exercises
+                </Text>
+                <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
+                  Log a session first, then come back.
+                </Text>
+              </View>
+            ) : (
+              renderRows(featured)
+            )}
+
+            {browseAllRows.length > 0 ? (
+              <Pressable
+                onPress={() => setShowAll((v) => !v)}
+                className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]"
+              >
+                <Text className="text-sm font-medium text-neutral-900 dark:text-[#F8F8F2]">
+                  {showAll ? "Hide all exercises" : "Browse all exercises"}
+                </Text>
+                <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
+                  {showAll
+                    ? "Collapse the full list"
+                    : "Show the complete registry in A–Z order"}
+                </Text>
+              </Pressable>
+            ) : null}
+
+            {showAll && browseAllRows.length > 0 ? (
+              <>
+                <View>
+                  <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
+                    All exercises
+                  </Text>
+                  <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
+                    Full list in alphabetical order
+                  </Text>
+                </View>
+
+                {renderRows(browseAllRows)}
+              </>
+            ) : null}
+          </>
+        )}
+      </View>
     </ScrollView>
   );
 }

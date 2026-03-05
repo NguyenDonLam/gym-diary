@@ -93,36 +93,40 @@ function WorkoutSessionStat({
   }, [sessions]);
 
   return (
-    <View className="mb-3 rounded-xl border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950">
-      <Text className="text-sm font-semibold text-zinc-900 dark:text-white">
+    <View className="mb-3 rounded-xl border border-zinc-200 bg-white p-3 dark:border-[#44475A] dark:bg-[#343746]">
+      <Text className="text-sm font-semibold text-zinc-900 dark:text-[#F8F8F2]">
         Workout stats
       </Text>
 
-      <Text className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+      <Text className="mt-1 text-xs text-zinc-500 dark:text-[#6272A4]">
         Date:{" "}
-        <Text className="text-zinc-900 dark:text-white">{selectedDateKey}</Text>
+        <Text className="text-zinc-900 dark:text-[#F8F8F2]">
+          {selectedDateKey}
+        </Text>
       </Text>
 
       <View className="mt-2">
-        <Text className="text-xs text-zinc-500 dark:text-zinc-400">
+        <Text className="text-xs text-zinc-500 dark:text-[#6272A4]">
           Sets:{" "}
-          <Text className="text-zinc-900 dark:text-white">{stat.setCount}</Text>
+          <Text className="text-zinc-900 dark:text-[#F8F8F2]">
+            {stat.setCount}
+          </Text>
         </Text>
 
-        <Text className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+        <Text className="mt-1 text-xs text-zinc-500 dark:text-[#6272A4]">
           Volume (kg·reps):{" "}
-          <Text className="text-zinc-900 dark:text-white">
+          <Text className="text-zinc-900 dark:text-[#F8F8F2]">
             {Number.isFinite(stat.volumeKg) ? Math.round(stat.volumeKg) : "—"}
           </Text>
         </Text>
 
-        <Text className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+        <Text className="mt-1 text-xs text-zinc-500 dark:text-[#6272A4]">
           Avg session growth:{" "}
-          <Text className="text-zinc-900 dark:text-white">
+          <Text className="text-zinc-900 dark:text-[#F8F8F2]">
             {stat.avgGrowthPct == null
               ? "—"
               : `${stat.avgGrowthPct >= 0 ? "+" : ""}${stat.avgGrowthPct.toFixed(
-                  2
+                  2,
                 )}%`}
           </Text>
         </Text>
@@ -265,14 +269,14 @@ export default function History() {
   const selectedSessions = sessionsByDate[selectedDateKey] ?? [];
 
   return (
-    <View className={`${schemeClass} flex-1 bg-white dark:bg-zinc-950`}>
-      <View className="px-4 pt-3 pb-2">
-        <Text className="text-xl font-bold text-zinc-900 dark:text-white">
+    <View className={`${schemeClass} flex-1 bg-white dark:bg-[#2B2D3A]`}>
+      <View className="border-b border-zinc-200 px-4 pb-3 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
+        <Text className="text-xl font-bold text-zinc-900 dark:text-[#F8F8F2]">
           History
         </Text>
       </View>
 
-      <View className="px-4 pb-2">
+      <View className="px-4 pb-2 pt-3">
         <CalendarMonth
           monthDate={monthDate}
           selectedDateKey={selectedDateKey}
@@ -282,12 +286,12 @@ export default function History() {
         />
 
         {isLoading && (
-          <Text className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+          <Text className="mt-2 text-xs text-zinc-500 dark:text-[#6272A4]">
             Loading…
           </Text>
         )}
         {loadError && (
-          <Text className="mt-2 text-xs text-red-600 dark:text-red-400">
+          <Text className="mt-2 text-xs text-red-600 dark:text-[#FF5555]">
             {loadError}
           </Text>
         )}

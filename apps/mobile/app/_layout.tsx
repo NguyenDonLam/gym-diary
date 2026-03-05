@@ -1,5 +1,5 @@
 import "../global.css";
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import { Stack } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
@@ -22,29 +22,15 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const THEME_KEY = "theme";
-
 const queryClient = new QueryClient();
 
 function BootScreen({ title, detail }: { title: string; detail?: string }) {
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-        backgroundColor: "#0B0B0C",
-      }}
-    >
-      <ActivityIndicator size="large" color="#E5E7EB" />
-      <Text style={{ color: "#E5E7EB", marginTop: 12, fontWeight: "600" }}>
-        {title}
-      </Text>
+    <View className="flex-1 items-center justify-center bg-[#21222C] px-4">
+      <ActivityIndicator size="large" color="#BD93F9" />
+      <Text className="mt-3 font-semibold text-[#F8F8F2]">{title}</Text>
       {detail ? (
-        <Text
-          selectable
-          style={{ color: "#9CA3AF", marginTop: 8, textAlign: "center" }}
-        >
+        <Text selectable className="mt-2 text-center text-[#6272A4]">
           {detail}
         </Text>
       ) : null}
@@ -68,7 +54,9 @@ export default function RootLayout() {
     (async () => {
       try {
         const stored = await AsyncStorage.getItem(THEME_KEY);
-        if (stored === "light" || stored === "dark") setColorScheme(stored);
+        if (stored === "light" || stored === "dark") {
+          setColorScheme(stored);
+        }
       } catch (e) {
         console.warn("[theme] failed to load theme", e);
       }
@@ -77,6 +65,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!success) return;
+
     (async () => {
       try {
         await runAllSeeds(db);
@@ -102,10 +91,14 @@ export default function RootLayout() {
               useSuspense
             >
               <OngoingSessionProvider>
-                <View className="flex-1 bg-white dark:bg-slate-950">
-                  <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
-                    <View style={{ flex: 1 }}>
+                <View className="flex-1 bg-white dark:bg-[#21222C]">
+                  <SafeAreaView
+                    className="flex-1 bg-white dark:bg-[#21222C]"
+                    edges={["top", "bottom"]}
+                  >
+                    <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
                       <CurrentSessionBanner dbReady={success} />
+
                       <Stack screenOptions={{ headerShown: false }}>
                         <Stack.Screen name="(tabs)" />
                         <Stack.Screen name="program-workout" />
@@ -115,23 +108,13 @@ export default function RootLayout() {
                       </Stack>
 
                       {seedErr ? (
-                        <View
-                          style={{
-                            position: "absolute",
-                            left: 12,
-                            right: 12,
-                            bottom: 12,
-                            backgroundColor: "#111827",
-                            padding: 12,
-                            borderRadius: 12,
-                          }}
-                        >
-                          <Text style={{ color: "#E5E7EB", fontWeight: "600" }}>
+                        <View className="absolute bottom-3 left-3 right-3 rounded-xl bg-[#111827] p-3 dark:bg-[#3A3D4F]">
+                          <Text className="font-semibold text-[#E5E7EB] dark:text-[#FF5555]">
                             Seeding failed
                           </Text>
                           <Text
                             selectable
-                            style={{ color: "#9CA3AF", marginTop: 6 }}
+                            className="mt-1 text-[#9CA3AF] dark:text-[#F8F8F2]"
                           >
                             {seedErr}
                           </Text>

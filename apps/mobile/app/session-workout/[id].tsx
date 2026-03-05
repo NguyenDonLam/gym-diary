@@ -84,29 +84,29 @@ export default function SessionWorkoutPage() {
   const readOnly = true;
 
   return (
-    <View className="flex-1 bg-white dark:bg-neutral-950">
+    <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
       {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-3 pb-2 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950">
+      <View className="flex-row items-center justify-between px-4 pt-3 pb-2 border-b border-zinc-200 dark:border-[#44475A] bg-white dark:bg-[#21222C]">
         <Pressable onPress={() => router.back()} hitSlop={10} className="mr-2">
           <ChevronLeft width={20} height={20} color={iconColor} />
         </Pressable>
 
         <View className="flex-1 items-center justify-center">
           <Text
-            className="text-base font-semibold text-neutral-900 dark:text-neutral-50 text-center"
+            className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2] text-center"
             numberOfLines={1}
           >
             {sessionName ?? "Session"}
           </Text>
 
           <View className="mt-0.5 flex-row items-center">
-            <Text className="text-[11px] text-neutral-500 dark:text-neutral-400">
+            <Text className="text-[11px] text-neutral-500 dark:text-[#6272A4]">
               Session
             </Text>
 
             {sessionStatus && (
-              <View className="ml-2 px-2 py-[1px] rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
-                <Text className="text-[10px] font-medium text-neutral-700 dark:text-neutral-200">
+              <View className="ml-2 px-2 py-[1px] rounded-full bg-neutral-100 dark:bg-[#343746] border border-neutral-200 dark:border-[#44475A]">
+                <Text className="text-[10px] font-medium text-neutral-700 dark:text-[#F8F8F2]">
                   {formatStatus(sessionStatus)}
                 </Text>
               </View>
@@ -119,7 +119,7 @@ export default function SessionWorkoutPage() {
 
       {/* Body */}
       <ScrollView
-        className="flex-1 bg-white dark:bg-neutral-950"
+        className="flex-1 bg-white dark:bg-[#2B2D3A]"
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 12,
@@ -127,13 +127,13 @@ export default function SessionWorkoutPage() {
         }}
       >
         {loading && exercises.length === 0 && (
-          <Text className="text-center text-[12px] text-neutral-500 dark:text-neutral-400">
+          <Text className="text-center text-[12px] text-neutral-500 dark:text-[#6272A4]">
             Loading…
           </Text>
         )}
 
         {!loading && exercises.length === 0 && (
-          <Text className="mt-4 text-center text-[12px] text-neutral-500 dark:text-neutral-400">
+          <Text className="mt-4 text-center text-[12px] text-neutral-500 dark:text-[#6272A4]">
             No exercises in this session.
           </Text>
         )}
@@ -145,7 +145,7 @@ export default function SessionWorkoutPage() {
             readOnly={readOnly}
             onChange={(next) =>
               setExercises((prev) =>
-                prev.map((e) => (e.id === next.id ? next : e))
+                prev.map((e) => (e.id === next.id ? next : e)),
               )
             }
           />

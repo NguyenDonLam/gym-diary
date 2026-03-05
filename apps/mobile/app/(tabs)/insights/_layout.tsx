@@ -18,7 +18,7 @@ export function HeaderBack() {
       hitSlop={12}
       className="px-3 py-2"
     >
-      <ArrowLeft size={22} color={isDark ? "#FFFFFF" : "#000000"} />
+      <ArrowLeft size={22} color={isDark ? "#F8F8F2" : "#000000"} />
     </Pressable>
   );
 }
@@ -32,10 +32,11 @@ export default function InsightsLayout() {
 
     return {
       headerShown: true,
-      headerStyle: { backgroundColor: isDark ? "#000000" : "#FFFFFF" },
-      headerTintColor: isDark ? "#FFFFFF" : "#000000",
-      headerTitleStyle: { color: isDark ? "#FFFFFF" : "#000000" },
-      contentStyle: { backgroundColor: isDark ? "#000000" : "#FAFAFA" },
+      headerStyle: { backgroundColor: isDark ? "#21222C" : "#FFFFFF" },
+      headerTintColor: isDark ? "#F8F8F2" : "#000000",
+      headerTitleStyle: { color: isDark ? "#F8F8F2" : "#000000" },
+      headerShadowVisible: false,
+      contentStyle: { backgroundColor: isDark ? "#2B2D3A" : "#FAFAFA" },
     } as const;
   }, [scheme]);
 

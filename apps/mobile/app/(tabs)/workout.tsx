@@ -294,14 +294,14 @@ export default function Workout() {
 
   if (isLoading || foldersLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-slate-950">
-        <ActivityIndicator size="large" />
+      <View className="flex-1 items-center justify-center bg-white dark:bg-[#282A36]">
+        <ActivityIndicator size="large" color="#BD93F9" />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-white dark:bg-slate-950">
+    <View className="flex-1 bg-white dark:bg-[#282A36]">
       <DraggableFlatList
         data={rows}
         keyExtractor={(item) => item.key}
@@ -316,31 +316,33 @@ export default function Workout() {
         }}
         ListHeaderComponent={
           <View className="mb-2 px-0">
-            <Text className="text-lg font-bold text-neutral-900 dark:text-slate-50">
+            <Text className="text-lg font-bold text-neutral-900 dark:text-[#F8F8F2]">
               Session templates
             </Text>
-            <Text className="mt-1 text-xs text-neutral-700 dark:text-neutral-300">
+
+            <Text className="mt-1 text-xs text-neutral-700 dark:text-[#6272A4]">
               Tap to start. Long-press to edit. Drag handle to move.
             </Text>
-            <Text className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+
+            <Text className="mt-0.5 text-xs text-neutral-500 dark:text-[#6272A4]">
               Total: {programs.length}
             </Text>
 
             <View className="mt-2 flex-row justify-between">
               <Pressable
-                className="rounded-full px-3 py-1.5 bg-neutral-900 dark:bg-slate-50"
+                className="rounded-full bg-neutral-900 px-3 py-1.5 dark:bg-[#BD93F9]"
                 onPress={handleCreateTemplate}
               >
-                <Text className="text-[13px] font-semibold text-white dark:text-slate-900">
+                <Text className="text-[13px] font-semibold text-white dark:text-[#282A36]">
                   New template
                 </Text>
               </Pressable>
 
               <Pressable
-                className="rounded-full px-3 py-1.5 bg-neutral-100 dark:bg-slate-800"
+                className="rounded-full bg-neutral-100 px-3 py-1.5 dark:bg-[#44475A]"
                 onPress={handleCreateFolder}
               >
-                <Text className="text-[13px] font-semibold text-neutral-900 dark:text-slate-50">
+                <Text className="text-[13px] font-semibold text-neutral-900 dark:text-[#F8F8F2]">
                   New folder
                 </Text>
               </Pressable>
@@ -350,7 +352,7 @@ export default function Workout() {
         ListFooterComponent={
           foldersError ? (
             <View className="mt-1">
-              <Text className="text-[10px] text-red-500 dark:text-red-400">
+              <Text className="text-[10px] text-red-500 dark:text-[#FF5555]">
                 Failed to load folders
               </Text>
             </View>
