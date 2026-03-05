@@ -12,23 +12,23 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
 
-        // make the bar itself transparent; we'll fully paint via tabBarBackground
         tabBarStyle: {
           backgroundColor: "transparent",
           borderTopWidth: 0,
           elevation: 0,
+          shadowOpacity: 0,
         },
 
-        tabBarActiveTintColor: isDark ? "#e5e7eb" : "#0f172a",
-        tabBarInactiveTintColor: isDark ? "#9ca3af" : "#64748b",
+        tabBarActiveTintColor: isDark ? "#BD93F9" : "#0f172a",
+        tabBarInactiveTintColor: isDark ? "#6272A4" : "#64748b",
 
         tabBarBackground: () => (
           <View
             style={{
               flex: 1,
-              backgroundColor: isDark ? "#020617" : "#ffffff", // slate-950 / white
-              borderTopWidth: 0.5,
-              borderTopColor: isDark ? "#1f2937" : "#e5e7eb", // slate-800 / gray-200
+              backgroundColor: isDark ? "#21222C" : "#ffffff",
+              borderTopWidth: 1,
+              borderTopColor: isDark ? "#44475A" : "#e5e7eb",
             }}
           />
         ),

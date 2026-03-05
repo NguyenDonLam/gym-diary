@@ -2,47 +2,44 @@ import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { useColorScheme } from "nativewind";
 
+type ThemeOption =  "light" | "dark";
+
 export default function SettingsScreen() {
   const { colorScheme, setColorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
 
-  const bg = isDark ? "#020617" : "#ffffff";
-  const card = isDark ? "#0f172a" : "#f8fafc";
-  const border = isDark ? "#1f2937" : "#e2e8f0";
-  const text = isDark ? "#e5e7eb" : "#0f172a";
-  const subtext = isDark ? "#94a3b8" : "#475569";
-  const activeBg = isDark ? "#1e293b" : "#e2e8f0";
+  const isActive = (value: ThemeOption) => {
+    return colorScheme === value;
+  };
 
   const ThemeButton = ({
     label,
     value,
+    isLast = false,
   }: {
     label: string;
-    value: "light" | "dark";
+    value: ThemeOption;
+    isLast?: boolean;
   }) => {
-    const active = colorScheme === value;
+    const active = isActive(value);
 
     return (
       <Pressable
         onPress={() => setColorScheme(value)}
-        style={{
-          flex: 1,
-          paddingVertical: 12,
-          paddingHorizontal: 14,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: border,
-          backgroundColor: active ? activeBg : "transparent",
-          alignItems: "center",
-          marginRight: value !== "dark" ? 8 : 0,
-        }}
+        className={[
+          "flex-1 rounded-full px-3 py-2",
+          active
+            ? "bg-neutral-900 dark:bg-slate-50"
+            : "bg-white dark:bg-slate-950",
+          !isLast ? "mr-2" : "",
+        ].join(" ")}
       >
         <Text
-          style={{
-            color: text,
-            fontSize: 14,
-            fontWeight: active ? "700" : "500",
-          }}
+          className={[
+            "text-center text-[13px] font-semibold",
+            active
+              ? "text-white dark:text-slate-900"
+              : "text-neutral-900 dark:text-slate-50",
+          ].join(" ")}
         >
           {label}
         </Text>
@@ -51,89 +48,31 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: bg,
-        padding: 20,
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 28,
-          fontWeight: "700",
-          color: text,
-          marginBottom: 20,
-        }}
-      >
-        Settings
-      </Text>
-
-      <View
-        style={{
-          backgroundColor: card,
-          borderWidth: 1,
-          borderColor: border,
-          borderRadius: 16,
-          padding: 16,
-          marginBottom: 16,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 18,
-            fontWeight: "600",
-            color: text,
-            marginBottom: 6,
-          }}
-        >
-          Appearance
+    <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
+      <View className="border-b border-zinc-200 px-4 pb-3 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
+        <Text className="text-lg font-bold text-neutral-900 dark:text-[#F8F8F2]">
+          Settings
         </Text>
-
-        <Text
-          style={{
-            fontSize: 14,
-            color: subtext,
-            marginBottom: 14,
-          }}
-        >
-          Choose how the app looks.
+        <Text className="mt-1 text-xs text-neutral-700 dark:text-[#6272A4]">
+          Preferences and app options.
         </Text>
-
-        <View style={{ flexDirection: "row" }}>
-          <ThemeButton label="Light" value="light" />
-          <ThemeButton label="Dark" value="dark" />
-        </View>
       </View>
 
-      <View
-        style={{
-          backgroundColor: card,
-          borderWidth: 1,
-          borderColor: border,
-          borderRadius: 16,
-          padding: 16,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 18,
-            fontWeight: "600",
-            color: text,
-            marginBottom: 6,
-          }}
-        >
-          Language
-        </Text>
+      <View className="px-4 pt-4">
+        <View className="mb-3 rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
+          <Text className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2]">
+            Appearance
+          </Text>
 
-        <Text
-          style={{
-            fontSize: 14,
-            color: subtext,
-          }}
-        >
-          Coming soon.
-        </Text>
+          <Text className="mt-1 text-xs text-neutral-700 dark:text-[#6272A4]">
+            Choose how the app looks.
+          </Text>
+
+          <View className="mt-3 flex-row">
+            <ThemeButton label="Light" value="light" />
+            <ThemeButton label="Dark" value="dark" isLast />
+          </View>
+        </View>
       </View>
     </View>
   );

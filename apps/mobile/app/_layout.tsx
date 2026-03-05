@@ -33,17 +33,17 @@ function BootScreen({ title, detail }: { title: string; detail?: string }) {
         alignItems: "center",
         justifyContent: "center",
         padding: 16,
-        backgroundColor: "#0B0B0C",
+        backgroundColor: "#21222C",
       }}
     >
-      <ActivityIndicator size="large" color="#E5E7EB" />
-      <Text style={{ color: "#E5E7EB", marginTop: 12, fontWeight: "600" }}>
+      <ActivityIndicator size="large" color="#BD93F9" />
+      <Text style={{ color: "#F8F8F2", marginTop: 12, fontWeight: "600" }}>
         {title}
       </Text>
       {detail ? (
         <Text
           selectable
-          style={{ color: "#9CA3AF", marginTop: 8, textAlign: "center" }}
+          style={{ color: "#6272A4", marginTop: 8, textAlign: "center" }}
         >
           {detail}
         </Text>
@@ -61,7 +61,8 @@ export default function RootLayout() {
     ? String(mig.error?.message ?? mig.error)
     : null;
 
-  const { setColorScheme } = useColorScheme();
+  const { colorScheme, setColorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const [seedErr, setSeedErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -94,7 +95,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>
+        <SafeAreaProvider key={colorScheme}>
           <Suspense fallback={<BootScreen title="Loading…" />}>
             <SQLiteProvider
               databaseName={DATABASE_NAME}
@@ -102,10 +103,27 @@ export default function RootLayout() {
               useSuspense
             >
               <OngoingSessionProvider>
-                <View className="flex-1 bg-white dark:bg-slate-950">
-                  <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
-                    <View style={{ flex: 1 }}>
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: isDark ? "#21222C" : "#FFFFFF",
+                  }}
+                >
+                  <SafeAreaView
+                    style={{
+                      flex: 1,
+                      backgroundColor: isDark ? "#21222C" : "#FFFFFF",
+                    }}
+                    edges={["top", "bottom"]}
+                  >
+                    <View
+                      style={{
+                        flex: 1,
+                        backgroundColor: isDark ? "#2B2D3A" : "#FFFFFF",
+                      }}
+                    >
                       <CurrentSessionBanner dbReady={success} />
+
                       <Stack screenOptions={{ headerShown: false }}>
                         <Stack.Screen name="(tabs)" />
                         <Stack.Screen name="program-workout" />
@@ -121,17 +139,25 @@ export default function RootLayout() {
                             left: 12,
                             right: 12,
                             bottom: 12,
-                            backgroundColor: "#111827",
+                            backgroundColor: isDark ? "#3A3D4F" : "#111827",
                             padding: 12,
                             borderRadius: 12,
                           }}
                         >
-                          <Text style={{ color: "#E5E7EB", fontWeight: "600" }}>
+                          <Text
+                            style={{
+                              color: isDark ? "#FF5555" : "#E5E7EB",
+                              fontWeight: "600",
+                            }}
+                          >
                             Seeding failed
                           </Text>
                           <Text
                             selectable
-                            style={{ color: "#9CA3AF", marginTop: 6 }}
+                            style={{
+                              color: isDark ? "#F8F8F2" : "#9CA3AF",
+                              marginTop: 6,
+                            }}
                           >
                             {seedErr}
                           </Text>

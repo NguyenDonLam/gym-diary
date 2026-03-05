@@ -146,66 +146,81 @@ export default function ProgramStatsPage() {
   // -----------------------------
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: "#000" }}
-      contentContainerStyle={{ padding: 16 }}
+      className="flex-1 bg-white dark:bg-[#2B2D3A]"
+      contentContainerClassName="pb-4"
     >
-      {error ? (
-        <Text className="text-red-400 text-xs mb-3">{error}</Text>
-      ) : null}
+      <View className="px-4 pt-4">
+        {error ? (
+          <Text className="text-red-600 dark:text-[#FF5555] text-xs mb-3">
+            {error}
+          </Text>
+        ) : null}
 
-      {program ? (
-        <View className="mb-3">
-          <View
-            className={[
-              "h-2 rounded-full",
-              COLOR_STRIP_MAP[program.color],
-            ].join(" ")}
-          />
-        </View>
-      ) : null}
-
-      {/* Lifetime */}
-      <ProgramStatsView stat={lifetime} className="mb-3" />
-
-      {/* Period selector */}
-      <View className="flex-row border border-neutral-700 rounded-xl overflow-hidden mt-3 mb-3">
-        {(["week", "month", "year"] as PeriodKey[]).map((p) => {
-          const active = period === p;
-          return (
-            <Pressable
-              key={p}
-              onPress={() => setPeriod(p)}
+        {program ? (
+          <View className="mb-3">
+            <View
               className={[
-                "flex-1 py-2",
-                active ? "bg-neutral-800" : "bg-neutral-950",
-                p !== "year" ? "border-r border-neutral-700" : "",
+                "h-2 rounded-full",
+                COLOR_STRIP_MAP[program.color],
               ].join(" ")}
-            >
-              <Text
+            />
+          </View>
+        ) : null}
+
+        {/* Lifetime */}
+        <ProgramStatsView stat={lifetime} className="mb-3" />
+
+        {/* Period selector */}
+        <View className="flex-row overflow-hidden rounded-xl border border-neutral-200 dark:border-[#44475A] mt-3 mb-3">
+          {(["week", "month", "year"] as PeriodKey[]).map((p) => {
+            const active = period === p;
+
+            return (
+              <Pressable
+                key={p}
+                onPress={() => setPeriod(p)}
                 className={[
-                  "text-center text-xs",
-                  active ? "text-neutral-50 font-semibold" : "text-neutral-400",
+                  "flex-1 py-2",
+                  active
+                    ? "bg-neutral-900 dark:bg-[#44475A]"
+                    : "bg-neutral-100 dark:bg-[#343746]",
+                  p !== "year"
+                    ? "border-r border-neutral-200 dark:border-[#44475A]"
+                    : "",
                 ].join(" ")}
               >
-                {p}
-              </Text>
-            </Pressable>
-          );
-        })}
+                <Text
+                  className={[
+                    "text-center text-xs",
+                    active
+                      ? "text-white dark:text-[#F8F8F2] font-semibold"
+                      : "text-neutral-600 dark:text-[#6272A4]",
+                  ].join(" ")}
+                >
+                  {p}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Latest */}
+        <Text className="text-neutral-600 dark:text-[#6272A4] text-xs mb-2">
+          Latest {period}
+        </Text>
+
+        <ProgramPeriodStatsView stat={latest} className="mb-3" />
+        <ProgramPeriodDeltaView rows={periodRows} period={period} />
+
+        {/* Trend */}
+        <ProgramPeriodTrendView rows={periodRows} className="mb-4" />
+
+        {loading ? (
+          <Text className="text-neutral-500 dark:text-[#6272A4] text-xs mt-2">
+            loading…
+          </Text>
+        ) : null}
       </View>
-
-      {/* Latest */}
-      <Text className="text-neutral-300 text-xs mb-2">Latest {period}</Text>
-
-      <ProgramPeriodStatsView stat={latest} className="mb-3" />
-      <ProgramPeriodDeltaView rows={periodRows} period={period} />
-
-      {/* Trend */}
-      <ProgramPeriodTrendView rows={periodRows} className="mb-4" />
-
-      {loading ? (
-        <Text className="text-neutral-500 text-xs mt-2">loading…</Text>
-      ) : null}
     </ScrollView>
   );
 }

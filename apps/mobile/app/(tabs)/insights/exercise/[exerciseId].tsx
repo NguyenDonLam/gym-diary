@@ -74,71 +74,78 @@ export default function ExerciseProgressionScreen() {
   const latest = periodRows[periodRows.length - 1] ?? null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#000" }}>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        <View style={{ marginBottom: 12 }}>
-          <Text style={{ color: "#fff", fontSize: 14, fontWeight: "600" }}>
+    <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
+      <ScrollView contentContainerClassName="pb-4">
+        <View className="border-b border-zinc-200 px-4 pb-3 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
+          <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
             Exercise
           </Text>
-          <Text style={{ color: "#9CA3AF", fontSize: 11, marginTop: 2 }}>
+
+          <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
             {exercise?.name ?? exerciseId}
           </Text>
+
           {error ? (
-            <Text style={{ color: "#F87171", fontSize: 11, marginTop: 6 }}>
+            <Text className="mt-2 text-xs text-red-600 dark:text-[#FF5555]">
               {error}
             </Text>
           ) : null}
         </View>
 
-        {/* Lifetime stats */}
-        <ExerciseStatsView stat={lifetime} className="mb-4" />
+        <View className="px-4 pt-4">
+          {/* Lifetime stats */}
+          <ExerciseStatsView stat={lifetime} className="mb-4" />
 
-        {/* Period stats */}
-        <View>
-          {/* Period selector */}
-          <View className="flex-row border border-neutral-700 rounded-xl overflow-hidden mb-2">
-            {(["week", "month", "year"] as PeriodKey[]).map((p) => {
-              const active = period === p;
-              return (
-                <Pressable
-                  key={p}
-                  onPress={() => setPeriod(p)}
-                  className={[
-                    "flex-1 py-2",
-                    active ? "bg-neutral-800" : "bg-neutral-950",
-                    p !== "year" ? "border-r border-neutral-700" : "",
-                  ].join(" ")}
-                >
-                  <Text
+          {/* Period stats */}
+          <View>
+            <View className="mb-2 flex-row overflow-hidden rounded-xl border border-neutral-200 dark:border-[#44475A]">
+              {(["week", "month", "year"] as PeriodKey[]).map((p) => {
+                const active = period === p;
+
+                return (
+                  <Pressable
+                    key={p}
+                    onPress={() => setPeriod(p)}
                     className={[
-                      "text-center text-xs",
+                      "flex-1 py-2",
                       active
-                        ? "text-neutral-50 font-semibold"
-                        : "text-neutral-400",
+                        ? "bg-neutral-900 dark:bg-[#44475A]"
+                        : "bg-neutral-100 dark:bg-[#343746]",
+                      p !== "year"
+                        ? "border-r border-neutral-200 dark:border-[#44475A]"
+                        : "",
                     ].join(" ")}
                   >
-                    {p}
-                  </Text>
-                </Pressable>
-              );
-            })}
+                    <Text
+                      className={[
+                        "text-center text-xs",
+                        active
+                          ? "text-white dark:text-[#F8F8F2] font-semibold"
+                          : "text-neutral-600 dark:text-[#6272A4]",
+                      ].join(" ")}
+                    >
+                      {p}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <ExercisePeriodStatsView stat={latest} className="mb-3" />
+
+            <ExercisePeriodDeltaView
+              rows={periodRows}
+              period={period}
+              className="mb-3"
+            />
           </View>
 
-          <ExercisePeriodStatsView stat={latest} className="mb-3" />
-
-          {/* Delta */}
-          <ExercisePeriodDeltaView
-            rows={periodRows}
-            period={period}
-            className="mb-3"
-          />
+          {loading ? (
+            <Text className="mt-2 text-xs text-neutral-500 dark:text-[#6272A4]">
+              loading…
+            </Text>
+          ) : null}
         </View>
-
-        {loading ? (
-          <Text style={{ color: "#6B7280", fontSize: 11, marginTop: 8 }}>
-            loading…
-          </Text>
-        ) : null}
       </ScrollView>
     </View>
   );

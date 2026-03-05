@@ -109,30 +109,30 @@ export default function ProgramWorkoutEditScreen() {
   // Loading / error state
   if (isLoading || !hasLoadedTemplate) {
     return (
-      <View className="flex-1 bg-white dark:bg-neutral-950">
-        <View className="flex-row items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-4 py-3 bg-white dark:bg-neutral-950">
+      <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
+        <View className="flex-row items-center justify-between border-b border-neutral-200 dark:border-[#44475A] px-4 py-3 bg-white dark:bg-[#21222C]">
           <Pressable onPress={handleCancel} disabled={isSaving}>
-            <Text className="text-sm text-neutral-500 dark:text-neutral-400">
+            <Text className="text-sm text-neutral-500 dark:text-[#6272A4]">
               Cancel
             </Text>
           </Pressable>
 
-          <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
+          <Text className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2]">
             Edit template
           </Text>
 
           <View className="px-3 py-1.5">
-            <ActivityIndicator />
+            <ActivityIndicator color="#BD93F9" />
           </View>
         </View>
 
-        <View className="flex-1 items-center justify-center px-4 bg-white dark:bg-neutral-950">
+        <View className="flex-1 items-center justify-center px-4 bg-white dark:bg-[#2B2D3A]">
           {loadError ? (
-            <Text className="text-sm text-red-500 dark:text-red-400 text-center">
+            <Text className="text-sm text-red-500 dark:text-[#FF5555] text-center">
               {loadError}
             </Text>
           ) : (
-            <ActivityIndicator />
+            <ActivityIndicator color="#BD93F9" />
           )}
         </View>
       </View>
@@ -146,14 +146,14 @@ export default function ProgramWorkoutEditScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={0}
     >
-      <View className="flex-row items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-4 py-3 bg-white dark:bg-neutral-950">
+      <View className="flex-row items-center justify-between border-b border-neutral-200 dark:border-[#44475A] px-4 py-3 bg-white dark:bg-[#21222C]">
         <Pressable onPress={handleCancel} disabled={isSaving}>
-          <Text className="text-sm text-neutral-500 dark:text-neutral-400">
+          <Text className="text-sm text-neutral-500 dark:text-[#6272A4]">
             Cancel
           </Text>
         </Pressable>
 
-        <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
+        <Text className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2]">
           Edit template
         </Text>
 
@@ -162,15 +162,15 @@ export default function ProgramWorkoutEditScreen() {
           disabled={!canSave}
           className={`rounded-full px-3 py-1.5 ${
             canSave
-              ? "bg-black dark:bg-neutral-50"
-              : "bg-neutral-300 dark:bg-neutral-700"
+              ? "bg-black dark:bg-[#BD93F9]"
+              : "bg-neutral-300 dark:bg-[#44475A]"
           }`}
         >
           <Text
             className={`text-xs font-semibold ${
               canSave
-                ? "text-white dark:text-neutral-900"
-                : "text-neutral-500 dark:text-neutral-300"
+                ? "text-white dark:text-[#282A36]"
+                : "text-neutral-500 dark:text-[#6272A4]"
             }`}
           >
             Save
@@ -178,7 +178,7 @@ export default function ProgramWorkoutEditScreen() {
         </Pressable>
       </View>
 
-      <View className="flex-1 bg-white dark:bg-neutral-950">
+      <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
         <WorkoutProgramForm formData={formData} setFormData={setFormData} />
       </View>
     </KeyboardAvoidingView>
