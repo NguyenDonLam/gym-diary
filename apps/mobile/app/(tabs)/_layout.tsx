@@ -2,7 +2,12 @@ import React, { useMemo } from "react";
 import { View } from "react-native";
 import { Tabs } from "expo-router";
 import { useColorScheme } from "nativewind";
-import { History, Dumbbell, LineChart, Settings } from "lucide-react-native";
+import {
+  History,
+  Dumbbell,
+  LineChart,
+  Settings as SettingsIcon,
+} from "lucide-react-native";
 
 export default function TabLayout() {
   const { colorScheme } = useColorScheme();
@@ -69,12 +74,13 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="settings"
+        name="settings/index"
         options={{
           title: "Settings",
           tabBarIcon: ({ color, size }) => (
-            <Settings size={size} color={color} />
+            <SettingsIcon size={size} color={color} />
           ),
+          tabBarItemStyle: { display: "flex" },
         }}
       />
     </Tabs>
