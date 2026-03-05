@@ -18,6 +18,12 @@ import { ExerciseStatFactory } from "../domain/factory";
 
 const LB_TO_KG = 0.45359237;
 
+export type ExerciseUsageSummary = {
+  exerciseId: string;
+  sessionCount: number;
+  lastPerformedAt: Date | null;
+};
+
 export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
   async get(exerciseId: string): Promise<ExerciseStat | null> {
     const rows: ExerciseStatRow[] = await db
@@ -99,7 +105,7 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
             r.baselineExerciseStrengthScore ?? null,
           baselineSetE1rm: r.baselineSetE1rm ?? null,
         },
-      ])
+      ]),
     );
 
     const seAgg = await db
@@ -113,13 +119,13 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
       .from(sessionExercises)
       .innerJoin(
         workoutSessions,
-        eq(workoutSessions.id, sessionExercises.workoutSessionId)
+        eq(workoutSessions.id, sessionExercises.workoutSessionId),
       )
       .where(
         and(
           eq(workoutSessions.status, "completed"),
-          isNotNull(sessionExercises.exerciseId)
-        )
+          isNotNull(sessionExercises.exerciseId),
+        ),
       )
       .groupBy(sessionExercises.exerciseId);
 
@@ -127,7 +133,7 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
       seAgg.map((r) => [
         r.exerciseId!,
         { sampleCount: r.sampleCount, bestStrength: r.bestStrength ?? null },
-      ])
+      ]),
     );
 
     const setAgg = await db
@@ -139,19 +145,19 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
       .from(sessionSets)
       .innerJoin(
         sessionExercises,
-        eq(sessionExercises.id, sessionSets.sessionExerciseId)
+        eq(sessionExercises.id, sessionSets.sessionExerciseId),
       )
       .innerJoin(
         workoutSessions,
-        eq(workoutSessions.id, sessionExercises.workoutSessionId)
+        eq(workoutSessions.id, sessionExercises.workoutSessionId),
       )
       .where(
         and(
           eq(workoutSessions.status, "completed"),
           isNotNull(sessionExercises.exerciseId),
           eq(sessionSets.isCompleted, true),
-          eq(sessionSets.isWarmup, false)
-        )
+          eq(sessionSets.isWarmup, false),
+        ),
       )
       .groupBy(sessionExercises.exerciseId);
 
@@ -159,7 +165,7 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
       setAgg.map((r) => [
         r.exerciseId!,
         { setCount: r.setCount, bestE1rm: r.bestE1rm ?? null },
-      ])
+      ]),
     );
 
     const volAgg = await db
@@ -176,11 +182,11 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
       .from(sessionSets)
       .innerJoin(
         sessionExercises,
-        eq(sessionExercises.id, sessionSets.sessionExerciseId)
+        eq(sessionExercises.id, sessionSets.sessionExerciseId),
       )
       .innerJoin(
         workoutSessions,
-        eq(workoutSessions.id, sessionExercises.workoutSessionId)
+        eq(workoutSessions.id, sessionExercises.workoutSessionId),
       )
       .where(
         and(
@@ -192,8 +198,8 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
           isNotNull(sessionSets.loadValue),
           sql`trim(${sessionSets.loadValue}) <> ''`,
           sql`cast(${sessionSets.loadValue} as real) > 0`,
-          or(eq(sessionSets.loadUnit, "kg"), eq(sessionSets.loadUnit, "lb"))
-        )
+          or(eq(sessionSets.loadUnit, "kg"), eq(sessionSets.loadUnit, "lb")),
+        ),
       )
       .groupBy(sessionExercises.exerciseId);
 
@@ -260,8 +266,8 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
         .where(
           and(
             eq(sessionExercises.workoutSessionId, workoutSessionId),
-            isNotNull(sessionExercises.exerciseId)
-          )
+            isNotNull(sessionExercises.exerciseId),
+          ),
         )
         .groupBy(sessionExercises.exerciseId);
 
@@ -274,15 +280,15 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
         .from(sessionSets)
         .innerJoin(
           sessionExercises,
-          eq(sessionExercises.id, sessionSets.sessionExerciseId)
+          eq(sessionExercises.id, sessionSets.sessionExerciseId),
         )
         .where(
           and(
             eq(sessionExercises.workoutSessionId, workoutSessionId),
             isNotNull(sessionExercises.exerciseId),
             eq(sessionSets.isCompleted, true),
-            eq(sessionSets.isWarmup, false)
-          )
+            eq(sessionSets.isWarmup, false),
+          ),
         )
         .groupBy(sessionExercises.exerciseId);
 
@@ -300,7 +306,7 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
         .from(sessionSets)
         .innerJoin(
           sessionExercises,
-          eq(sessionExercises.id, sessionSets.sessionExerciseId)
+          eq(sessionExercises.id, sessionSets.sessionExerciseId),
         )
         .where(
           and(
@@ -312,8 +318,8 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
             isNotNull(sessionSets.loadValue),
             sql`trim(${sessionSets.loadValue}) <> ''`,
             sql`cast(${sessionSets.loadValue} as real) > 0`,
-            or(eq(sessionSets.loadUnit, "kg"), eq(sessionSets.loadUnit, "lb"))
-          )
+            or(eq(sessionSets.loadUnit, "kg"), eq(sessionSets.loadUnit, "lb")),
+          ),
         )
         .groupBy(sessionExercises.exerciseId);
 
@@ -326,13 +332,13 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
         seAgg.map((r) => [
           r.exerciseId!,
           { sampleCount: r.sampleCount, bestStrength: r.bestStrength ?? null },
-        ])
+        ]),
       );
       const setById = new Map(
         setAgg.map((r) => [
           r.exerciseId!,
           { setCount: r.setCount, bestE1rm: r.bestE1rm ?? null },
-        ])
+        ]),
       );
       const volById = new Map(volAgg.map((r) => [r.exerciseId!, r.vol]));
 
@@ -379,6 +385,47 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
             },
           });
       }
+    });
+  }
+
+  async listUsageSummaries(): Promise<ExerciseUsageSummary[]> {
+    const rows = await db
+      .select({
+        exerciseId: sessionExercises.exerciseId,
+        sessionCount: sql<number>`count(distinct ${sessionExercises.workoutSessionId})`,
+        lastPerformedAtText: sql<
+          string | null
+        >`max(coalesce(${workoutSessions.endedAt}, ${workoutSessions.startedAt}))`,
+      })
+      .from(sessionExercises)
+      .innerJoin(
+        workoutSessions,
+        eq(workoutSessions.id, sessionExercises.workoutSessionId),
+      )
+      .where(
+        and(
+          eq(workoutSessions.status, "completed"),
+          isNotNull(sessionExercises.exerciseId),
+        ),
+      )
+      .groupBy(sessionExercises.exerciseId);
+
+    return rows.flatMap((row) => {
+      const exerciseId = row.exerciseId;
+      if (!exerciseId) return [];
+
+      const raw = row.lastPerformedAtText;
+      const parsed = raw ? new Date(raw) : null;
+      const lastPerformedAt =
+        parsed && !Number.isNaN(parsed.getTime()) ? parsed : null;
+
+      return [
+        {
+          exerciseId,
+          sessionCount: row.sessionCount,
+          lastPerformedAt,
+        },
+      ];
     });
   }
 }

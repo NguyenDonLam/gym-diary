@@ -2,7 +2,7 @@
 
 import type { ExercisePeriodStat } from "../domain/types";
 
-import { and, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 import { BaseRepository } from "@/src/lib/base-repository";
 import { exercisePeriodStats, sessionExercises, sessionSets, workoutSessions } from "@/db/schema";
 import { db } from "@/db";
@@ -36,8 +36,18 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
     return rows.map((r) => ExercisePeriodStatFactory.domainFromDb(r));
   }
 
+  async getAllForExercise(exerciseId: string): Promise<ExercisePeriodStat[]> {
+    const rows: ExercisePeriodStatRow[] = await db
+      .select()
+      .from(exercisePeriodStats)
+      .where(eq(exercisePeriodStats.exerciseId, exerciseId))
+      .orderBy(asc(exercisePeriodStats.periodStart));
+
+    return rows.map((r) => ExercisePeriodStatFactory.domainFromDb(r));
+  }
+
   protected async insert(
-    entity: ExercisePeriodStat & { id?: string | null }
+    entity: ExercisePeriodStat & { id?: string | null },
   ): Promise<ExercisePeriodStat> {
     const id = entity.id ?? generateId();
     const withId: ExercisePeriodStat = {
@@ -53,13 +63,13 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
   }
 
   protected async update(
-    entity: ExercisePeriodStat & { id?: string | null }
+    entity: ExercisePeriodStat & { id?: string | null },
   ): Promise<ExercisePeriodStat> {
     if (!entity.id)
       throw new Error("Cannot update ExercisePeriodStat without id");
 
     const row = ExercisePeriodStatFactory.dbFromDomain(
-      entity as ExercisePeriodStat
+      entity as ExercisePeriodStat,
     );
 
     await db
@@ -76,7 +86,7 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
 
   async upsertPeriodStat(
     workoutSessionId: string,
-    periodType: PeriodType
+    periodType: PeriodType,
   ): Promise<void> {
     const now = new Date();
 
@@ -109,7 +119,7 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
           0,
           0,
           0,
-          0
+          0,
         );
       } else {
         const diffToMon = (d.getDay() + 6) % 7;
@@ -129,12 +139,12 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
         .where(
           and(
             eq(sessionExercises.workoutSessionId, workoutSessionId),
-            isNotNull(sessionExercises.exerciseId)
-          )
+            isNotNull(sessionExercises.exerciseId),
+          ),
         );
 
       const exerciseIds = Array.from(
-        new Set(exInSession.map((r) => r.exerciseId!).filter(Boolean))
+        new Set(exInSession.map((r) => r.exerciseId!).filter(Boolean)),
       );
       if (!exerciseIds.length) return;
 
@@ -149,15 +159,15 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
         .from(sessionExercises)
         .innerJoin(
           workoutSessions,
-          eq(workoutSessions.id, sessionExercises.workoutSessionId)
+          eq(workoutSessions.id, sessionExercises.workoutSessionId),
         )
         .where(
           and(
             eq(workoutSessions.status, "completed"),
             inArray(sessionExercises.exerciseId, exerciseIds),
             sql`${workoutSessions.startedAt} >= ${startIso}`,
-            sql`${workoutSessions.startedAt} < ${endIso}`
-          )
+            sql`${workoutSessions.startedAt} < ${endIso}`,
+          ),
         )
         .groupBy(sessionExercises.exerciseId);
 
@@ -177,11 +187,11 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
         .from(sessionSets)
         .innerJoin(
           sessionExercises,
-          eq(sessionExercises.id, sessionSets.sessionExerciseId)
+          eq(sessionExercises.id, sessionSets.sessionExerciseId),
         )
         .innerJoin(
           workoutSessions,
-          eq(workoutSessions.id, sessionExercises.workoutSessionId)
+          eq(workoutSessions.id, sessionExercises.workoutSessionId),
         )
         .where(
           and(
@@ -195,8 +205,8 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
             isNotNull(sessionSets.loadValue),
             sql`trim(${sessionSets.loadValue}) <> ''`,
             sql`cast(${sessionSets.loadValue} as real) > 0`,
-            or(eq(sessionSets.loadUnit, "kg"), eq(sessionSets.loadUnit, "lb"))
-          )
+            or(eq(sessionSets.loadUnit, "kg"), eq(sessionSets.loadUnit, "lb")),
+          ),
         )
         .groupBy(sessionExercises.exerciseId);
 
@@ -204,7 +214,7 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
         seAgg.map((r) => [
           r.exerciseId!,
           { sampleCount: r.sampleCount, bestStrength: r.bestStrength ?? null },
-        ])
+        ]),
       );
 
       const setById = new Map(
@@ -215,7 +225,7 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
             bestE1rm: r.bestE1rm ?? null,
             volumeKg: r.volumeKg ?? 0,
           },
-        ])
+        ]),
       );
 
       const existing = await tx
@@ -228,8 +238,8 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
           and(
             inArray(exercisePeriodStats.exerciseId, exerciseIds),
             eq(exercisePeriodStats.periodType, periodType),
-            eq(exercisePeriodStats.periodStart, start)
-          )
+            eq(exercisePeriodStats.periodStart, start),
+          ),
         );
 
       const idByExerciseId = new Map(existing.map((r) => [r.exerciseId, r.id]));

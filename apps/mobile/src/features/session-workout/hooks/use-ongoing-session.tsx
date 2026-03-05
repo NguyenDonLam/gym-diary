@@ -32,6 +32,7 @@ import { useExerciseStats } from "../../exercise-stats/hooks/use-exercise-stats"
 import { exerciseStatRepository } from "../../exercise-stats/data/repository";
 import { ExerciseStat } from "../../exercise-stats/domain/types";
 import { ExerciseStatFactory } from "../../exercise-stats/domain/factory";
+import { statService } from "../../history/services/stat-service";
 
 const KEY = "ongoing";
 const LB_TO_KG = 0.45359237;
@@ -274,14 +275,18 @@ export function OngoingSessionProvider({
   const endSession = useCallback(async () => {
     if (!ongoingSession) return;
     if (!aggregate) {
-      // no aggregate => cannot reliably compute scores
+      const now = new Date();
       const endedNoScores: SessionWorkout = {
         ...ongoingSession,
         status: "completed",
-        endedAt: new Date(),
-        updatedAt: new Date(),
+        endedAt: now,
+        updatedAt: now,
       };
       await sessionWorkoutRepository.save(endedNoScores);
+
+      await statService.updateProgramStat(endedNoScores.id);
+      await statService.updateExerciseStat(endedNoScores.id);
+
       setOngoingSession(endedNoScores);
       bumpMutationVersion();
       await setOngoingId(null);
@@ -290,7 +295,6 @@ export function OngoingSessionProvider({
 
     const now = new Date();
 
-    // 1) build the completed snapshot with embedded scores from the EXISTING aggregate caches
     const ended: SessionWorkout = {
       ...ongoingSession,
       status: "completed",
@@ -298,19 +302,20 @@ export function OngoingSessionProvider({
       updatedAt: now,
       strengthScore: aggregate.getWorkoutScore(),
       strengthScoreVersion: aggregate.version,
-      exercises: (ongoingSession.exercises ?? []).map((ex) => {
-        return {
-          ...ex,
-          updatedAt: now,
-          strengthScore: aggregate.getExerciseScore(ex.id) ?? null,
-          strengthScoreVersion: aggregate.version,
-          sets: undefined,
-        };
-      }),
+      exercises: (ongoingSession.exercises ?? []).map((ex) => ({
+        ...ex,
+        updatedAt: now,
+        strengthScore: aggregate.getExerciseScore(ex.id) ?? null,
+        strengthScoreVersion: aggregate.version,
+        sets: undefined,
+      })),
     };
 
-    // 2) persist completed session (with scores)
     await sessionWorkoutRepository.save(ended);
+
+    await statService.updateProgramStat(ended.id);
+    await statService.updateExerciseStat(ended.id);
+
     setOngoingSession(ended);
     for (const exSession of ended.exercises ?? []) {
       const exerciseId = exSession.exerciseId;
@@ -320,12 +325,13 @@ export function OngoingSessionProvider({
       if (v == null || !Number.isFinite(v)) continue;
 
       const prevStat = await exerciseStatRepository.get(exerciseId);
+      // do not clobber sampleCount/totals; baseline should be set once
+      if (prevStat?.baselineExerciseStrengthScore != null) continue;
 
       const updatedStat: ExerciseStat = {
         ...(prevStat ?? ExerciseStatFactory.create({ exerciseId })),
         exerciseId,
         baselineExerciseStrengthScore: v,
-        sampleCount: 1,
         baselineSetE1rm: prevStat?.baselineSetE1rm ?? null,
         updatedAt: now,
       };
@@ -333,7 +339,6 @@ export function OngoingSessionProvider({
       await exerciseStatRepository.save(updatedStat);
     }
 
-    // 4) clear ongoing
     await setOngoingId(null);
     bumpMutationVersion();
   }, [ongoingSession, aggregate, setOngoingId, bumpMutationVersion]);

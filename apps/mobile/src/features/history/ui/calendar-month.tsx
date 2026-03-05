@@ -1,12 +1,11 @@
 import React, { memo, useCallback, useMemo } from "react";
 import { View, Text, Pressable } from "react-native";
-import {
-  COLOR_STRIP_MAP,
-  type ProgramColor,
-} from "@/src/features/program-workout/domain/type";
+import { COLOR_STRIP_MAP } from "@/src/features/program-workout/domain/type";
 import { buildMonthMatrix, firstDayOfMonth } from "./date";
+import { ProgramColor } from "@/db/enums";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+const COL_WIDTH = `${100 / 7}%`;
 
 type Props = {
   monthDate: Date;
@@ -31,20 +30,20 @@ export const CalendarMonth = memo(function CalendarMonth({
         month: "long",
         year: "numeric",
       }),
-    [monthFirst]
+    [monthFirst],
   );
 
   const monthCells = useMemo(() => buildMonthMatrix(monthFirst), [monthFirst]);
 
   const goPrev = useCallback(() => {
     onMonthChange?.(
-      new Date(monthFirst.getFullYear(), monthFirst.getMonth() - 1, 1)
+      new Date(monthFirst.getFullYear(), monthFirst.getMonth() - 1, 1),
     );
   }, [monthFirst, onMonthChange]);
 
   const goNext = useCallback(() => {
     onMonthChange?.(
-      new Date(monthFirst.getFullYear(), monthFirst.getMonth() + 1, 1)
+      new Date(monthFirst.getFullYear(), monthFirst.getMonth() + 1, 1),
     );
   }, [monthFirst, onMonthChange]);
 
@@ -70,14 +69,16 @@ export const CalendarMonth = memo(function CalendarMonth({
         </Pressable>
       </View>
 
-      <View className="flex-row justify-between mt-1 mb-0.5">
+      {/* Weekday header */}
+      <View className="flex-row mt-1 mb-0.5">
         {DAYS.map((d) => (
-          <Text key={d} className="w-10 text-center text-[11px] text-zinc-500">
-            {d}
-          </Text>
+          <View key={d} style={{ width: COL_WIDTH }} className="items-center">
+            <Text className="text-[11px] text-zinc-500">{d}</Text>
+          </View>
         ))}
       </View>
 
+      {/* Date grid */}
       <View className="flex-row flex-wrap">
         {monthCells.map((cell) => {
           const isSelected = !!selectedDateKey && cell.key === selectedDateKey;
@@ -86,7 +87,7 @@ export const CalendarMonth = memo(function CalendarMonth({
           const bgClass = bgColor ? COLOR_STRIP_MAP[bgColor] : "";
 
           const dayClasses = [
-            "w-10 h-10 items-center justify-center rounded-full my-0.5",
+            "w-10 h-10 items-center justify-center rounded-full",
             "border border-transparent",
             !cell.inMonth && "opacity-30",
             isSelected && "border-2 border-emerald-500 dark:border-emerald-400",
@@ -103,13 +104,18 @@ export const CalendarMonth = memo(function CalendarMonth({
             .join(" ");
 
           return (
-            <Pressable
+            <View
               key={cell.key}
-              className={dayClasses}
-              onPress={() => onDayPress?.(cell.key, cell.date)}
+              style={{ width: COL_WIDTH }}
+              className="items-center my-0.5"
             >
-              <Text className={dayTextClasses}>{cell.date.getDate()}</Text>
-            </Pressable>
+              <Pressable
+                className={dayClasses}
+                onPress={() => onDayPress?.(cell.key, cell.date)}
+              >
+                <Text className={dayTextClasses}>{cell.date.getDate()}</Text>
+              </Pressable>
+            </View>
           );
         })}
       </View>
