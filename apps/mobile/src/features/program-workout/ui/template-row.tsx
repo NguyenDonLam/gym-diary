@@ -2,7 +2,8 @@
 import React from "react";
 import { Pressable, Text, View } from "react-native";
 import { GripVertical, Trash2 } from "lucide-react-native";
-import { COLOR_STRIP_MAP, ProgramColor, WorkoutProgram } from "../domain/type";
+import { COLOR_STRIP_MAP, WorkoutProgram } from "../domain/type";
+import { ProgramColor } from "@/db/enums";
 
 type Props = {
   template: WorkoutProgram;

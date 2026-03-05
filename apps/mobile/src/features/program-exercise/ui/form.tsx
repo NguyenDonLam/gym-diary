@@ -24,16 +24,19 @@ export default function ExerciseProgramForm({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  const cardBg = isDark ? "bg-neutral-800" : "bg-white";
-  const cardBorder = isDark ? "border-neutral-700" : "border-neutral-200";
-  const textMain = isDark ? "text-neutral-100" : "text-neutral-900";
-  const textSoft = isDark ? "text-neutral-500" : "text-neutral-500";
-  const handleBg = isDark ? "bg-neutral-700" : "bg-neutral-100";
-  // neutral delete styling (no red)
+  const cardBg = isDark ? "bg-[#282A36]" : "bg-white";
+  const cardBorder = isDark ? "border-[#44475A]" : "border-neutral-200";
+
+  const textMain = isDark ? "text-[#F8F8F2]" : "text-neutral-900";
+  const textSoft = isDark ? "text-[#6272A4]" : "text-neutral-500";
+
+  const handleBg = isDark ? "bg-[#343746]" : "bg-neutral-100";
+
   const deleteBg = handleBg;
-  const deleteColor = isDark ? "#E5E7EB" : "#6B7280";
-  const chipBg = isDark ? "bg-neutral-200" : "bg-neutral-900";
-  const chipText = isDark ? "text-neutral-900" : "text-white";
+  const deleteColor = isDark ? "#F8F8F2" : "#6B7280";
+
+  const chipBg = isDark ? "bg-[#BD93F9]" : "bg-neutral-900";
+  const chipText = isDark ? "text-[#282A36]" : "text-white";
 
   const update = (patch: Partial<ExerciseProgramFormData>) =>
     setFormData({ ...formData, ...patch });
@@ -77,7 +80,7 @@ export default function ExerciseProgramForm({
     <View
       className={`mb-2 rounded-2xl border px-3 py-2 ${cardBg} ${cardBorder}`}
     >
-      {/* Header: drag + name + delete exercise (no index, neutral delete) */}
+      {/* Header */}
       <View className="mb-1 flex-row items-center justify-between">
         <View className="flex-row items-center flex-1">
           {onDrag ? (
@@ -87,7 +90,7 @@ export default function ExerciseProgramForm({
               hitSlop={8}
               className={`mr-2 h-6 w-6 items-center justify-center rounded-full ${handleBg}`}
             >
-              <GripVertical size={14} color={isDark ? "#9CA3AF" : "#6B7280"} />
+              <GripVertical size={14} color={isDark ? "#6272A4" : "#6B7280"} />
             </Pressable>
           ) : (
             <View className="mr-2 h-6 w-6" />
@@ -110,7 +113,7 @@ export default function ExerciseProgramForm({
         </Pressable>
       </View>
 
-      {/* Presets – very small, only when no sets */}
+      {/* Presets */}
       {formData.sets.length === 0 && (
         <View className="mb-1 flex-row flex-wrap gap-1.5">
           <Pressable
@@ -119,6 +122,7 @@ export default function ExerciseProgramForm({
           >
             <Text className={`text-[10px] font-semibold ${chipText}`}>1×8</Text>
           </Pressable>
+
           <Pressable
             className={`rounded-full px-2.5 py-0.5 ${chipBg}`}
             onPress={() => applyPreset(2, 10)}
@@ -127,6 +131,7 @@ export default function ExerciseProgramForm({
               2×10
             </Text>
           </Pressable>
+
           <Pressable
             className={`rounded-full px-2.5 py-0.5 ${chipBg}`}
             onPress={() => applyPreset(3, 12)}
@@ -137,15 +142,16 @@ export default function ExerciseProgramForm({
           </Pressable>
         </View>
       )}
+
       {formData.sets.length > 0 && (
         <View className="mt-1 mb-0.5 flex-row items-center gap-2 px-1">
-          <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-neutral-400">
+          <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-[#6272A4]">
             Target Volume
           </Text>
-          <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-neutral-400">
+          <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-[#6272A4]">
             Load
           </Text>
-          <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-neutral-400">
+          <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-[#6272A4]">
             Effort
           </Text>
         </View>
@@ -160,14 +166,14 @@ export default function ExerciseProgramForm({
           setFormData={(next) =>
             update({
               sets: formData.sets.map((curr) =>
-                curr.id === s.id ? next : curr
+                curr.id === s.id ? next : curr,
               ),
             })
           }
         />
       ))}
 
-      {/* Set controls – minimal icon-only */}
+      {/* Controls */}
       <View className="mt-1 flex-row justify-end gap-2">
         <Pressable
           onPress={removeLastSet}
@@ -175,7 +181,7 @@ export default function ExerciseProgramForm({
           hitSlop={8}
           className={`h-6 w-6 items-center justify-center rounded-full ${
             formData.sets.length === 0
-              ? "bg-neutral-200 dark:bg-neutral-700"
+              ? "bg-neutral-200 dark:bg-[#44475A]"
               : chipBg
           }`}
         >
@@ -183,11 +189,9 @@ export default function ExerciseProgramForm({
             size={12}
             color={
               formData.sets.length === 0
-                ? isDark
-                  ? "#9CA3AF"
-                  : "#9CA3AF"
+                ? "#6272A4"
                 : isDark
-                  ? "#111827"
+                  ? "#282A36"
                   : "#F9FAFB"
             }
           />
@@ -198,7 +202,7 @@ export default function ExerciseProgramForm({
           hitSlop={8}
           className={`h-6 w-6 items-center justify-center rounded-full ${chipBg}`}
         >
-          <Plus size={12} color={isDark ? "#111827" : "#F9FAFB"} />
+          <Plus size={12} color={isDark ? "#282A36" : "#F9FAFB"} />
         </Pressable>
       </View>
     </View>
