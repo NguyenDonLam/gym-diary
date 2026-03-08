@@ -30,7 +30,7 @@ export default function Workout() {
   const [foldersLoading, setFoldersLoading] = useState(true);
   const [foldersError, setFoldersError] = useState<Error | null>(null);
 
-  const [layoutTemplates, setLayoutTemplates] = useState<WorkoutProgram[]>([]);
+  const [templateProgram, setTemplateProgram] = useState<WorkoutProgram[]>([]);
 
   const [unassignedOpen, setUnassignedOpen] = useState(true);
   const [openFolderIds, setOpenFolderIds] = useState<string[]>([]);
@@ -40,7 +40,7 @@ export default function Workout() {
 
   // keep layout in sync with source templates (initial + external changes)
   useEffect(() => {
-    setLayoutTemplates(programs);
+    setTemplateProgram(programs);
   }, [programs]);
 
   // folders
@@ -53,7 +53,7 @@ export default function Workout() {
         setFolders(all);
       } catch (e) {
         setFoldersError(
-          e instanceof Error ? e : new Error("Failed to load folders")
+          e instanceof Error ? e : new Error("Failed to load folders"),
         );
         setFolders([]);
       } finally {
@@ -73,8 +73,8 @@ export default function Workout() {
   }, [folders]);
 
   const rows = useMemo(
-    () => buildRows(layoutTemplates, folders, unassignedOpen, openFolderIds),
-    [layoutTemplates, folders, unassignedOpen, openFolderIds]
+    () => buildRows(templateProgram, folders, unassignedOpen, openFolderIds),
+    [templateProgram, folders, unassignedOpen, openFolderIds],
   );
 
   const handleCreateTemplate = () => {
@@ -93,7 +93,7 @@ export default function Workout() {
       await startSession(template.id);
 
       router.push({
-        pathname: "/session-workout/ongoing"
+        pathname: "/session-workout/ongoing",
       });
     };
 
@@ -135,13 +135,13 @@ export default function Workout() {
               } catch (err) {
                 console.warn(
                   "[workout] failed to discard ongoing session",
-                  err
+                  err,
                 );
               }
             },
           },
         ],
-        { cancelable: true }
+        { cancelable: true },
       );
 
       return;
@@ -184,7 +184,7 @@ export default function Workout() {
 
   const handleUpdateFolder = async (
     folder: TemplateFolder,
-    newName: string
+    newName: string,
   ) => {
     const updated: TemplateFolder = { ...folder, name: newName };
 
@@ -202,10 +202,10 @@ export default function Workout() {
       await templateFolderRepository.delete(folderId);
       setFolders((prev) => prev.filter((f) => f.id !== folderId));
       setOpenFolderIds((prev) => prev.filter((id) => id !== folderId));
-      setLayoutTemplates((prev) =>
+      setTemplateProgram((prev) =>
         prev.map((t) =>
-          t.folderId === folderId ? { ...t, folderId: null } : t
-        )
+          t.folderId === folderId ? { ...t, folderId: null } : t,
+        ),
       );
     } catch (err) {
       console.error("Failed to delete folder", err);
@@ -218,12 +218,12 @@ export default function Workout() {
     setOpenFolderIds((prev) =>
       prev.includes(folderId)
         ? prev.filter((id) => id !== folderId)
-        : [...prev, folderId]
+        : [...prev, folderId],
     );
   };
 
   const handleDragEnd = ({ data }: DragEndParams<Row>) => {
-    setLayoutTemplates((prev) => {
+    setTemplateProgram((prev) => {
       const next = applyDragResult(data, prev);
 
       const prevById = new Map(prev.map((t) => [t.id, t]));
@@ -236,7 +236,7 @@ export default function Workout() {
         (async () => {
           try {
             await Promise.all(
-              changed.map((tpl) => workoutProgramRepository.save(tpl))
+              changed.map((tpl) => workoutProgramRepository.save(tpl)),
             );
           } catch (err) {
             console.error("Failed to persist template layout", err);
@@ -252,7 +252,7 @@ export default function Workout() {
     if (item.type === "unassigned-header") {
       return (
         <UnassignedHeaderRow
-          templateCount={item.templateCount}
+          programCount={item.templateCount}
           open={unassignedOpen}
           onToggle={toggleUnassignedOpen}
         />
@@ -264,12 +264,12 @@ export default function Workout() {
       return (
         <FolderRow
           folder={item.folder}
-          templateCount={item.templateCount}
+          programCount={item.templateCount}
           isOpen={isOpen}
           onToggleOpen={() => toggleFolderOpen(item.folder.id)}
           onRenameFolder={(name) => handleUpdateFolder(item.folder, name)}
           onDeleteFolder={() => handleDeleteFolder(item.folder.id)}
-          onCreateTemplateInFolder={() =>
+          onCreateProgramInFolder={() =>
             handleCreateTemplateInFolder(item.folder.id)
           }
         />
@@ -317,7 +317,7 @@ export default function Workout() {
         ListHeaderComponent={
           <View className="mb-2 px-0">
             <Text className="text-lg font-bold text-neutral-900 dark:text-[#F8F8F2]">
-              Session templates
+              Programs
             </Text>
 
             <Text className="mt-1 text-xs text-neutral-700 dark:text-[#6272A4]">
@@ -334,7 +334,7 @@ export default function Workout() {
                 onPress={handleCreateTemplate}
               >
                 <Text className="text-[13px] font-semibold text-white dark:text-[#282A36]">
-                  New template
+                  New program
                 </Text>
               </Pressable>
 
