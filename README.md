@@ -13,15 +13,14 @@ Workout tracking platform with:
 
 <p align="center">
   <img src="./docs/images/home-screen.png" alt="Home screen" width="260" />
-  <img src="./docs/images/home-screen-2.png" alt="Home screen (stats)" width="260" />
   <img src="./docs/images/home-screen-dark.png" alt="Home screen (stats)" width="260" />
 </p>
 
-### Mobile — Template management
+### Mobile — Program management
 
 <p align="center">
-  <img src="./docs/images/template-screen.png" alt="Template list" width="260" />
-  <img src="./docs/images/program-screen-dark.png" alt="Template drag-and-drop" width="260" />
+  <img src="./docs/images/program-edit-light.png" alt="Template list" width="260" />
+  <img src="./docs/images/program-edit-dark.png" alt="Template drag-and-drop" width="260" />
 </p>
 
 ### Mobile — Exercise library
@@ -34,17 +33,31 @@ Workout tracking platform with:
 ### Mobile — Ongoing session
 
 <p align="center">
+<img src="./docs/images/session-screen-light.png" alt="Template drag-and-drop" width="260" />
   <img src="./docs/images/session-screen-dark.png" alt="Template list" width="260" />
-  <img src="./docs/images/session-screen-light.png" alt="Template drag-and-drop" width="260" />
-  <img src="./docs/images/session-page-target.png" alt="Template list" width="260" />
-  <img src="./docs/images/session-page-target-2.png" alt="Template drag-and-drop" width="260" />
+  
 </p>
 
 ### Mobile — History
 
 <p align="center">
+  <img src="./docs/images/history-screen.png" alt="Template    drag-and-drop" width="260" />
   <img src="./docs/images/history-screen-dark.png" alt="Template list" width="260" />
-  <img src="./docs/images/history-screen-dark-2.png" alt="Template drag-and-drop" width="260" />
+</p>
+
+### Mobile — Insights
+
+<p align="center">
+  <img src="./docs/images/insights-index.png" alt="Template    drag-and-drop" width="260" />
+  <img src="./docs/images/insights-exercise-list.png" alt="Template list" width="260" />
+  <img src="./docs/images/insights-program-list.png" alt="Template list" width="260" />
+</p>
+
+### Mobile — Stats
+
+<p align="center">
+  <img src="./docs/images/exercise-stat.png" alt="Template list" width="260" />
+  <img src="./docs/images/program-stat.png" alt="Template list" width="260" />
 </p>
 
 ## Repo layout
