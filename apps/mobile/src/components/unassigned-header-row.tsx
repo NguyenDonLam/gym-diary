@@ -4,12 +4,16 @@ import { Pressable, Text, View } from "react-native";
 import { ChevronDown, ChevronLeft } from "lucide-react-native";
 
 type Props = {
-  templateCount: number;
+  programCount: number;
   open: boolean;
   onToggle: () => void;
 };
 
-export function UnassignedHeaderRow({ templateCount, open, onToggle }: Props) {
+export function UnassignedHeaderRow({
+  programCount,
+  open,
+  onToggle,
+}: Props) {
   return (
     <Pressable
       onPress={onToggle}
@@ -20,8 +24,8 @@ export function UnassignedHeaderRow({ templateCount, open, onToggle }: Props) {
       </Text>
       <View className="flex-row items-center">
         <Text className="mr-1 text-[11px] text-neutral-500 dark:text-neutral-400">
-          {templateCount} template
-          {templateCount === 1 ? "" : "s"}
+          {programCount} program
+          {programCount === 1 ? "" : "s"}
         </Text>
         {open ? (
           <ChevronDown width={14} height={14} color="#9CA3AF" />

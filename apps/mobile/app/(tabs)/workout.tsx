@@ -1,6 +1,6 @@
 // apps/mobile/app/(tabs)/workout.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, Alert, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, Alert, ActivityIndicator, useColorScheme } from "react-native";
 import { useRouter } from "expo-router";
 import DraggableFlatList, {
   RenderItemParams,
@@ -21,16 +21,18 @@ import {
   buildRows,
   Row,
 } from "@/src/features/program-workout/utils";
+import { ChevronRight, Play } from "lucide-react-native";
 
 export default function Workout() {
   const router = useRouter();
+  const isDark = useColorScheme() === "dark";
   const { programs, deleteProgram, isLoading } = useWorkoutPrograms();
 
   const [folders, setFolders] = useState<TemplateFolder[]>([]);
   const [foldersLoading, setFoldersLoading] = useState(true);
   const [foldersError, setFoldersError] = useState<Error | null>(null);
 
-  const [layoutTemplates, setLayoutTemplates] = useState<WorkoutProgram[]>([]);
+  const [templateProgram, setTemplateProgram] = useState<WorkoutProgram[]>([]);
 
   const [unassignedOpen, setUnassignedOpen] = useState(true);
   const [openFolderIds, setOpenFolderIds] = useState<string[]>([]);
@@ -40,7 +42,7 @@ export default function Workout() {
 
   // keep layout in sync with source templates (initial + external changes)
   useEffect(() => {
-    setLayoutTemplates(programs);
+    setTemplateProgram(programs);
   }, [programs]);
 
   // folders
@@ -53,7 +55,7 @@ export default function Workout() {
         setFolders(all);
       } catch (e) {
         setFoldersError(
-          e instanceof Error ? e : new Error("Failed to load folders")
+          e instanceof Error ? e : new Error("Failed to load folders"),
         );
         setFolders([]);
       } finally {
@@ -73,8 +75,8 @@ export default function Workout() {
   }, [folders]);
 
   const rows = useMemo(
-    () => buildRows(layoutTemplates, folders, unassignedOpen, openFolderIds),
-    [layoutTemplates, folders, unassignedOpen, openFolderIds]
+    () => buildRows(templateProgram, folders, unassignedOpen, openFolderIds),
+    [templateProgram, folders, unassignedOpen, openFolderIds],
   );
 
   const handleCreateTemplate = () => {
@@ -88,12 +90,12 @@ export default function Workout() {
     });
   };
 
-  async function handleStartFromTemplate(template: WorkoutProgram) {
+  async function handleStartSession(program?: WorkoutProgram) {
     const startNewSession = async () => {
-      await startSession(template.id);
+      await startSession(program?.id);
 
       router.push({
-        pathname: "/session-workout/ongoing"
+        pathname: "/session-workout/ongoing",
       });
     };
 
@@ -135,13 +137,13 @@ export default function Workout() {
               } catch (err) {
                 console.warn(
                   "[workout] failed to discard ongoing session",
-                  err
+                  err,
                 );
               }
             },
           },
         ],
-        { cancelable: true }
+        { cancelable: true },
       );
 
       return;
@@ -184,7 +186,7 @@ export default function Workout() {
 
   const handleUpdateFolder = async (
     folder: TemplateFolder,
-    newName: string
+    newName: string,
   ) => {
     const updated: TemplateFolder = { ...folder, name: newName };
 
@@ -202,10 +204,10 @@ export default function Workout() {
       await templateFolderRepository.delete(folderId);
       setFolders((prev) => prev.filter((f) => f.id !== folderId));
       setOpenFolderIds((prev) => prev.filter((id) => id !== folderId));
-      setLayoutTemplates((prev) =>
+      setTemplateProgram((prev) =>
         prev.map((t) =>
-          t.folderId === folderId ? { ...t, folderId: null } : t
-        )
+          t.folderId === folderId ? { ...t, folderId: null } : t,
+        ),
       );
     } catch (err) {
       console.error("Failed to delete folder", err);
@@ -218,12 +220,12 @@ export default function Workout() {
     setOpenFolderIds((prev) =>
       prev.includes(folderId)
         ? prev.filter((id) => id !== folderId)
-        : [...prev, folderId]
+        : [...prev, folderId],
     );
   };
 
   const handleDragEnd = ({ data }: DragEndParams<Row>) => {
-    setLayoutTemplates((prev) => {
+    setTemplateProgram((prev) => {
       const next = applyDragResult(data, prev);
 
       const prevById = new Map(prev.map((t) => [t.id, t]));
@@ -236,7 +238,7 @@ export default function Workout() {
         (async () => {
           try {
             await Promise.all(
-              changed.map((tpl) => workoutProgramRepository.save(tpl))
+              changed.map((tpl) => workoutProgramRepository.save(tpl)),
             );
           } catch (err) {
             console.error("Failed to persist template layout", err);
@@ -252,7 +254,7 @@ export default function Workout() {
     if (item.type === "unassigned-header") {
       return (
         <UnassignedHeaderRow
-          templateCount={item.templateCount}
+          programCount={item.templateCount}
           open={unassignedOpen}
           onToggle={toggleUnassignedOpen}
         />
@@ -264,12 +266,12 @@ export default function Workout() {
       return (
         <FolderRow
           folder={item.folder}
-          templateCount={item.templateCount}
+          programCount={item.templateCount}
           isOpen={isOpen}
           onToggleOpen={() => toggleFolderOpen(item.folder.id)}
           onRenameFolder={(name) => handleUpdateFolder(item.folder, name)}
           onDeleteFolder={() => handleDeleteFolder(item.folder.id)}
-          onCreateTemplateInFolder={() =>
+          onCreateProgramInFolder={() =>
             handleCreateTemplateInFolder(item.folder.id)
           }
         />
@@ -285,7 +287,7 @@ export default function Workout() {
         inFolder={inFolder}
         isActive={isActive}
         onDragHandleLongPress={drag}
-        onPress={() => handleStartFromTemplate(tpl)}
+        onPress={() => handleStartSession(tpl)}
         onLongPress={() => handleEditTemplate(tpl.id)}
         onDeletePress={() => handleDeleteTemplatePress(tpl.id, tpl.name)}
       />
@@ -315,9 +317,9 @@ export default function Workout() {
           paddingBottom: 16,
         }}
         ListHeaderComponent={
-          <View className="mb-2 px-0">
+          <View className="mb-3 px-0">
             <Text className="text-lg font-bold text-neutral-900 dark:text-[#F8F8F2]">
-              Session templates
+              Programs
             </Text>
 
             <Text className="mt-1 text-xs text-neutral-700 dark:text-[#6272A4]">
@@ -328,13 +330,51 @@ export default function Workout() {
               Total: {programs.length}
             </Text>
 
-            <View className="mt-2 flex-row justify-between">
+            <Pressable
+              onPress={() => handleStartSession()}
+              android_ripple={{ color: "rgba(255,255,255,0.08)" }}
+              className="mt-3 overflow-hidden rounded-2xl border border-neutral-300 bg-white dark:border-[#6272A4] dark:bg-[#21222C]"
+            >
+              {({ pressed }) => (
+                <View
+                  className={`flex-row items-center justify-between px-4 py-4 ${
+                    pressed ? "opacity-80" : "opacity-100"
+                  }`}
+                >
+                  <View className="flex-row items-center flex-1">
+                    <View className="mr-3 rounded-full bg-neutral-900/10 p-2 dark:bg-[#BD93F9]/20">
+                      <Play
+                        size={16}
+                        color={isDark ? "#BD93F9" : "#111827"}
+                        fill={isDark ? "#BD93F9" : "#111827"}
+                      />
+                    </View>
+
+                    <View className="flex-1 pr-3">
+                      <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
+                        Start one-off session
+                      </Text>
+                      <Text className="mt-1 text-xs text-neutral-600 dark:text-[#6272A4]">
+                        Start a workout without using a saved program
+                      </Text>
+                    </View>
+                  </View>
+
+                  <ChevronRight
+                    size={18}
+                    color={isDark ? "#6272A4" : "#6b7280"}
+                  />
+                </View>
+              )}
+            </Pressable>
+
+            <View className="mt-3 flex-row gap-2">
               <Pressable
                 className="rounded-full bg-neutral-900 px-3 py-1.5 dark:bg-[#BD93F9]"
                 onPress={handleCreateTemplate}
               >
                 <Text className="text-[13px] font-semibold text-white dark:text-[#282A36]">
-                  New template
+                  New program
                 </Text>
               </Pressable>
 

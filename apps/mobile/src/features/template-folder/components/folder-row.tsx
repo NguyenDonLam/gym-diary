@@ -7,22 +7,22 @@ import type { TemplateFolder } from "@/src/features/template-folder/domain/types
 
 type FolderRowProps = {
   folder: TemplateFolder;
-  templateCount: number;
+  programCount: number;
   isOpen: boolean;
   onToggleOpen: () => void;
   onRenameFolder: (newName: string) => Promise<void> | void;
   onDeleteFolder: () => void;
-  onCreateTemplateInFolder: () => void;
+  onCreateProgramInFolder: () => void;
 };
 
 export default function FolderRow({
   folder,
-  templateCount,
+  programCount,
   isOpen,
   onToggleOpen,
   onRenameFolder,
   onDeleteFolder,
-  onCreateTemplateInFolder,
+  onCreateProgramInFolder,
 }: FolderRowProps) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
@@ -52,7 +52,7 @@ export default function FolderRow({
 
   const openActions = () => {
     Alert.alert(folder.name || "Folder", undefined, [
-      { text: "New template here", onPress: onCreateTemplateInFolder },
+      { text: "New program here", onPress: onCreateProgramInFolder },
       { text: "Rename", onPress: () => setRenaming(true) },
       { text: "Delete", style: "destructive", onPress: onDeleteFolder },
       { text: "Cancel", style: "cancel" },
@@ -77,7 +77,7 @@ export default function FolderRow({
             {folder.name}
           </Text>
           <Text className={`mt-0.5 text-[11px] ${subText}`}>
-            {templateCount} template{templateCount === 1 ? "" : "s"}
+            {programCount} program{programCount === 1 ? "" : "s"}
           </Text>
         </Pressable>
 
