@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, Plus } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
 import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
@@ -19,6 +19,11 @@ import {
 } from "@/src/features/session-exercise/components/form";
 import type { SessionSet } from "@/src/features/session-set/domain/types";
 import { sessionSetRepository } from "@/src/features/session-set/data/repository";
+
+import ExerciseLibraryPicker from "@/src/features/exercise/components/exercise-library-picker";
+import type { Exercise } from "@packages/exercise/type";
+import { SessionExerciseFactory } from "@/src/features/session-exercise/domain/factory";
+import { sessionExerciseRepository } from "@/src/features/session-exercise/data/repository";
 
 type ViewModel = {
   id: string;
@@ -42,27 +47,41 @@ export default function OngoingSessionPage() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
   const iconColor = colorScheme === "dark" ? "#F9FAFB" : "#111827";
+  const isDark = colorScheme === "dark";
 
   const { ongoingSession, refresh, mutationVersion } = useOngoingSession();
 
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<ViewModel | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const lastSessionIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    refresh().finally(() => setLoading(false));
-  }, [refresh]);
+    let cancelled = false;
 
-  // When we have an ongoing session, show it and remember its id
+    (async () => {
+      try {
+        await refresh();
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     if (!ongoingSession) return;
 
     lastSessionIdRef.current = ongoingSession.id;
     setView(toView(ongoingSession, "ongoing"));
-  }, [ongoingSession]);
+  }, [ongoingSession?.id, mutationVersion]);
 
-  // When session ends (ongoing becomes null), fetch the just-finished session by last id
   useEffect(() => {
     if (ongoingSession) return;
 
@@ -106,20 +125,60 @@ export default function OngoingSessionPage() {
         console.error("Failed to save session set", err);
       }
     },
-    [readOnly]
+    [readOnly],
+  );
+
+  const handleAddExercises = useCallback(
+    async (selectedExercises: Exercise[]) => {
+      if (readOnly || !view) return;
+
+      try {
+        const created: SessionExerciseView[] = [];
+
+        for (const [index, exercise] of selectedExercises.entries()) {
+          const domain = SessionExerciseFactory.domainFromExercise(exercise, {
+            workoutSessionId: view.id,
+            orderIndex: view.exercises.length + index,
+          });
+
+          await sessionExerciseRepository.save(domain);
+
+          created.push({
+            ...domain,
+            isOpen: true,
+            lastSessionSets: [],
+          });
+        }
+
+        const nextExercises = [...view.exercises, ...created];
+
+        setView((prev) =>
+          !prev
+            ? prev
+            : {
+                ...prev,
+                exercises: nextExercises,
+              },
+        );
+
+        setPickerOpen(false);
+      } catch (err) {
+        console.error("Failed to add exercises", err);
+      }
+    },
+    [readOnly, view],
   );
 
   return (
     <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-3 pb-2 border-b border-zinc-200 dark:border-[#44475A] bg-white dark:bg-[#21222C]">
+      <View className="flex-row items-center justify-between border-b border-zinc-200 bg-white px-4 pb-2 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
         <Pressable onPress={() => router.back()} hitSlop={10} className="mr-2">
           <ChevronLeft width={20} height={20} color={iconColor} />
         </Pressable>
 
         <View className="flex-1 items-center justify-center">
           <Text
-            className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2] text-center"
+            className="text-center text-base font-semibold text-neutral-900 dark:text-[#F8F8F2]"
             numberOfLines={1}
           >
             {view?.name ??
@@ -134,13 +193,13 @@ export default function OngoingSessionPage() {
             </Text>
 
             {view?.mode === "completed" ? (
-              <View className="ml-2 px-2 py-[1px] rounded-full bg-emerald-50 dark:bg-[#343746] border border-emerald-200 dark:border-[#44475A]">
+              <View className="ml-2 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-[1px] dark:border-[#44475A] dark:bg-[#343746]">
                 <Text className="text-[10px] font-medium text-emerald-700 dark:text-[#50FA7B]">
                   Completed
                 </Text>
               </View>
             ) : view?.status ? (
-              <View className="ml-2 px-2 py-[1px] rounded-full bg-neutral-100 dark:bg-[#343746] border border-neutral-200 dark:border-[#44475A]">
+              <View className="ml-2 rounded-full border border-neutral-200 bg-neutral-100 px-2 py-[1px] dark:border-[#44475A] dark:bg-[#343746]">
                 <Text className="text-[10px] font-medium text-neutral-700 dark:text-[#F8F8F2]">
                   {formatStatus(view.status)}
                 </Text>
@@ -152,13 +211,12 @@ export default function OngoingSessionPage() {
         <View style={{ width: 20, marginLeft: 8 }} />
       </View>
 
-      {/* Body */}
       <ScrollView
         className="flex-1 bg-white dark:bg-[#2B2D3A]"
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 12,
-          paddingBottom: 24,
+          paddingBottom: readOnly ? 24 : 96,
         }}
       >
         {loading && !view && (
@@ -201,6 +259,36 @@ export default function OngoingSessionPage() {
           />
         ))}
       </ScrollView>
+
+      {!readOnly ? (
+        <View className="border-t border-zinc-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#21222C]">
+          <Pressable
+            onPress={() => setPickerOpen(true)}
+            className="h-12 flex-row items-center justify-center rounded-2xl bg-neutral-900 dark:bg-[#BD93F9]"
+          >
+            <Plus size={16} color={isDark ? "#282A36" : "#FFFFFF"} />
+            <Text className="ml-2 text-sm font-medium text-white dark:text-[#282A36]">
+              Add exercise
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {pickerOpen && !readOnly ? (
+        <View className="absolute inset-0 z-50">
+          <ExerciseLibraryPicker
+            title="Add exercises"
+            subtitle="Select exercises for this session"
+            mode="multi-select"
+            confirmLabel="Add to session"
+            allowCreate
+            showUsageSummary
+            showBrowseAll
+            onCancel={() => setPickerOpen(false)}
+            onConfirmSelection={handleAddExercises}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }

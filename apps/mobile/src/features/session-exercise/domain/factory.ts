@@ -9,6 +9,7 @@ import type { SessionSetRow } from "@/src/features/session-set/data/types";
 import type { ExerciseProgramRow } from "@/src/features/program-exercise/data/type";
 import { SessionSetFactory } from "../../session-set/domain/factory";
 import { generateId } from "@/src/lib/id";
+import { Exercise } from "@packages/exercise";
 
 export class SessionExerciseFactory {
   static domainFromDb(row: SessionExerciseRow): SessionExercise {
@@ -71,7 +72,7 @@ export class SessionExerciseFactory {
   }
 
   private static exerciseProgramDomainFromDb(
-    row: ExerciseProgramRow
+    row: ExerciseProgramRow,
   ): ExerciseProgram {
     // Explicit mapping only.
     // Keep exactly aligned to your ExerciseProgram domain type.
@@ -91,6 +92,45 @@ export class SessionExerciseFactory {
       updatedAt: new Date(row.updatedAt),
 
       sets: [],
+    };
+  }
+
+  static domainFromExercise(
+    exercise: Exercise,
+    overrides: Partial<SessionExercise>,
+  ): SessionExercise {
+    if (!overrides.workoutSessionId) {
+      throw new Error("domainFromExercise requires overrides.workoutSessionId");
+    }
+
+    if (overrides.orderIndex == null) {
+      throw new Error("domainFromExercise requires overrides.orderIndex");
+    }
+
+    const now = new Date();
+
+    return {
+      id: overrides.id ?? generateId(),
+
+      workoutSessionId: overrides.workoutSessionId,
+
+      exerciseId: overrides.exerciseId ?? exercise.id,
+      exerciseProgramId: overrides.exerciseProgramId ?? null,
+      exerciseProgram: overrides.exerciseProgram,
+      quantityUnit: overrides.quantityUnit ?? exercise.quantityUnit,
+
+      exerciseName: overrides.exerciseName ?? exercise.name ?? null,
+
+      orderIndex: overrides.orderIndex,
+
+      note: overrides.note ?? null,
+      strengthScore: overrides.strengthScore ?? null,
+      strengthScoreVersion: overrides.strengthScoreVersion ?? 1,
+
+      createdAt: overrides.createdAt ?? now,
+      updatedAt: overrides.updatedAt ?? now,
+
+      sets: overrides.sets ?? [],
     };
   }
 }
