@@ -3,22 +3,19 @@ import React, { memo, useMemo } from "react";
 import { View, Text, ScrollView } from "react-native";
 
 import type { SessionWorkout } from "@/src/features/session-workout/domain/types";
-import {
-  COLOR_STRIP_MAP,
-  type ProgramColor,
-} from "@/src/features/program-workout/domain/type";
 
 import { formatDuration, minutesBetween } from "../ui/date";
 import { SessionRow } from "../components/session-row";
+import { ProgramColor } from "@/db/enums";
+import { COLOR_STRIP_MAP } from "../../program-workout/domain/type";
 
 type Props = {
   selectedDateKey: string;
   sessions: SessionWorkout[];
   onSessionPress?: (session: SessionWorkout) => void;
   onSessionDeletePress?: (session: SessionWorkout) => void;
-
-  // optional: lets parent cap the list height
   maxListHeight?: number;
+  bottomInset?: number;
 };
 
 export const DaySummaryCard = memo(function DaySummaryCard({
@@ -26,6 +23,7 @@ export const DaySummaryCard = memo(function DaySummaryCard({
   onSessionPress,
   onSessionDeletePress,
   maxListHeight = 320,
+  bottomInset = 0,
 }: Props) {
   const primary = sessions[0] ?? null;
 
@@ -52,8 +50,10 @@ export const DaySummaryCard = memo(function DaySummaryCard({
           <View style={{ maxHeight: maxListHeight }}>
             <ScrollView
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 0 }}
               nestedScrollEnabled
+              contentContainerStyle={{
+                paddingBottom: bottomInset + 12,
+              }}
             >
               {sessions.map((s) => (
                 <SessionRow

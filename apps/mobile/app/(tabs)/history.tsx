@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import { useColorScheme } from "nativewind";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 
 import type { SessionWorkout } from "@/src/features/session-workout/domain/types";
 import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
@@ -13,14 +14,14 @@ import {
   toKey,
 } from "@/src/features/history/ui/date";
 import { CalendarMonth } from "@/src/features/history/ui/calendar-month";
-import { DaySummaryCard } from "@/src/features/history/ui/day-summary-card";
 import { LoadUnit, ProgramColor } from "@/db/enums";
 import { router } from "expo-router";
 import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
+import { DaySummaryCard } from "@/src/features/history/ui/day-summary-card";
 
 function parseLoadKg(
   loadValue: string | null | undefined,
-  loadUnit: LoadUnit | null | undefined
+  loadUnit: LoadUnit | null | undefined,
 ) {
   if (!loadValue) return null;
   const t = loadValue.trim();
@@ -40,14 +41,13 @@ function parseLoadKg(
 function WorkoutSessionStat({
   selectedDateKey,
   sessions,
-  growthBySessionId,
 }: {
   selectedDateKey: string;
   sessions: SessionWorkout[];
   growthBySessionId: Record<string, number | null | undefined>;
 }) {
   function growthPctFromNormalizedStrengthScore(
-    norm: number | null | undefined
+    norm: number | null | undefined,
   ) {
     if (norm == null || !Number.isFinite(norm) || norm <= 0) return null;
     const pct = (norm - 1) * 100;
@@ -56,7 +56,7 @@ function WorkoutSessionStat({
 
   const stat = useMemo(() => {
     const byTime = [...sessions].sort(
-      (a, b) => a.startedAt.getTime() - b.startedAt.getTime()
+      (a, b) => a.startedAt.getTime() - b.startedAt.getTime(),
     );
 
     let setCount = 0;
@@ -125,9 +125,7 @@ function WorkoutSessionStat({
           <Text className="text-zinc-900 dark:text-[#F8F8F2]">
             {stat.avgGrowthPct == null
               ? "—"
-              : `${stat.avgGrowthPct >= 0 ? "+" : ""}${stat.avgGrowthPct.toFixed(
-                  2,
-                )}%`}
+              : `${stat.avgGrowthPct >= 0 ? "+" : ""}${stat.avgGrowthPct.toFixed(2)}%`}
           </Text>
         </Text>
       </View>
@@ -138,10 +136,11 @@ function WorkoutSessionStat({
 export default function History() {
   const { colorScheme } = useColorScheme();
   const schemeClass = colorScheme === "dark" ? "dark" : "";
+  const tabBarHeight = useBottomTabBarHeight();
 
   const [monthDate, setMonthDate] = useState(() => firstDayOfMonth(new Date()));
   const [selectedDateKey, setSelectedDateKey] = useState<string>(() =>
-    toKey(new Date())
+    toKey(new Date()),
   );
   const { mutationVersion } = useOngoingSession();
 
@@ -162,12 +161,12 @@ export default function History() {
 
         const rangeStart = startOfDayLocal(grid[0].date);
         const rangeEndExclusive = startOfDayLocal(
-          addDaysLocal(grid[41].date, 1)
+          addDaysLocal(grid[41].date, 1),
         );
 
         const rows = await sessionWorkoutRepository.getCompletedInRange(
           rangeStart.toISOString(),
-          rangeEndExclusive.toISOString()
+          rangeEndExclusive.toISOString(),
         );
 
         if (cancelled) return;
@@ -175,7 +174,7 @@ export default function History() {
       } catch (e) {
         if (cancelled) return;
         setLoadError(
-          e instanceof Error ? e.message : "Failed to load sessions"
+          e instanceof Error ? e.message : "Failed to load sessions",
         );
         setSessions([]);
       } finally {
@@ -184,7 +183,8 @@ export default function History() {
       }
     };
 
-    run();
+    void run();
+
     return () => {
       cancelled = true;
     };
@@ -224,7 +224,6 @@ export default function History() {
         }
       }
 
-      // direct color stored on the session row (no join needed)
       const color = winner?.color ?? null;
       if (color) map[dateKey] = color;
     }
@@ -232,12 +231,9 @@ export default function History() {
     return map;
   }, [sessionsByDate]);
 
-
-  // Growth is computed across the entire loaded month range (chronological),
-  // so a day with 1 session can still have a growth value vs the prior session.
   const growthBySessionId = useMemo(() => {
     const byTime = [...sessions].sort(
-      (a, b) => a.startedAt.getTime() - b.startedAt.getTime()
+      (a, b) => a.startedAt.getTime() - b.startedAt.getTime(),
     );
 
     const out: Record<string, number | null> = {};
@@ -297,7 +293,10 @@ export default function History() {
         )}
       </View>
 
-      <View className="flex-1 px-4 pb-4">
+      <View
+        className="flex-1 px-4"
+        style={{ paddingBottom: tabBarHeight + 12 }}
+      >
         <WorkoutSessionStat
           selectedDateKey={selectedDateKey}
           sessions={selectedSessions}
@@ -307,6 +306,7 @@ export default function History() {
         <DaySummaryCard
           selectedDateKey={selectedDateKey}
           sessions={selectedSessions}
+          bottomInset={tabBarHeight}
           onSessionPress={(s) => {
             router.push(`/session-workout/${s.id}`);
           }}
