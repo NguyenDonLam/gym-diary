@@ -42,13 +42,33 @@ const BAND_OPTIONS = [
     baseClass: "bg-amber-100 dark:bg-amber-950",
     dotClass: "bg-amber-400 dark:bg-amber-300",
   },
-];
+] as const;
 
 const INTENSITY_LEVELS = [
   { id: "light", label: "Light", rpe: "5" },
   { id: "medium", label: "Medium", rpe: "7" },
   { id: "intense", label: "Intense", rpe: "10" },
-];
+] as const;
+
+const KG_TO_LB = 2.2046226218;
+const LB_TO_KG = 0.45359237;
+
+function parseNumericLoad(raw: string | null | undefined): number | null {
+  if (raw == null) return null;
+
+  const trimmed = raw.trim();
+  if (trimmed === "") return null;
+
+  const normalized = trimmed.replace(",", ".");
+  const parsed = Number.parseFloat(normalized);
+  if (!Number.isFinite(parsed)) return null;
+
+  return parsed;
+}
+
+function formatNumericLoad(value: number): string {
+  return value.toFixed(2).replace(/\.?0+$/, "");
+}
 
 export default function SetProgramForm({
   formData,
@@ -58,15 +78,43 @@ export default function SetProgramForm({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
+  const rememberedNumericRef = React.useRef<{
+    kg: string | null;
+    lb: string | null;
+  }>({
+    kg: null,
+    lb: null,
+  });
+
   const update = (patch: Partial<SetProgramFormData>) =>
     setFormData({ ...formData, ...patch });
 
-  // default effort = medium
   React.useEffect(() => {
     if (!formData.rpe) {
       update({ rpe: "7" });
     }
   }, [formData.rpe]);
+
+  React.useEffect(() => {
+    if (formData.loadUnit !== "kg" && formData.loadUnit !== "lb") return;
+
+    const parsed = parseNumericLoad(formData.loadValue);
+    if (parsed == null) return;
+
+    if (formData.loadUnit === "kg") {
+      rememberedNumericRef.current.kg = formatNumericLoad(parsed);
+      rememberedNumericRef.current.lb = formatNumericLoad(parsed * KG_TO_LB);
+      return;
+    }
+
+    rememberedNumericRef.current.lb = formatNumericLoad(parsed);
+    rememberedNumericRef.current.kg = formatNumericLoad(parsed * LB_TO_KG);
+  }, [formData.loadUnit, formData.loadValue]);
+
+  const getRememberedNumericValue = (targetUnit: "kg" | "lb") => {
+    const hit = rememberedNumericRef.current[targetUnit];
+    return hit ?? "0";
+  };
 
   const cycleUnit = () => {
     const current = formData.loadUnit;
@@ -76,7 +124,36 @@ export default function SetProgramForm({
         ? LOAD_UNITS[0]
         : LOAD_UNITS[idx + 1];
 
-    update({ loadUnit: next, loadValue: "" });
+    if (current === "kg" || current === "lb") {
+      const parsed = parseNumericLoad(formData.loadValue);
+      if (parsed != null) {
+        if (current === "kg") {
+          rememberedNumericRef.current.kg = formatNumericLoad(parsed);
+          rememberedNumericRef.current.lb = formatNumericLoad(
+            parsed * KG_TO_LB,
+          );
+        } else {
+          rememberedNumericRef.current.lb = formatNumericLoad(parsed);
+          rememberedNumericRef.current.kg = formatNumericLoad(
+            parsed * LB_TO_KG,
+          );
+        }
+      }
+    }
+
+    let nextLoadValue = "";
+
+    if (next === "band") {
+      nextLoadValue = BAND_OPTIONS[0].id;
+    } else if (next === "custom") {
+      nextLoadValue = "0";
+    } else if (next === "kg") {
+      nextLoadValue = getRememberedNumericValue("kg");
+    } else if (next === "lb") {
+      nextLoadValue = getRememberedNumericValue("lb");
+    }
+
+    update({ loadUnit: next, loadValue: nextLoadValue });
   };
 
   const handleChangeLoadValue = (raw: string) => {
@@ -90,7 +167,23 @@ export default function SetProgramForm({
         const tail = cleaned.slice(firstDot + 1).replace(/[.,]/g, "");
         cleaned = head + tail;
       }
+
       update({ loadValue: cleaned });
+
+      const parsed = parseNumericLoad(cleaned);
+      if (parsed != null) {
+        if (unit === "kg") {
+          rememberedNumericRef.current.kg = formatNumericLoad(parsed);
+          rememberedNumericRef.current.lb = formatNumericLoad(
+            parsed * KG_TO_LB,
+          );
+        } else {
+          rememberedNumericRef.current.lb = formatNumericLoad(parsed);
+          rememberedNumericRef.current.kg = formatNumericLoad(
+            parsed * LB_TO_KG,
+          );
+        }
+      }
       return;
     }
 
@@ -123,13 +216,13 @@ export default function SetProgramForm({
   const intensityIndex =
     INTENSITY_LEVELS.findIndex((l) => l.rpe === formData.rpe) !== -1
       ? INTENSITY_LEVELS.findIndex((l) => l.rpe === formData.rpe)
-      : 1; // medium
+      : 1;
 
   const selectedIntensity = INTENSITY_LEVELS[intensityIndex];
 
   const cycleIntensity = () => {
     const currentIdx = INTENSITY_LEVELS.findIndex(
-      (l) => l.rpe === formData.rpe
+      (l) => l.rpe === formData.rpe,
     );
     const nextIndex =
       currentIdx === -1 ? 1 : (currentIdx + 1) % INTENSITY_LEVELS.length;
@@ -139,9 +232,6 @@ export default function SetProgramForm({
 
   const outerField = "flex-1 px-1 py-1";
   const shellBase = "rounded-xl px-2 py-0.5 flex-row items-center";
-  const inputShell = `${shellBase} ${
-    isDark ? "bg-neutral-800/90" : "bg-white"
-  }`;
 
   const renderIntensityIcon = (id: string, active: boolean) => {
     const size = 14;
@@ -162,7 +252,6 @@ export default function SetProgramForm({
 
   return (
     <View className="mt-1 flex-row items-center gap-2">
-      {/* REPS */}
       <View className={outerField}>
         <View
           className={`${shellBase} ${isDark ? "bg-[#44475A]" : "bg-white"}`}
@@ -189,7 +278,6 @@ export default function SetProgramForm({
         </View>
       </View>
 
-      {/* LOAD */}
       <View className={outerField}>
         <View
           className={`${shellBase} ${isDark ? "bg-[#44475A]" : "bg-white"}`}
@@ -213,10 +301,7 @@ export default function SetProgramForm({
                 <Text className="text-[9px] text-neutral-600 dark:text-[#F8F8F2]">
                   {formData.loadUnit}
                 </Text>
-                <ChevronsUpDown
-                  size={11}
-                  color={isDark ? "#6272A4" : "#6B7280"}
-                />
+                <ChevronsUpDown size={11} color={unitIconColor} />
               </Pressable>
             </>
           )}
@@ -241,17 +326,13 @@ export default function SetProgramForm({
                 <Text className="text-[9px] text-neutral-600 dark:text-[#F8F8F2]">
                   band
                 </Text>
-                <ChevronsUpDown
-                  size={11}
-                  color={isDark ? "#6272A4" : "#6B7280"}
-                />
+                <ChevronsUpDown size={11} color={unitIconColor} />
               </Pressable>
             </>
           )}
         </View>
       </View>
 
-      {/* EFFORT */}
       <View className={outerField}>
         <Pressable
           onPress={cycleIntensity}

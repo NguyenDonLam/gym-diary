@@ -14,15 +14,84 @@ const EFFORT_LEVELS = [
   { id: "intense", label: "Intense", rpe: 10 },
 ] as const;
 
+const LOAD_UNIT_OPTIONS: { id: SessionSet["loadUnit"]; label: string }[] = [
+  { id: "kg", label: "kg" },
+  { id: "lb", label: "lb" },
+  { id: "band", label: "band" },
+  { id: "custom", label: "custom" },
+];
+
+const BAND_OPTIONS = [
+  {
+    id: "green",
+    label: "Green",
+    dotClass: "bg-emerald-500 dark:bg-emerald-300",
+  },
+  {
+    id: "purple",
+    label: "Purple",
+    dotClass: "bg-violet-500 dark:bg-violet-300",
+  },
+  {
+    id: "black",
+    label: "Black",
+    dotClass: "bg-neutral-900 dark:bg-neutral-50",
+  },
+  {
+    id: "red",
+    label: "Red",
+    dotClass: "bg-red-500 dark:bg-red-300",
+  },
+  {
+    id: "yellow",
+    label: "Yellow",
+    dotClass: "bg-amber-400 dark:bg-amber-300",
+  },
+] as const;
+
+const KG_TO_LB = 2.2046226218;
+const LB_TO_KG = 0.45359237;
+
+function isNumericLoadUnit(unit: SessionSet["loadUnit"]) {
+  return unit === "kg" || unit === "lb";
+}
+
 function getEffortFromRpe(rpe: number | null | undefined) {
   if (rpe == null) return EFFORT_LEVELS[1];
   const found = EFFORT_LEVELS.find((lvl) => lvl.rpe === rpe);
   return found ?? EFFORT_LEVELS[1];
 }
 
+function getNextLoadUnit(current: SessionSet["loadUnit"]) {
+  const currentIndex = LOAD_UNIT_OPTIONS.findIndex((u) => u.id === current);
+  if (currentIndex === -1) return LOAD_UNIT_OPTIONS[0].id;
+  return LOAD_UNIT_OPTIONS[(currentIndex + 1) % LOAD_UNIT_OPTIONS.length].id;
+}
+
+function getLoadUnitLabel(unit: SessionSet["loadUnit"]) {
+  return LOAD_UNIT_OPTIONS.find((u) => u.id === unit)?.label ?? String(unit);
+}
+
+function parseNumericLoad(raw: string | null | undefined): number | null {
+  if (raw == null) return null;
+
+  const trimmed = raw.trim();
+  if (trimmed === "") return null;
+
+  const normalized = trimmed.replace(",", ".");
+  const parsed = Number.parseFloat(normalized);
+  if (!Number.isFinite(parsed)) return null;
+
+  return parsed;
+}
+
+function formatNumericLoad(value: number): string {
+  return value.toFixed(2).replace(/\.?0+$/, "");
+}
+
 function renderEffortIcon(
   id: (typeof EFFORT_LEVELS)[number]["id"],
-  color: string
+  color: string,
 ) {
   const size = 14;
   if (id === "light") return <Wind size={size} color={color} />;
@@ -51,10 +120,31 @@ export function SessionSetRow({
 
   const repsRef = useRef<TextInput | null>(null);
 
-  // always mutate from latest to avoid stale overwrites
   const latestRef = useRef<SessionSet>(value);
+  const rememberedNumericRef = useRef<{
+    kg: string | null;
+    lb: string | null;
+  }>({
+    kg: null,
+    lb: null,
+  });
+
   useEffect(() => {
     latestRef.current = value;
+
+    if (!isNumericLoadUnit(value.loadUnit)) return;
+
+    const parsed = parseNumericLoad(value.loadValue);
+    if (parsed == null) return;
+
+    if (value.loadUnit === "kg") {
+      rememberedNumericRef.current.kg = formatNumericLoad(parsed);
+      rememberedNumericRef.current.lb = formatNumericLoad(parsed * KG_TO_LB);
+      return;
+    }
+
+    rememberedNumericRef.current.lb = formatNumericLoad(parsed);
+    rememberedNumericRef.current.kg = formatNumericLoad(parsed * LB_TO_KG);
   }, [value]);
 
   const tpl = value.setProgram;
@@ -75,12 +165,20 @@ export function SessionSetRow({
   const repsValue = value.quantity == null ? "" : String(value.quantity);
   const loadValue = value.loadValue ?? "";
 
-  // IMPORTANT: placeholders do NOT count. Only real loadValue counts.
+  const hasValidLoad = (v: SessionSet) => {
+    if (v.loadValue == null) return false;
+
+    const trimmed = v.loadValue.trim();
+    if (trimmed === "") return false;
+
+    if (!isNumericLoadUnit(v.loadUnit)) return true;
+
+    const raw = parseNumericLoad(trimmed);
+    return raw != null && raw > 0;
+  };
+
   const isValid = (v: SessionSet) =>
-    v.quantity != null &&
-    v.loadValue != null &&
-    v.loadValue.trim() !== "" &&
-    v.rpe != null;
+    v.quantity != null && hasValidLoad(v) && v.rpe != null;
 
   const showCompleted = value.isCompleted === true;
 
@@ -92,17 +190,15 @@ export function SessionSetRow({
     return next;
   };
 
-  // ensure rpe is real (UI shows a default, but state might still be null)
   const ensureRpeDefault = (v: SessionSet): SessionSet => {
     if (v.rpe != null) return v;
-    if (readOnly) return v; // do not mutate in readOnly mode
+    if (readOnly) return v;
     const next: SessionSet = { ...v, rpe: EFFORT_LEVELS[1].rpe };
     latestRef.current = next;
     setValue(next);
     return next;
   };
 
-  // marks completed ONLY when fields are actually filled (esp. loadValue)
   const commitIfValid = () => {
     if (readOnly) return;
 
@@ -148,8 +244,101 @@ export function SessionSetRow({
 
   const onChangeLoad = (raw: string) => {
     if (readOnly) return;
-    const trimmed = raw.trim();
-    apply({ loadValue: trimmed === "" ? null : trimmed });
+
+    const unit = latestRef.current.loadUnit;
+
+    if (unit === "kg" || unit === "lb") {
+      let cleaned = raw.replace(/[^0-9.,]/g, "");
+      const firstDot = cleaned.search(/[.,]/);
+      if (firstDot !== -1) {
+        const head = cleaned.slice(0, firstDot + 1);
+        const tail = cleaned.slice(firstDot + 1).replace(/[.,]/g, "");
+        cleaned = head + tail;
+      }
+
+      const nextValue = cleaned === "" ? null : cleaned;
+      apply({ loadValue: nextValue });
+
+      const parsed = parseNumericLoad(nextValue);
+      if (parsed != null) {
+        if (unit === "kg") {
+          rememberedNumericRef.current.kg = formatNumericLoad(parsed);
+          rememberedNumericRef.current.lb = formatNumericLoad(
+            parsed * KG_TO_LB,
+          );
+        } else {
+          rememberedNumericRef.current.lb = formatNumericLoad(parsed);
+          rememberedNumericRef.current.kg = formatNumericLoad(
+            parsed * LB_TO_KG,
+          );
+        }
+      }
+      return;
+    }
+
+    apply({ loadValue: raw.trim() === "" ? null : raw });
+  };
+
+  const getRememberedNumericValue = (targetUnit: "kg" | "lb") => {
+    const hit = rememberedNumericRef.current[targetUnit];
+    return hit ?? "0";
+  };
+
+  const cycleLoadUnit = () => {
+    if (readOnly) return;
+
+    const current = latestRef.current;
+    const nextUnit = getNextLoadUnit(current.loadUnit);
+
+    let nextLoadValue: string | null;
+
+    if (current.loadUnit === "kg" || current.loadUnit === "lb") {
+      const parsed = parseNumericLoad(current.loadValue);
+      if (parsed != null) {
+        if (current.loadUnit === "kg") {
+          rememberedNumericRef.current.kg = formatNumericLoad(parsed);
+          rememberedNumericRef.current.lb = formatNumericLoad(
+            parsed * KG_TO_LB,
+          );
+        } else {
+          rememberedNumericRef.current.lb = formatNumericLoad(parsed);
+          rememberedNumericRef.current.kg = formatNumericLoad(
+            parsed * LB_TO_KG,
+          );
+        }
+      }
+    }
+
+    if (nextUnit === "band") {
+      nextLoadValue = BAND_OPTIONS[0].id;
+    } else if (nextUnit === "custom") {
+      nextLoadValue = "0";
+    } else if (nextUnit === "kg") {
+      nextLoadValue = getRememberedNumericValue("kg");
+    } else {
+      nextLoadValue = getRememberedNumericValue("lb");
+    }
+
+    apply({
+      loadUnit: nextUnit,
+      loadValue: nextLoadValue,
+    });
+
+    setTimeout(commitIfValid, 0);
+  };
+
+  const cycleBand = () => {
+    if (readOnly) return;
+
+    const currentId = latestRef.current.loadValue;
+    const idx = BAND_OPTIONS.findIndex((b) => b.id === currentId);
+    const next =
+      idx === -1 || idx === BAND_OPTIONS.length - 1
+        ? BAND_OPTIONS[0]
+        : BAND_OPTIONS[idx + 1];
+
+    apply({ loadValue: next.id });
+    setTimeout(commitIfValid, 0);
   };
 
   const cycleEffort = () => {
@@ -166,13 +355,19 @@ export function SessionSetRow({
   };
 
   const effort = getEffortFromRpe(value.rpe);
+  const isBandUnit = value.loadUnit === "band";
+  const loadKeyboardType =
+    value.loadUnit === "kg" || value.loadUnit === "lb"
+      ? "decimal-pad"
+      : "default";
+  const selectedBand =
+    BAND_OPTIONS.find((b) => b.id === value.loadValue) ?? BAND_OPTIONS[0];
 
   return (
     <View
       className={`mb-1.5 rounded-xl px-2 py-1.5 ${shellBg} ${readOnly ? "opacity-70" : ""}`}
     >
       <View className="flex-row items-center gap-2">
-        {/* Left status icon: tap to autofill reps with target */}
         <Pressable
           disabled={readOnly}
           onPress={fillFromTarget}
@@ -186,11 +381,10 @@ export function SessionSetRow({
           )}
         </Pressable>
 
-        {/* Reps */}
         <Pressable
           disabled={readOnly}
           onPress={() => repsRef.current?.focus()}
-          className="flex-1 rounded-xl bg-neutral-50 dark:bg-neutral-900 px-2 py-0.5"
+          className="flex-1 rounded-xl bg-neutral-50 px-2 py-0.5 dark:bg-neutral-900"
         >
           <TextInput
             ref={repsRef}
@@ -205,26 +399,48 @@ export function SessionSetRow({
           />
         </Pressable>
 
-        {/* Load */}
-        <View className="flex-1 rounded-xl bg-neutral-50 dark:bg-neutral-900 px-2 py-0.5">
-          <TextInput
-            className="text-center text-[11px] text-neutral-900 dark:text-neutral-50"
-            keyboardType="numeric"
-            editable={!readOnly}
-            placeholder={weightPlaceholder}
-            placeholderTextColor="#9CA3AF"
-            value={loadValue}
-            onChangeText={onChangeLoad}
-            onEndEditing={commitIfValid}
-          />
+        <View className="flex-1 flex-row items-center rounded-xl bg-neutral-50 px-2 py-0.5 dark:bg-neutral-900">
+          {isBandUnit ? (
+            <Pressable
+              disabled={readOnly}
+              onPress={cycleBand}
+              hitSlop={8}
+              className="flex-1 items-center justify-center"
+            >
+              <View
+                className={`h-4 w-10 rounded-full ${selectedBand.dotClass}`}
+              />
+            </Pressable>
+          ) : (
+            <TextInput
+              className="flex-1 text-center text-[11px] text-neutral-900 dark:text-neutral-50"
+              keyboardType={loadKeyboardType}
+              editable={!readOnly}
+              placeholder={weightPlaceholder}
+              placeholderTextColor="#9CA3AF"
+              value={loadValue}
+              onChangeText={onChangeLoad}
+              onEndEditing={commitIfValid}
+            />
+          )}
+
+          <Pressable
+            disabled={readOnly}
+            onPress={cycleLoadUnit}
+            hitSlop={8}
+            className="ml-1 min-w-[38px] items-center justify-center rounded-lg bg-neutral-200 px-1.5 py-1 dark:bg-neutral-800"
+          >
+            <Text className="text-[10px] font-medium text-neutral-900 dark:text-neutral-50">
+              {getLoadUnitLabel(value.loadUnit)}
+            </Text>
+          </Pressable>
         </View>
 
-        {/* Effort */}
         <Pressable
           disabled={readOnly}
           onPress={cycleEffort}
           hitSlop={8}
-          className="w-20 flex-row items-center justify-center gap-1 rounded-xl bg-neutral-50 dark:bg-neutral-900 px-1.5 py-0.5"
+          className="w-20 flex-row items-center justify-center gap-1 rounded-xl bg-neutral-50 px-1.5 py-0.5 dark:bg-neutral-900"
         >
           {renderEffortIcon(effort.id, activeIcon)}
           <Text className="text-[9px] text-neutral-900 dark:text-neutral-50">
