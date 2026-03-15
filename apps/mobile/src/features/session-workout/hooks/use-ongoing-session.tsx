@@ -6,8 +6,6 @@ import React, {
   useMemo,
   useState,
   useCallback,
-  Dispatch,
-  SetStateAction,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -24,9 +22,7 @@ import type { SessionSet } from "@/src/features/session-set/domain/types";
 import type { SessionWorkout } from "../domain/types";
 
 import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
-// IMPORTANT: you must provide an implementation for this (whatever module you already use)
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
-import { WorkoutProgramFactory } from "@/src/features/program-workout/domain/factory";
 import { SessionWorkoutFactory } from "../domain/factory";
 import { useExerciseStats } from "../../exercise-stats/hooks/use-exercise-stats";
 import { exerciseStatRepository } from "../../exercise-stats/data/repository";
@@ -54,14 +50,12 @@ type OngoingSessionContextValue = {
 };
 
 const OngoingSessionContext = createContext<OngoingSessionContextValue | null>(
-  null
+  null,
 );
-
-const EMPTY_CTX: StrengthScoreContext = {};
 
 function createAggregate(
   session: SessionWorkout,
-  lookupExerciseStat: Record<string, ExerciseStat>
+  lookupExerciseStat: Record<string, ExerciseStat>,
 ): Aggregate {
   const setStrategy = new SetE1rmScoreStrategy<SessionSet>(
     (s) => {
@@ -78,10 +72,9 @@ function createAggregate(
       return raw;
     },
     (s) => s.quantity,
-    (s) => 10 - (s.rpe ?? 10)
+    (s) => 10 - (s.rpe ?? 10),
   );
 
-  // two-phase: strategies can consult aggregate caches after agg is assigned
   let agg: Aggregate | null = null;
 
   const exerciseStrategy = new ExerciseMeanScoreStrategy<
@@ -89,11 +82,10 @@ function createAggregate(
     SessionSet
   >(
     (s) => {
-      // prefer aggregate cache (updated during upsertSet), fallback to persisted field
       const v = agg?.getSetScore(s.id);
       return v !== undefined ? v : s.e1rm;
     },
-    (s) => s.isCompleted
+    (s) => s.isCompleted,
   );
 
   const workoutStrategy = new WorkoutNormalizedScoreStrategy<
@@ -103,7 +95,7 @@ function createAggregate(
   >(
     (exSession, allSets) =>
       allSets.filter((s) => s.sessionExerciseId === exSession.id),
-    (exSession, ctx) => {
+    (exSession) => {
       const hit = lookupExerciseStat[exSession.exerciseId ?? ""];
 
       return {
@@ -111,12 +103,10 @@ function createAggregate(
           hit?.baselineExerciseStrengthScore ?? null,
       };
     },
-
     (exSession) => {
-      // prefer aggregate cache (updated when any set changes), fallback to persisted field
       const v = agg?.getExerciseScore(exSession.id);
       return v !== undefined ? v : exSession.strengthScore;
-    }
+    },
   );
 
   const built = new ScoreAggregateV1<
@@ -154,10 +144,11 @@ export function OngoingSessionProvider({
 }) {
   const [ongoingId, setOngoingIdState] = useState<string | null>(null);
   const [ongoingSession, setOngoingSession] = useState<SessionWorkout | null>(
-    null
+    null,
   );
   const { lookupExerciseStat } = useExerciseStats();
   const [mutationVersion, setMutationVersion] = useState(0);
+
   const bumpMutationVersion = useCallback(() => {
     setMutationVersion((v) => v + 1);
   }, []);
@@ -165,9 +156,8 @@ export function OngoingSessionProvider({
   const aggregate = useMemo<Aggregate | null>(() => {
     if (!ongoingSession) return null;
     return createAggregate(ongoingSession, lookupExerciseStat);
-  }, [ongoingSession]);
+  }, [ongoingSession, lookupExerciseStat]);
 
-  // load ongoing id from storage on boot
   useEffect(() => {
     let cancelled = false;
 
@@ -191,6 +181,7 @@ export function OngoingSessionProvider({
       setOngoingSession(null);
       return;
     }
+
     try {
       const s = await sessionWorkoutRepository.get(ongoingId);
       setOngoingSession(s ?? null);
@@ -200,7 +191,6 @@ export function OngoingSessionProvider({
     }
   }, [ongoingId]);
 
-  // load ongoing session whenever id changes
   useEffect(() => {
     let cancelled = false;
 
@@ -236,13 +226,6 @@ export function OngoingSessionProvider({
     }
   }, []);
 
-  /**
-   * startOngoing(programId)
-   * - fetch program
-   * - build a new session structure
-   * - persist it
-   * - set as ongoing
-   */
   const startSession = useCallback(
     async (programId?: string | null) => {
       let session: SessionWorkout;
@@ -263,26 +246,109 @@ export function OngoingSessionProvider({
 
       return session;
     },
-    [setOngoingId]
+    [setOngoingId, bumpMutationVersion],
   );
 
-  /**
-   * endSession()
-   * - compute + persist set.e1rm, exercise.strengthScore, workout.strengthScore
-   * - update ExerciseStat baseline + sampleCount (incremental mean)
-   * - clear ongoing
-   */
+  const syncCompletedSessionBackToProgram = useCallback(
+    async (session: SessionWorkout, now: Date) => {
+      const sourceProgramId = session.sourceProgramId;
+      if (!sourceProgramId) return;
+
+      const program = await workoutProgramRepository.get(sourceProgramId);
+      if (!program) return;
+
+      let changed = false;
+
+      const updatedProgram = {
+        ...program,
+        updatedAt: now,
+        exercises: (program.exercises ?? []).map((programExercise) => {
+          const sessionExercise = (session.exercises ?? []).find(
+            (ex) => ex.exerciseProgramId === programExercise.id,
+          );
+
+          if (!sessionExercise) return programExercise;
+
+          let exerciseChanged = false;
+
+          const updatedSets = (programExercise.sets ?? []).map((programSet) => {
+            const sessionSet = (sessionExercise.sets ?? []).find(
+              (s) =>
+                s.setProgramId === programSet.id &&
+                s.isCompleted &&
+                !s.isWarmup,
+            );
+
+            if (!sessionSet) return programSet;
+
+            const hasLoadValue =
+              sessionSet.loadValue != null &&
+              sessionSet.loadValue.trim() !== "";
+            const hasTargetRpe = sessionSet.rpe != null;
+
+            const nextLoadUnit = hasLoadValue
+              ? sessionSet.loadUnit
+              : programSet.loadUnit;
+
+            const nextLoadValue = hasLoadValue
+              ? sessionSet.loadValue
+              : programSet.loadValue;
+
+            const nextTargetRpe = hasTargetRpe
+              ? sessionSet.rpe
+              : programSet.targetRpe;
+
+            const didChange =
+              nextLoadUnit !== programSet.loadUnit ||
+              nextLoadValue !== programSet.loadValue ||
+              nextTargetRpe !== programSet.targetRpe;
+
+            if (!didChange) return programSet;
+
+            changed = true;
+            exerciseChanged = true;
+
+            return {
+              ...programSet,
+              loadUnit: nextLoadUnit,
+              loadValue: nextLoadValue,
+              targetRpe: nextTargetRpe,
+              updatedAt: now,
+            };
+          });
+
+          if (!exerciseChanged) return programExercise;
+
+          return {
+            ...programExercise,
+            updatedAt: now,
+            sets: updatedSets,
+          };
+        }),
+      };
+
+      if (!changed) return;
+
+      await workoutProgramRepository.save(updatedProgram);
+    },
+    [],
+  );
+
   const endSession = useCallback(async () => {
     if (!ongoingSession) return;
+
     if (!aggregate) {
       const now = new Date();
-      const endedNoScores: SessionWorkout = {
+
+      const endedNoScores = SessionWorkoutFactory.create({
         ...ongoingSession,
         status: "completed",
         endedAt: now,
         updatedAt: now,
-      };
+      });
+
       await sessionWorkoutRepository.save(endedNoScores);
+      await syncCompletedSessionBackToProgram(ongoingSession, now);
 
       await statService.updateProgramStat(endedNoScores.id);
       await statService.updateExerciseStat(endedNoScores.id);
@@ -295,7 +361,7 @@ export function OngoingSessionProvider({
 
     const now = new Date();
 
-    const ended: SessionWorkout = {
+    const ended = SessionWorkoutFactory.create({
       ...ongoingSession,
       status: "completed",
       endedAt: now,
@@ -309,14 +375,16 @@ export function OngoingSessionProvider({
         strengthScoreVersion: aggregate.version,
         sets: undefined,
       })),
-    };
+    });
 
     await sessionWorkoutRepository.save(ended);
+    await syncCompletedSessionBackToProgram(ongoingSession, now);
 
     await statService.updateProgramStat(ended.id);
     await statService.updateExerciseStat(ended.id);
 
     setOngoingSession(ended);
+
     for (const exSession of ended.exercises ?? []) {
       const exerciseId = exSession.exerciseId;
       if (!exerciseId) continue;
@@ -325,7 +393,6 @@ export function OngoingSessionProvider({
       if (v == null || !Number.isFinite(v)) continue;
 
       const prevStat = await exerciseStatRepository.get(exerciseId);
-      // do not clobber sampleCount/totals; baseline should be set once
       if (prevStat?.baselineExerciseStrengthScore != null) continue;
 
       const updatedStat: ExerciseStat = {
@@ -341,39 +408,42 @@ export function OngoingSessionProvider({
 
     await setOngoingId(null);
     bumpMutationVersion();
-  }, [ongoingSession, aggregate, setOngoingId, bumpMutationVersion]);
+  }, [
+    ongoingSession,
+    aggregate,
+    setOngoingId,
+    bumpMutationVersion,
+    syncCompletedSessionBackToProgram,
+  ]);
 
-  /**
-   * discardSession()
-   * - set status to discarded
-   * - clear ongoing
-   */
   const discardSession = useCallback(async () => {
     if (!ongoingId) {
       await setOngoingId(null);
       setOngoingSession(null);
       return;
     }
+
     if (!ongoingSession) return;
-    const discarded: SessionWorkout = {
+
+    const discarded: SessionWorkout = SessionWorkoutFactory.create({
       ...ongoingSession,
       status: "discarded",
       endedAt: new Date(),
       updatedAt: new Date(),
-    };
+    });
+
     await sessionWorkoutRepository.save(discarded);
     await setOngoingId(null);
     setOngoingSession(null);
-  }, [ongoingId, setOngoingId]);
+  }, [ongoingId, ongoingSession, setOngoingId]);
 
   function getContextForSet(set: SessionSet): StrengthScoreContext {
     const exSession =
       ongoingSession?.exercises?.find(
-        (ex) => ex.id === set.sessionExerciseId
+        (ex) => ex.id === set.sessionExerciseId,
       ) ?? null;
 
     const exerciseId = exSession?.exerciseId ?? null;
-
     const baseline = exerciseId ? lookupExerciseStat[exerciseId] : undefined;
 
     return {
@@ -396,7 +466,7 @@ export function OngoingSessionProvider({
         aggregate,
         getContextForSet,
         mutationVersion,
-        bumpMutationVersion
+        bumpMutationVersion,
       }}
     >
       {children}
@@ -408,7 +478,7 @@ export function useOngoingSession() {
   const ctx = useContext(OngoingSessionContext);
   if (!ctx) {
     throw new Error(
-      "useOngoingSession must be used within OngoingSessionProvider"
+      "useOngoingSession must be used within OngoingSessionProvider",
     );
   }
   return ctx;
