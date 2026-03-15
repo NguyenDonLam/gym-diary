@@ -12,26 +12,16 @@ import {
 import DraggableFlatList, {
   DragEndParams,
 } from "react-native-draggable-flatlist";
-import {
-  ListChecks,
-  Plus,
-  X,
-  Check,
-  Search,
-  BookOpen,
-} from "lucide-react-native";
+import { ListChecks, Plus, X, Check } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
 import { WorkoutProgramFormData } from "../domain/type";
-import { SetProgramFormData } from "../../program-set/domain/type";
 import { generateId } from "@/src/lib/id";
-import { useExercises } from "../../exercise/hooks/use-exercises";
-import { Exercise } from "@packages/exercise";
+import type { Exercise } from "@packages/exercise/type";
 import { ExerciseProgramFormData } from "../../program-exercise/domain/type";
 import ExerciseProgramForm from "../../program-exercise/ui/form";
-import { exerciseFactory } from "../../exercise/domain/factory";
-import { exerciseRepository } from "../../exercise/data/exercise-repository";
 import { ProgramColor } from "@/db/enums";
+import ExerciseLibraryPicker from "../../exercise/components/exercise-library-picker";
 
 type WorkoutProgramFormProps = {
   formData: WorkoutProgramFormData;
@@ -107,22 +97,20 @@ export default function WorkoutProgramForm({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  // greys, no pure black / pure white
   const primaryIconColor = isDark ? "#111827" : "#F9FAFB";
   const secondaryIconColor = isDark ? "#D1D5DB" : "#4B5563";
   const accentIconColor = isDark ? "#F9FAFB" : "#111827";
 
   const { name, description, exercises, color } = formData;
 
-  const { options: exerciseOptions, refetch } = useExercises();
   const [libraryOpen, setLibraryOpen] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
-  const [librarySearch, setLibrarySearch] = useState("");
 
-  // Dedicated create-exercise mini-form
-  const [createExerciseOpen, setCreateExerciseOpen] = useState(false);
-  const [newExerciseName, setNewExerciseName] = useState("");
+  const selectedExerciseIds = useMemo(
+    () =>
+      exercises.map((ex) => ex.exerciseId).filter((id): id is string => !!id),
+    [exercises],
+  );
 
   const setName = (value: string) => {
     setFormData((prev) => ({
@@ -152,7 +140,7 @@ export default function WorkoutProgramForm({
       const existingIds = new Set(
         prev.exercises
           .map((ex) => ex.exerciseId)
-          .filter((id): id is string => !!id)
+          .filter((id): id is string => !!id),
       );
 
       const nextExercises: ExerciseProgramFormData[] = [...prev.exercises];
@@ -178,14 +166,19 @@ export default function WorkoutProgramForm({
     });
   };
 
+  const handleConfirmLibrary = (selected: Exercise[]) => {
+    addExercisesFromLibrary(selected);
+    setLibraryOpen(false);
+  };
+
   const updateExercise = (
     exerciseId: string,
-    updater: (prev: ExerciseProgramFormData) => ExerciseProgramFormData
+    updater: (prev: ExerciseProgramFormData) => ExerciseProgramFormData,
   ) => {
     setFormData((prev) => ({
       ...prev,
       exercises: prev.exercises.map((ex) =>
-        ex.id === exerciseId ? updater(ex) : ex
+        ex.id === exerciseId ? updater(ex) : ex,
       ),
     }));
   };
@@ -195,78 +188,6 @@ export default function WorkoutProgramForm({
       ...prev,
       exercises: prev.exercises.filter((ex) => ex.id !== exerciseId),
     }));
-  };
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const handleConfirmLibrary = () => {
-    const selected = exerciseOptions.filter((opt) => selectedIds.has(opt.id));
-    addExercisesFromLibrary(selected);
-    setSelectedIds(new Set());
-    setLibraryOpen(false);
-  };
-
-  const handleCloseLibrary = () => {
-    setSelectedIds(new Set());
-    setLibraryOpen(false);
-  };
-
-  const filteredExerciseOptions = useMemo(() => {
-    const q = librarySearch.trim().toLowerCase();
-    if (!q) return exerciseOptions;
-    return exerciseOptions.filter((opt) =>
-      String((opt as any).name ?? "")
-        .toLowerCase()
-        .includes(q)
-    );
-  }, [exerciseOptions, librarySearch]);
-
-  const handleOpenCreateExercise = () => {
-    setNewExerciseName(librarySearch.trim());
-    setCreateExerciseOpen(true);
-  };
-
-  const handleSubmitCreateExercise = async () => {
-    const baseName = newExerciseName.trim();
-    if (!baseName) {
-      return;
-    }
-
-    try {
-      const exercise = exerciseFactory.create({ name: baseName });
-      const saved = await exerciseRepository.save(exercise);
-
-      // refresh exercise options so the library list is up to date
-      await refetch();
-
-      // attach new exercise to this template
-      addExercisesFromLibrary([saved]);
-
-      // mark as selected in the overlay
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.add(saved.id);
-        return next;
-      });
-
-      setCreateExerciseOpen(false);
-      setNewExerciseName("");
-      setLibrarySearch("");
-    } catch (error) {
-      console.error("Failed to create exercise", error);
-    }
-  };
-
-  const handleCancelCreateExercise = () => {
-    setCreateExerciseOpen(false);
-    setNewExerciseName("");
   };
 
   const currentColorOption =
@@ -362,7 +283,7 @@ export default function WorkoutProgramForm({
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={56}
     >
-      <View className="flex-1 px-4 pt-3 bg-white dark:bg-[#2B2D3A]">
+      <View className="flex-1 bg-white px-4 pt-3 dark:bg-[#2B2D3A]">
         {renderHeader()}
 
         <DraggableFlatList
@@ -378,182 +299,34 @@ export default function WorkoutProgramForm({
             paddingBottom: 70,
           }}
           ListEmptyComponent={renderEmpty}
-          renderItem={({ item, drag, isActive }) => {
-            const exerciseIndex = exercises.findIndex(
-              (ex) => ex.id === item.id,
-            );
-
-            return (
-              <View className={isActive ? "opacity-80" : ""}>
-                <ExerciseProgramForm
-                  formData={item}
-                  setFormData={(next) => updateExercise(item.id, () => next)}
-                  onRemove={() => removeExercise(item.id)}
-                  onDrag={drag}
-                />
-              </View>
-            );
-          }}
+          renderItem={({ item, drag, isActive }) => (
+            <View className={isActive ? "opacity-80" : ""}>
+              <ExerciseProgramForm
+                formData={item}
+                setFormData={(next) => updateExercise(item.id, () => next)}
+                onRemove={() => removeExercise(item.id)}
+                onDrag={drag}
+              />
+            </View>
+          )}
         />
 
-        {libraryOpen && (
-          <View
-            className="absolute inset-0 bg-[#21222C]/70"
-            style={{ zIndex: 50 }}
-          >
-            <View className="absolute inset-x-4 top-16 bottom-16 rounded-3xl bg-white px-3 py-3 dark:bg-[#343746]">
-              <View className="mb-2 flex-row items-center justify-between">
-                <View className="flex-row items-center">
-                  <BookOpen size={16} color={secondaryIconColor} />
-                  <Text className="ml-1 text-[13px] text-neutral-900 dark:text-[#F8F8F2]">
-                    Exercise library
-                  </Text>
-                </View>
-
-                <View className="flex-row items-center gap-2">
-                  <Pressable
-                    onPress={handleCloseLibrary}
-                    className="h-7 w-7 items-center justify-center rounded-full bg-neutral-100 dark:bg-[#44475A]"
-                  >
-                    <X size={14} color={secondaryIconColor} />
-                  </Pressable>
-
-                  <Pressable
-                    onPress={handleConfirmLibrary}
-                    className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900 dark:bg-[#BD93F9]"
-                  >
-                    <Check size={14} color={primaryIconColor} />
-                  </Pressable>
-                </View>
-              </View>
-
-              <View className="mb-2 flex-row items-center gap-2">
-                <View className="flex-1 flex-row items-center rounded-full bg-neutral-100 px-2 dark:bg-[#21222C]">
-                  <Search
-                    size={14}
-                    color="#9CA3AF"
-                    style={{ marginRight: 4 }}
-                  />
-                  <TextInput
-                    className="flex-1 py-1 text-[12px] text-neutral-900 dark:text-[#F8F8F2]"
-                    placeholder=""
-                    placeholderTextColor="#9CA3AF"
-                    value={librarySearch}
-                    onChangeText={setLibrarySearch}
-                  />
-                </View>
-
-                <Pressable
-                  onPress={handleOpenCreateExercise}
-                  className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900 dark:bg-[#BD93F9]"
-                >
-                  <Plus size={13} color={primaryIconColor} />
-                </Pressable>
-              </View>
-
-              <ScrollView keyboardShouldPersistTaps="handled" className="mt-1">
-                {filteredExerciseOptions.map((opt) => {
-                  const isSelected = selectedIds.has(opt.id);
-                  const name = (opt as any).name ?? "";
-                  const trimmed = String(name).trim();
-                  const initial = trimmed ? trimmed[0]!.toUpperCase() : "?";
-
-                  return (
-                    <Pressable
-                      key={opt.id}
-                      onPress={() => toggleSelect(opt.id)}
-                      className={`mb-1 flex-row items-center rounded-2xl px-2 py-1.5 ${
-                        isSelected
-                          ? "dark:bg-[#44475A]"
-                          : "bg-neutral-50 dark:bg-[#343746]"
-                      }`}
-                    >
-                      <View className="mr-2 h-6 w-6 items-center justify-center rounded-full bg-white dark:bg-[#21222C]">
-                        {isSelected && (
-                          <Check size={12} color={accentIconColor} />
-                        )}
-                      </View>
-
-                      <View
-                        className={`mr-2 h-7 w-7 items-center justify-center rounded-xl ${
-                          isSelected
-                            ? "bg-neutral-800"
-                            : "bg-neutral-200 dark:bg-[#44475A]"
-                        }`}
-                      >
-                        <Text
-                          className={`text-[11px] font-semibold ${
-                            isSelected
-                              ? "text-white"
-                              : "text-neutral-800 dark:text-[#F8F8F2]"
-                          }`}
-                        >
-                          {initial}
-                        </Text>
-                      </View>
-
-                      <View className="flex-1">
-                        <Text
-                          className={`text-[12px] ${
-                            isSelected
-                              ? "text-white"
-                              : "text-neutral-900 dark:text-[#F8F8F2]"
-                          }`}
-                          numberOfLines={1}
-                        >
-                          {name}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  );
-                })}
-
-                <View className="h-4" />
-              </ScrollView>
-            </View>
+        {libraryOpen ? (
+          <View className="absolute inset-0 z-50">
+            <ExerciseLibraryPicker
+              title="Add exercises"
+              subtitle="Select exercises for this template"
+              mode="multi-select"
+              initialSelectedIds={selectedExerciseIds}
+              confirmLabel="Add to template"
+              allowCreate
+              showUsageSummary
+              showBrowseAll
+              onCancel={() => setLibraryOpen(false)}
+              onConfirmSelection={handleConfirmLibrary}
+            />
           </View>
-        )}
-
-        {createExerciseOpen && (
-          <View
-            className="absolute inset-0 bg-[#21222C]/70"
-            style={{ zIndex: 60 }}
-          >
-            <View className="absolute inset-x-8 top-32 rounded-2xl bg-white px-4 py-3 dark:bg-[#343746]">
-              <Text className="mb-2 text-[13px] font-semibold text-neutral-900 dark:text-[#F8F8F2]">
-                New exercise
-              </Text>
-
-              <TextInput
-                className="mb-3 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-[13px] text-neutral-900 dark:border-[#44475A] dark:bg-[#21222C] dark:text-[#F8F8F2]"
-                placeholder="Exercise name"
-                placeholderTextColor="#9CA3AF"
-                value={newExerciseName}
-                onChangeText={setNewExerciseName}
-              />
-
-              <View className="flex-row items-center justify-end gap-2">
-                <Pressable
-                  onPress={handleCancelCreateExercise}
-                  className="h-7 px-3 items-center justify-center rounded-full bg-neutral-100 dark:bg-[#44475A]"
-                >
-                  <Text className="text-[12px] text-neutral-600 dark:text-[#6272A4]">
-                    Cancel
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={handleSubmitCreateExercise}
-                  className="h-7 px-3 items-center justify-center rounded-full bg-neutral-900 dark:bg-[#BD93F9]"
-                >
-                  <Text className="text-[12px] font-medium text-white dark:text-[#282A36]">
-                    Save
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        )}
+        ) : null}
 
         {colorPickerOpen && (
           <View
