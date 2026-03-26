@@ -1,7 +1,7 @@
 // src/features/exercise-period-stats/components/exercise-period-stats-view.tsx
 import React from "react";
 import { View, Text } from "react-native";
-import { CalendarDays, Dumbbell, Trophy, Sigma } from "lucide-react-native";
+import { CalendarDays, Dumbbell, Trophy } from "lucide-react-native";
 import type { ExercisePeriodStat } from "@/src/features/exercise-period-stats/domain/types";
 import { Exercise } from "@packages/exercise";
 
@@ -20,9 +20,6 @@ export function ExercisePeriodStatsView({ stat, exercise, className }: Props) {
 
   const fmtKg = (n: number | null | undefined, dp = 0) =>
     isNum(n) ? `${n.toFixed(dp)} kg` : "—";
-
-  const fmtScore = (n: number | null | undefined, dp = 1) =>
-    isNum(n) ? n.toFixed(dp) : "—";
 
   const fmtDateShort = (d: Date | null | undefined) => {
     if (!d) return "—";
@@ -63,7 +60,6 @@ export function ExercisePeriodStatsView({ stat, exercise, className }: Props) {
   };
 
   const quantityUnit = exercise?.quantityUnit ?? "reps";
-
   const quantityLabel = quantityUnit === "time" ? "Total time" : "Total reps";
 
   const Row = ({
@@ -147,21 +143,13 @@ export function ExercisePeriodStatsView({ stat, exercise, className }: Props) {
 
       <View className="flex-row items-center gap-2 mb-1">
         <Trophy size={14} color="#FBBF24" />
-        <Text className="text-neutral-300 text-xs font-semibold">e1RM</Text>
+        <Text className="text-neutral-300 text-xs font-semibold">
+          Estimated Max
+        </Text>
       </View>
 
-      <Row label="Best set e1RM" value={fmtKg(stat.bestSetE1rm, 0)} />
-      <Row label="Median set e1RM" value={fmtKg(stat.medianSetE1rm, 0)} />
-
-      <View className="border-t border-neutral-800 my-2" />
-
-      <View className="flex-row items-center gap-2 mb-0.5">
-        <Sigma size={14} color="#A78BFA" />
-        <Text className="text-neutral-300 text-xs font-semibold">Score</Text>
-      </View>
-
-      <Row label="Best score" value={fmtScore(stat.bestStrengthScore, 1)} />
-      <Row label="Median score" value={fmtScore(stat.medianStrengthScore, 1)} />
+      <Row label="Best Estimated Max" value={fmtKg(stat.bestSetE1rm, 0)} />
+      {/* <Row label="Median Estimated Max" value={fmtKg(stat.medianSetE1rm, 0)} /> */}
 
       <View className="border-t border-neutral-800 my-2" />
 

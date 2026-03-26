@@ -299,12 +299,15 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
           periodType,
           periodStart: start,
 
-          totalSetCount: qt.setCount,
+          sessionCount: se.sampleCount,
           totalQuantity: qt.totalQuantity,
-          totalVolumeKg: volumeKg,
+          totalSetCount: qt.setCount,
+
+          bestStrengthScore: se.bestStrength,
+          medianStrengthScore: null,
+
           bestSetE1rm: qt.bestE1rm,
-          bestExerciseStrengthScore: se.bestStrength,
-          sampleCount: se.sampleCount,
+          medianSetE1rm: null,
 
           updatedAt: now,
         };

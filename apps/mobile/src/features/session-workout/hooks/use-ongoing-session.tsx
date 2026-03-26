@@ -309,15 +309,6 @@ export function OngoingSessionProvider({
               nextTargetRpe !== programSet.targetRpe ||
               nextTargetQuantity !== programSet.targetQuantity;
 
-            console.log("STILL RUNNING:", {
-              didChange,
-              programSetId: programSet.id,
-              sessionSetId: sessionSet.id,
-              sessionQuantity: sessionSet.quantity,
-              nextTargetQuantity,
-              currentTargetQuantity: programSet.targetQuantity,
-            });
-
             if (!didChange) return programSet;
 
             changed = true;

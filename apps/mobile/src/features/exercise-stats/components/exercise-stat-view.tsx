@@ -31,11 +31,11 @@ export function ExerciseStatsView({ stat, exercise, className }: Props) {
   };
 
   const fmtDeltaPct = (
-    baseline: number | null | undefined,
+    Current: number | null | undefined,
     best: number | null | undefined,
     dp = 1,
   ) => {
-    const b0 = ok(baseline);
+    const b0 = ok(Current);
     const b1 = ok(best);
     if (b0 == null || b1 == null || b0 === 0) return "—";
     const p = ((b1 - b0) / b0) * 100;
@@ -66,8 +66,16 @@ export function ExerciseStatsView({ stat, exercise, className }: Props) {
   };
 
   const quantityUnit = exercise?.quantityUnit ?? "reps";
+  const maxLabel = "Best Estimated Max";
+  const CurrentMaxLabel = exercise?.name
+    ? `Current ${exercise.name} max`
+    : "Current max";
+  const maxChangeLabel = exercise?.name
+    ? `${exercise.name} max change`
+    : "Max change";
 
   const quantityLabel = quantityUnit === "time" ? "Total time" : "Total reps";
+
   const Row = ({
     label,
     value,
@@ -108,28 +116,16 @@ export function ExerciseStatsView({ stat, exercise, className }: Props) {
         className ?? "",
       ].join(" ")}
     >
-      <View className="flex-row justify-between mb-1">
+      <View className="flex-row justify-center mb-1">
         <View className="flex-row items-center gap-2">
           <View className="h-6 w-6 rounded-full bg-amber-400/20 items-center justify-center">
             <Trophy size={13} color="#FBBF24" />
           </View>
           <View className="items-center">
-            <Text className="text-neutral-500 text-[10px]">Best e1RM</Text>
+            <Text className="text-neutral-500 text-[10px]">{maxLabel}</Text>
             <Text className="text-neutral-50 text-lg font-semibold leading-tight">
               {fmtKg(stat.bestSetE1rm, 0)}
             </Text>
-          </View>
-        </View>
-
-        <View className="flex-row items-center gap-2">
-          <View className="items-center">
-            <Text className="text-neutral-500 text-[10px]">Best score</Text>
-            <Text className="text-neutral-50 text-lg font-semibold leading-tight">
-              {fmtNum(stat.bestExerciseStrengthScore, 1)}
-            </Text>
-          </View>
-          <View className="h-6 w-6 rounded-full bg-fuchsia-400/20 items-center justify-center">
-            <TrendingUp size={13} color="#E879F9" />
           </View>
         </View>
       </View>
@@ -153,22 +149,6 @@ export function ExerciseStatsView({ stat, exercise, className }: Props) {
       <Row label="Total sets" value={fmtInt(stat.totalSetCount)} />
       <Row label="Samples" value={fmtInt(stat.sampleCount)} />
 
-      <View className="border-t border-neutral-800 my-2" />
-
-      <View className="flex-row items-center gap-2 mb-0.5">
-        <Sigma size={14} color="#60A5FA" />
-        <Text className="text-neutral-300 text-xs font-semibold">Baseline</Text>
-      </View>
-
-      <Row label="Baseline e1RM" value={fmtKg(stat.baselineSetE1rm, 0)} />
-      <Row
-        label="Baseline score"
-        value={fmtNum(stat.baselineExerciseStrengthScore, 1)}
-      />
-      <Row
-        label="e1RM change"
-        value={fmtDeltaPct(stat.baselineSetE1rm, stat.bestSetE1rm, 1)}
-      />
     </View>
   );
 }

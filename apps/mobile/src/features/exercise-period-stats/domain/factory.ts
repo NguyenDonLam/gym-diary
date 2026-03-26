@@ -13,7 +13,7 @@ export class ExercisePeriodStatFactory {
 
       bestStrengthScore: row.bestStrengthScore,
       medianStrengthScore: row.medianStrengthScore,
-      totalQuantity: row.totalRepCount,
+      totalQuantity: row.totalQuantity,
       totalSetCount: row.totalSetCount,
 
       bestSetE1rm: row.bestSetE1rm,
