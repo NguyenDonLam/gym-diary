@@ -285,6 +285,7 @@ export function OngoingSessionProvider({
               sessionSet.loadValue != null &&
               sessionSet.loadValue.trim() !== "";
             const hasTargetRpe = sessionSet.rpe != null;
+            const hasQuantity = sessionSet.quantity != null;
 
             const nextLoadUnit = hasLoadValue
               ? sessionSet.loadUnit
@@ -298,10 +299,24 @@ export function OngoingSessionProvider({
               ? sessionSet.rpe
               : programSet.targetRpe;
 
+            const nextTargetQuantity = hasQuantity
+              ? sessionSet.quantity
+              : programSet.targetQuantity;
+
             const didChange =
               nextLoadUnit !== programSet.loadUnit ||
               nextLoadValue !== programSet.loadValue ||
-              nextTargetRpe !== programSet.targetRpe;
+              nextTargetRpe !== programSet.targetRpe ||
+              nextTargetQuantity !== programSet.targetQuantity;
+
+            console.log("STILL RUNNING:", {
+              didChange,
+              programSetId: programSet.id,
+              sessionSetId: sessionSet.id,
+              sessionQuantity: sessionSet.quantity,
+              nextTargetQuantity,
+              currentTargetQuantity: programSet.targetQuantity,
+            });
 
             if (!didChange) return programSet;
 
@@ -313,6 +328,7 @@ export function OngoingSessionProvider({
               loadUnit: nextLoadUnit,
               loadValue: nextLoadValue,
               targetRpe: nextTargetRpe,
+              targetQuantity: nextTargetQuantity,
               updatedAt: now,
             };
           });

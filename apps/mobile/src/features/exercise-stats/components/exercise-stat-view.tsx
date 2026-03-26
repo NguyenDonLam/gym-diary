@@ -3,13 +3,15 @@ import React from "react";
 import { View, Text } from "react-native";
 import { Trophy, TrendingUp, BarChart3, Sigma } from "lucide-react-native";
 import type { ExerciseStat } from "@/src/features/exercise-stats/domain/types";
+import { Exercise } from "@packages/exercise";
 
 type Props = {
   stat: ExerciseStat | null | undefined;
+  exercise: Exercise | null | undefined;
   className?: string;
 };
 
-export function ExerciseStatsView({ stat, className }: Props) {
+export function ExerciseStatsView({ stat, exercise, className }: Props) {
   const ok = (n: number | null | undefined) =>
     typeof n === "number" && Number.isFinite(n) ? n : null;
 
@@ -41,6 +43,31 @@ export function ExerciseStatsView({ stat, className }: Props) {
     return `${sign}${p.toFixed(dp)}%`;
   };
 
+  const fmtDuration = (seconds: number | null | undefined) => {
+    const s0 = ok(seconds);
+    if (s0 == null) return "—";
+
+    const s = Math.round(s0);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+
+    if (h > 0) return `${h}h ${m}m ${sec}s`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
+  };
+
+  const fmtQuantity = (
+    n: number | null | undefined,
+    unit: Exercise["quantityUnit"],
+  ) => {
+    if (unit === "time") return fmtDuration(n);
+    return ok(n) == null ? "—" : `${fmtInt(n)} reps`;
+  };
+
+  const quantityUnit = exercise?.quantityUnit ?? "reps";
+
+  const quantityLabel = quantityUnit === "time" ? "Total time" : "Total reps";
   const Row = ({
     label,
     value,
@@ -81,7 +108,6 @@ export function ExerciseStatsView({ stat, className }: Props) {
         className ?? "",
       ].join(" ")}
     >
-      {/* Highlights (different from program: two “best” KPIs) */}
       <View className="flex-row justify-between mb-1">
         <View className="flex-row items-center gap-2">
           <View className="h-6 w-6 rounded-full bg-amber-400/20 items-center justify-center">
@@ -110,7 +136,6 @@ export function ExerciseStatsView({ stat, className }: Props) {
 
       <View className="border-t border-neutral-800 my-2" />
 
-      {/* Totals (exercise schema: volume/sets/samples) */}
       <View className="flex-row items-center gap-2 mb-1">
         <BarChart3 size={14} color="#34D399" />
         <Text className="text-neutral-300 text-xs font-semibold">Totals</Text>
@@ -119,14 +144,17 @@ export function ExerciseStatsView({ stat, className }: Props) {
       <Row
         label="Total volume"
         value={fmtInt(stat.totalVolumeKg)}
-        sub="kg·reps"
+        sub="kg·qty"
+      />
+      <Row
+        label={quantityLabel}
+        value={fmtQuantity(stat.totalQuantity, quantityUnit)}
       />
       <Row label="Total sets" value={fmtInt(stat.totalSetCount)} />
       <Row label="Samples" value={fmtInt(stat.sampleCount)} />
 
       <View className="border-t border-neutral-800 my-2" />
 
-      {/* Baseline (exercise schema: baseline score + baseline e1rm) */}
       <View className="flex-row items-center gap-2 mb-0.5">
         <Sigma size={14} color="#60A5FA" />
         <Text className="text-neutral-300 text-xs font-semibold">Baseline</Text>

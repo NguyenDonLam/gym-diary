@@ -3,13 +3,15 @@ import React from "react";
 import { View, Text } from "react-native";
 import { CalendarDays, Dumbbell, Trophy, Sigma } from "lucide-react-native";
 import type { ExercisePeriodStat } from "@/src/features/exercise-period-stats/domain/types";
+import { Exercise } from "@packages/exercise";
 
 type Props = {
   stat: ExercisePeriodStat | null | undefined;
+  exercise: Exercise | null | undefined;
   className?: string;
 };
 
-export function ExercisePeriodStatsView({ stat, className }: Props) {
+export function ExercisePeriodStatsView({ stat, exercise, className }: Props) {
   const isNum = (n: number | null | undefined): n is number =>
     typeof n === "number" && Number.isFinite(n);
 
@@ -39,6 +41,30 @@ export function ExercisePeriodStatsView({ stat, className }: Props) {
     if (p === "year") return "Year";
     return String(p);
   };
+
+  const fmtDuration = (seconds: number) => {
+    const s = Math.round(seconds);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+
+    if (h > 0) return `${h}h ${m}m ${sec}s`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
+  };
+
+  const fmtQuantity = (
+    n: number | null | undefined,
+    unit: Exercise["quantityUnit"],
+  ) => {
+    if (!isNum(n)) return "—";
+    if (unit === "time") return fmtDuration(n);
+    return `${fmtInt(n)} reps`;
+  };
+
+  const quantityUnit = exercise?.quantityUnit ?? "reps";
+
+  const quantityLabel = quantityUnit === "time" ? "Total time" : "Total reps";
 
   const Row = ({
     label,
@@ -80,7 +106,6 @@ export function ExercisePeriodStatsView({ stat, className }: Props) {
         className ?? "",
       ].join(" ")}
     >
-      {/* Header (different from program: period emphasis first) */}
       <View className="flex-row justify-between mb-1">
         <View className="flex-row items-center gap-2">
           <View className="h-6 w-6 rounded-full bg-sky-400/20 items-center justify-center">
@@ -113,7 +138,13 @@ export function ExercisePeriodStatsView({ stat, className }: Props) {
 
       <View className="border-t border-neutral-800 my-2" />
 
-      {/* e1RM */}
+      <Row
+        label={quantityLabel}
+        value={fmtQuantity(stat.totalQuantity, quantityUnit)}
+      />
+
+      <View className="border-t border-neutral-800 my-2" />
+
       <View className="flex-row items-center gap-2 mb-1">
         <Trophy size={14} color="#FBBF24" />
         <Text className="text-neutral-300 text-xs font-semibold">e1RM</Text>
@@ -124,7 +155,6 @@ export function ExercisePeriodStatsView({ stat, className }: Props) {
 
       <View className="border-t border-neutral-800 my-2" />
 
-      {/* Score */}
       <View className="flex-row items-center gap-2 mb-0.5">
         <Sigma size={14} color="#A78BFA" />
         <Text className="text-neutral-300 text-xs font-semibold">Score</Text>
