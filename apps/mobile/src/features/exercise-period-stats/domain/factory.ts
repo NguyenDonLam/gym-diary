@@ -13,12 +13,16 @@ export class ExercisePeriodStatFactory {
 
       bestStrengthScore: row.bestStrengthScore,
       medianStrengthScore: row.medianStrengthScore,
+      totalQuantity: row.totalRepCount,
+      totalSetCount: row.totalSetCount,
 
       bestSetE1rm: row.bestSetE1rm,
       medianSetE1rm: row.medianSetE1rm,
 
       updatedAt: row.updatedAt,
-      exercise: row.exercise ? exerciseFactory.domainFromDb(row.exercise) : undefined,
+      exercise: row.exercise
+        ? exerciseFactory.domainFromDb(row.exercise)
+        : undefined,
     };
   }
 
@@ -32,6 +36,8 @@ export class ExercisePeriodStatFactory {
 
       bestStrengthScore: entity.bestStrengthScore,
       medianStrengthScore: entity.medianStrengthScore,
+      totalQuantity: entity.totalQuantity,
+      totalSetCount: entity.totalSetCount,
 
       bestSetE1rm: entity.bestSetE1rm,
       medianSetE1rm: entity.medianSetE1rm,

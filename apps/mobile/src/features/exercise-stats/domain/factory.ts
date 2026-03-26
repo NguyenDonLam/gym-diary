@@ -24,6 +24,7 @@ export class ExerciseStatFactory {
       bestExerciseStrengthScore: row.bestExerciseStrengthScore ?? null,
       totalSetCount: row.totalSetCount,
       totalVolumeKg: row.totalVolumeKg,
+      totalQuantity: row.totalQuantity,
 
       sampleCount: row.sampleCount,
 
@@ -55,12 +56,11 @@ export class ExerciseStatFactory {
   }
 
   static create(
-    overrides: Partial<ExerciseStat> & { exerciseId: string }
+    overrides: Partial<ExerciseStat> & { exerciseId: string },
   ): ExerciseStat {
     const now = new Date();
 
     return {
-
       baselineExerciseStrengthScore: null,
       baselineSetE1rm: null,
 
@@ -68,6 +68,7 @@ export class ExerciseStatFactory {
       bestExerciseStrengthScore: null,
       totalSetCount: 0,
       totalVolumeKg: 0,
+      totalQuantity: 0,
 
       sampleCount: 0,
 

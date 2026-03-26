@@ -206,7 +206,7 @@ export const exerciseStats = sqliteTable("exercise_stats", {
   bestSetE1rm: real("best_set_e1rm"),
   bestExerciseStrengthScore: real("best_exercise_strength_score"),
   totalSetCount: integer("total_set_count").notNull().default(0),
-  totalRepCount: integer("total_rep_count").notNull().default(0),
+  totalQuantity: integer("total_quantity").notNull().default(0),
   totalVolumeKg: real("total_volume_kg").notNull().default(0),
 
   sampleCount: integer("sample_count").notNull().default(0),
@@ -229,7 +229,7 @@ export const exercisePeriodStats = sqliteTable("exercise_period_stats", {
   periodStart: integer("period_start", { mode: "timestamp_ms" }).notNull(),
 
   sessionCount: integer("session_count").notNull().default(0),
-  totalRepCount: integer("total_rep_count").notNull().default(0),
+  totalQuantity: integer("total_quantity").notNull().default(0),
   totalSetCount: integer("total_set_count").notNull().default(0),
 
   bestStrengthScore: real("best_strength_score"),

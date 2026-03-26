@@ -21,6 +21,9 @@ export type ExerciseStat = {
   // Lifetime count of performed sets for this exercise.
   totalSetCount: number;
 
+  // Lifetime count of performed reps for this exercise.
+  totalQuantity: number;
+
   // Lifetime accumulated training volume in kilograms.
   totalVolumeKg: number;
 
