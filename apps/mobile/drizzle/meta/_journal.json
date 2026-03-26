@@ -29,6 +29,13 @@
       "when": 1773563112074,
       "tag": "0003_supreme_sasquatch",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1774483382656,
+      "tag": "0004_regular_omega_flight",
+      "breakpoints": true
     }
   ]
 }
