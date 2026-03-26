@@ -294,7 +294,6 @@ export const DEFAULT_EXERCISES: { id: string; name: string }[] = [
     id: "be7cda5b-c2c0-47f1-9941-d4414f41af29",
     name: "Machine Assisted Pull-Up",
   },
-  { id: "9d6b53cd-e520-41e4-92c2-d8ea7cf4b017", name: "Machine Assisted Dip" },
   // SMITH MACHINE – UPPER
   {
     id: "3bf6f166-8f0d-4a68-92e7-11025f43baf9",
@@ -329,38 +328,38 @@ export const DEFAULT_EXERCISES: { id: string; name: string }[] = [
     name: "Smith Machine Hip Thrust",
   },
   // BODYWEIGHT – PULL
-  { id: "45f61193-3907-46ba-8254-576e6325b54e", name: "Bodyweight Pull-Up" },
-  { id: "b7242d5b-50a0-4c30-a321-c03d30f19d02", name: "Bodyweight Chin-Up" },
+  { id: "45f61193-3907-46ba-8254-576e6325b54e", name: "Pull-Up" },
+  { id: "b7242d5b-50a0-4c30-a321-c03d30f19d02", name: "Chin-Up" },
   {
     id: "8bc55b3f-7af2-423d-95a8-8b50873ce67c",
-    name: "Bodyweight Inverted Row",
+    name: "Inverted Row",
   },
-  { id: "d0d70bf9-48d1-410c-9a0e-a43a02f0ae55", name: "Bodyweight Muscle-Up" },
+  { id: "d0d70bf9-48d1-410c-9a0e-a43a02f0ae55", name: "Muscle-Up" },
   // BODYWEIGHT – PUSH
-  { id: "9d823524-e840-40a3-bb95-9805c22702f4", name: "Bodyweight Dip" },
-  { id: "0cec5801-558d-47ef-9da1-c4b2a2c4ae60", name: "Bodyweight Push-Up" },
+  { id: "9d823524-e840-40a3-bb95-9805c22702f4", name: "Dip" },
+  { id: "0cec5801-558d-47ef-9da1-c4b2a2c4ae60", name: "Push-Up" },
   {
     id: "1a1d36a8-1648-431c-80a5-4ea1d0bec7cb",
-    name: "Bodyweight Handstand Push-Up",
+    name: "Handstand Push-Up",
   },
   // BODYWEIGHT – LEGS
-  { id: "a0e37b78-9ce9-422c-84d4-da9e7a53029a", name: "Bodyweight Squat" },
-  { id: "d3d3685b-baf5-4ae5-9542-d716a5ce9b19", name: "Bodyweight Lunge" },
+  { id: "a0e37b78-9ce9-422c-84d4-da9e7a53029a", name: "Squat" },
+  { id: "d3d3685b-baf5-4ae5-9542-d716a5ce9b19", name: "Lunge" },
   {
     id: "f4620d0f-66b4-4256-a77e-1e033da0666c",
-    name: "Bodyweight Glute Bridge",
+    name: "Glute Bridge",
   },
   // BODYWEIGHT – CORE
-  { id: "64a3a5c7-cdb0-40ee-8dc8-ca575653c441", name: "Bodyweight Sit-Up" },
-  { id: "2ee40053-748a-44c2-a1f5-e0f031f7396b", name: "Bodyweight Crunch" },
+  { id: "64a3a5c7-cdb0-40ee-8dc8-ca575653c441", name: "Sit-Up" },
+  { id: "2ee40053-748a-44c2-a1f5-e0f031f7396b", name: "Crunch" },
   {
     id: "b8aa81df-60f0-4400-ac27-088833c049b2",
-    name: "Bodyweight Hanging Leg Raise",
+    name: "Hanging Leg Raise",
   },
-  { id: "49ec6fe2-b02f-450a-9b55-3041cb411d20", name: "Bodyweight Plank" },
+  { id: "49ec6fe2-b02f-450a-9b55-3041cb411d20", name: "Plank" },
   {
     id: "4d78cf2b-32ff-4d16-8116-27961cd3c261",
-    name: "Bodyweight Back Extension",
+    name: "Back Extension",
   },
   // OTHER – STRONGMAN
   { id: "cb1cf8a4-231d-4115-8adb-4c8c698b7d0a", name: "Sled Push" },
