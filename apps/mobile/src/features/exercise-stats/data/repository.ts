@@ -132,14 +132,18 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
     const seById = new Map(
       seAgg.map((r) => [
         r.exerciseId!,
-        { sampleCount: r.sampleCount, bestStrength: r.bestStrength ?? null },
+        {
+          sampleCount: r.sampleCount,
+          bestStrength: r.bestStrength ?? null,
+        },
       ]),
     );
 
-    const setAgg = await db
+    const quantityAgg = await db
       .select({
         exerciseId: sessionExercises.exerciseId,
         setCount: sql<number>`count(*)`,
+        totalQuantity: sql<number>`coalesce(sum(${sessionSets.quantity}), 0)`,
         bestE1rm: sql<number | null>`max(${sessionSets.e1rm})`,
       })
       .from(sessionSets)
@@ -157,27 +161,33 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
           isNotNull(sessionExercises.exerciseId),
           eq(sessionSets.isCompleted, true),
           eq(sessionSets.isWarmup, false),
+          isNotNull(sessionSets.quantity),
+          sql`${sessionSets.quantity} > 0`,
         ),
       )
       .groupBy(sessionExercises.exerciseId);
 
-    const setById = new Map(
-      setAgg.map((r) => [
+    const quantityById = new Map(
+      quantityAgg.map((r) => [
         r.exerciseId!,
-        { setCount: r.setCount, bestE1rm: r.bestE1rm ?? null },
+        {
+          setCount: r.setCount,
+          totalQuantity: r.totalQuantity ?? 0,
+          bestE1rm: r.bestE1rm ?? null,
+        },
       ]),
     );
 
-    const volAgg = await db
+    const loadKgExpr = sql<number | null>`case
+    when ${sessionSets.loadUnit} = 'kg' then cast(${sessionSets.loadValue} as real)
+    when ${sessionSets.loadUnit} = 'lb' then cast(${sessionSets.loadValue} as real) * ${LB_TO_KG}
+    else null
+  end`;
+
+    const volumeAgg = await db
       .select({
         exerciseId: sessionExercises.exerciseId,
-        vol: sql<number>`coalesce(sum(
-        (case
-          when ${sessionSets.loadUnit} = 'kg'
-            then cast(${sessionSets.loadValue} as real)
-          else cast(${sessionSets.loadValue} as real) * ${LB_TO_KG}
-        end) * ${sessionSets.quantity}
-      ), 0)`,
+        totalVolumeKg: sql<number>`coalesce(sum(${loadKgExpr} * ${sessionSets.quantity}), 0)`,
       })
       .from(sessionSets)
       .innerJoin(
@@ -194,6 +204,7 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
           isNotNull(sessionExercises.exerciseId),
           eq(sessionSets.isCompleted, true),
           eq(sessionSets.isWarmup, false),
+          isNotNull(sessionSets.quantity),
           sql`${sessionSets.quantity} > 0`,
           isNotNull(sessionSets.loadValue),
           sql`trim(${sessionSets.loadValue}) <> ''`,
@@ -203,16 +214,28 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
       )
       .groupBy(sessionExercises.exerciseId);
 
-    const volById = new Map(volAgg.map((r) => [r.exerciseId!, r.vol]));
+    const volumeById = new Map(
+      volumeAgg.map((r) => [r.exerciseId!, r.totalVolumeKg ?? 0]),
+    );
 
     for (const e of exRows) {
       const b = baselineById.get(e.id) ?? {
         baselineExerciseStrengthScore: null,
         baselineSetE1rm: null,
       };
-      const se = seById.get(e.id) ?? { sampleCount: 0, bestStrength: null };
-      const st = setById.get(e.id) ?? { setCount: 0, bestE1rm: null };
-      const vol = volById.get(e.id) ?? 0;
+
+      const se = seById.get(e.id) ?? {
+        sampleCount: 0,
+        bestStrength: null,
+      };
+
+      const qt = quantityById.get(e.id) ?? {
+        setCount: 0,
+        totalQuantity: 0,
+        bestE1rm: null,
+      };
+
+      const totalVolumeKg = volumeById.get(e.id) ?? 0;
 
       await db
         .insert(exerciseStats)
@@ -220,10 +243,11 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
           exerciseId: e.id,
           baselineExerciseStrengthScore: b.baselineExerciseStrengthScore,
           baselineSetE1rm: b.baselineSetE1rm,
-          bestSetE1rm: st.bestE1rm,
+          bestSetE1rm: qt.bestE1rm,
           bestExerciseStrengthScore: se.bestStrength,
-          totalSetCount: st.setCount,
-          totalVolumeKg: vol,
+          totalSetCount: qt.setCount,
+          totalQuantity: qt.totalQuantity,
+          totalVolumeKg,
           sampleCount: se.sampleCount,
           updatedAt: now,
         })
@@ -232,10 +256,11 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
           set: {
             baselineExerciseStrengthScore: b.baselineExerciseStrengthScore,
             baselineSetE1rm: b.baselineSetE1rm,
-            bestSetE1rm: st.bestE1rm,
+            bestSetE1rm: qt.bestE1rm,
             bestExerciseStrengthScore: se.bestStrength,
-            totalSetCount: st.setCount,
-            totalVolumeKg: vol,
+            totalSetCount: qt.setCount,
+            totalQuantity: qt.totalQuantity,
+            totalVolumeKg,
             sampleCount: se.sampleCount,
             updatedAt: now,
           },
@@ -271,10 +296,11 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
         )
         .groupBy(sessionExercises.exerciseId);
 
-      const setAgg = await tx
+      const quantityAgg = await tx
         .select({
           exerciseId: sessionExercises.exerciseId,
           setCount: sql<number>`count(*)`,
+          totalQuantity: sql<number>`coalesce(sum(${sessionSets.quantity}), 0)`,
           bestE1rm: sql<number | null>`max(${sessionSets.e1rm})`,
         })
         .from(sessionSets)
@@ -288,20 +314,22 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
             isNotNull(sessionExercises.exerciseId),
             eq(sessionSets.isCompleted, true),
             eq(sessionSets.isWarmup, false),
+            isNotNull(sessionSets.quantity),
+            sql`${sessionSets.quantity} > 0`,
           ),
         )
         .groupBy(sessionExercises.exerciseId);
 
-      const volAgg = await tx
+      const loadKgExpr = sql<number | null>`case
+      when ${sessionSets.loadUnit} = 'kg' then cast(${sessionSets.loadValue} as real)
+      when ${sessionSets.loadUnit} = 'lb' then cast(${sessionSets.loadValue} as real) * ${LB_TO_KG}
+      else null
+    end`;
+
+      const volumeAgg = await tx
         .select({
           exerciseId: sessionExercises.exerciseId,
-          vol: sql<number>`coalesce(sum(
-          (case
-            when ${sessionSets.loadUnit} = 'kg'
-              then cast(${sessionSets.loadValue} as real)
-            else cast(${sessionSets.loadValue} as real) * ${LB_TO_KG}
-          end) * ${sessionSets.quantity}
-        ), 0)`,
+          volumeKg: sql<number>`coalesce(sum(${loadKgExpr} * ${sessionSets.quantity}), 0)`,
         })
         .from(sessionSets)
         .innerJoin(
@@ -314,6 +342,7 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
             isNotNull(sessionExercises.exerciseId),
             eq(sessionSets.isCompleted, true),
             eq(sessionSets.isWarmup, false),
+            isNotNull(sessionSets.quantity),
             sql`${sessionSets.quantity} > 0`,
             isNotNull(sessionSets.loadValue),
             sql`trim(${sessionSets.loadValue}) <> ''`,
@@ -325,35 +354,52 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
 
       const ids = new Set<string>();
       for (const r of seAgg) ids.add(r.exerciseId!);
-      for (const r of setAgg) ids.add(r.exerciseId!);
-      for (const r of volAgg) ids.add(r.exerciseId!);
+      for (const r of quantityAgg) ids.add(r.exerciseId!);
+      for (const r of volumeAgg) ids.add(r.exerciseId!);
 
       const seById = new Map(
         seAgg.map((r) => [
           r.exerciseId!,
-          { sampleCount: r.sampleCount, bestStrength: r.bestStrength ?? null },
+          {
+            sampleCount: r.sampleCount,
+            bestStrength: r.bestStrength ?? null,
+          },
         ]),
       );
-      const setById = new Map(
-        setAgg.map((r) => [
+
+      const quantityById = new Map(
+        quantityAgg.map((r) => [
           r.exerciseId!,
-          { setCount: r.setCount, bestE1rm: r.bestE1rm ?? null },
+          {
+            setCount: r.setCount,
+            totalQuantity: r.totalQuantity ?? 0,
+            bestE1rm: r.bestE1rm ?? null,
+          },
         ]),
       );
-      const volById = new Map(volAgg.map((r) => [r.exerciseId!, r.vol]));
+
+      const volumeById = new Map(
+        volumeAgg.map((r) => [r.exerciseId!, r.volumeKg ?? 0]),
+      );
 
       for (const exerciseId of ids) {
         const se = seById.get(exerciseId) ?? {
           sampleCount: 0,
           bestStrength: null,
         };
-        const st = setById.get(exerciseId) ?? { setCount: 0, bestE1rm: null };
-        const vol = volById.get(exerciseId) ?? 0;
+
+        const qt = quantityById.get(exerciseId) ?? {
+          setCount: 0,
+          totalQuantity: 0,
+          bestE1rm: null,
+        };
+
+        const volumeKg = volumeById.get(exerciseId) ?? 0;
 
         const bestE1rmExpr = sql<number | null>`case
-        when ${st.bestE1rm} is null then ${exerciseStats.bestSetE1rm}
-        when ${exerciseStats.bestSetE1rm} is null then ${st.bestE1rm}
-        else max(${exerciseStats.bestSetE1rm}, ${st.bestE1rm})
+        when ${qt.bestE1rm} is null then ${exerciseStats.bestSetE1rm}
+        when ${exerciseStats.bestSetE1rm} is null then ${qt.bestE1rm}
+        else max(${exerciseStats.bestSetE1rm}, ${qt.bestE1rm})
       end`;
 
         const bestStrengthExpr = sql<number | null>`case
@@ -366,18 +412,20 @@ export class ExerciseStatRepository extends BaseRepository<ExerciseStat> {
           .insert(exerciseStats)
           .values({
             exerciseId,
-            bestSetE1rm: st.bestE1rm,
+            bestSetE1rm: qt.bestE1rm,
             bestExerciseStrengthScore: se.bestStrength,
-            totalSetCount: st.setCount,
-            totalVolumeKg: vol,
+            totalSetCount: qt.setCount,
+            totalQuantity: qt.totalQuantity,
+            totalVolumeKg: volumeKg,
             sampleCount: se.sampleCount,
             updatedAt: now,
           })
           .onConflictDoUpdate({
             target: exerciseStats.exerciseId,
             set: {
-              totalSetCount: sql`${exerciseStats.totalSetCount} + ${st.setCount}`,
-              totalVolumeKg: sql`${exerciseStats.totalVolumeKg} + ${vol}`,
+              totalSetCount: sql`${exerciseStats.totalSetCount} + ${qt.setCount}`,
+              totalQuantity: sql`${exerciseStats.totalQuantity} + ${qt.totalQuantity}`,
+              totalVolumeKg: sql`${exerciseStats.totalVolumeKg} + ${volumeKg}`,
               sampleCount: sql`${exerciseStats.sampleCount} + ${se.sampleCount}`,
               bestSetE1rm: bestE1rmExpr,
               bestExerciseStrengthScore: bestStrengthExpr,

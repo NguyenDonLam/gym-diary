@@ -171,17 +171,45 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
         )
         .groupBy(sessionExercises.exerciseId);
 
+      const quantityAgg = await tx
+        .select({
+          exerciseId: sessionExercises.exerciseId,
+          setCount: sql<number>`count(*)`,
+          totalQuantity: sql<number>`coalesce(sum(${sessionSets.quantity}), 0)`,
+          bestE1rm: sql<number | null>`max(${sessionSets.e1rm})`,
+        })
+        .from(sessionSets)
+        .innerJoin(
+          sessionExercises,
+          eq(sessionExercises.id, sessionSets.sessionExerciseId),
+        )
+        .innerJoin(
+          workoutSessions,
+          eq(workoutSessions.id, sessionExercises.workoutSessionId),
+        )
+        .where(
+          and(
+            eq(workoutSessions.status, "completed"),
+            inArray(sessionExercises.exerciseId, exerciseIds),
+            sql`${workoutSessions.startedAt} >= ${startIso}`,
+            sql`${workoutSessions.startedAt} < ${endIso}`,
+            eq(sessionSets.isCompleted, true),
+            eq(sessionSets.isWarmup, false),
+            isNotNull(sessionSets.quantity),
+            sql`${sessionSets.quantity} > 0`,
+          ),
+        )
+        .groupBy(sessionExercises.exerciseId);
+
       const loadKgExpr = sql<number | null>`case
       when ${sessionSets.loadUnit} = 'kg' then cast(${sessionSets.loadValue} as real)
       when ${sessionSets.loadUnit} = 'lb' then cast(${sessionSets.loadValue} as real) * ${LB_TO_KG}
       else null
     end`;
 
-      const setAgg = await tx
+      const volumeAgg = await tx
         .select({
           exerciseId: sessionExercises.exerciseId,
-          setCount: sql<number>`count(*)`,
-          bestE1rm: sql<number | null>`max(${sessionSets.e1rm})`,
           volumeKg: sql<number>`coalesce(sum(${loadKgExpr} * ${sessionSets.quantity}), 0)`,
         })
         .from(sessionSets)
@@ -201,6 +229,7 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
             sql`${workoutSessions.startedAt} < ${endIso}`,
             eq(sessionSets.isCompleted, true),
             eq(sessionSets.isWarmup, false),
+            isNotNull(sessionSets.quantity),
             sql`${sessionSets.quantity} > 0`,
             isNotNull(sessionSets.loadValue),
             sql`trim(${sessionSets.loadValue}) <> ''`,
@@ -213,19 +242,26 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
       const seById = new Map(
         seAgg.map((r) => [
           r.exerciseId!,
-          { sampleCount: r.sampleCount, bestStrength: r.bestStrength ?? null },
+          {
+            sampleCount: r.sampleCount,
+            bestStrength: r.bestStrength ?? null,
+          },
         ]),
       );
 
-      const setById = new Map(
-        setAgg.map((r) => [
+      const quantityById = new Map(
+        quantityAgg.map((r) => [
           r.exerciseId!,
           {
             setCount: r.setCount,
+            totalQuantity: r.totalQuantity ?? 0,
             bestE1rm: r.bestE1rm ?? null,
-            volumeKg: r.volumeKg ?? 0,
           },
         ]),
+      );
+
+      const volumeById = new Map(
+        volumeAgg.map((r) => [r.exerciseId!, r.volumeKg ?? 0]),
       );
 
       const existing = await tx
@@ -249,23 +285,29 @@ export class ExercisePeriodStatRepository extends BaseRepository<ExercisePeriodS
           sampleCount: 0,
           bestStrength: null,
         };
-        const st = setById.get(exerciseId) ?? {
+
+        const qt = quantityById.get(exerciseId) ?? {
           setCount: 0,
+          totalQuantity: 0,
           bestE1rm: null,
-          volumeKg: 0,
         };
+
+        const volumeKg = volumeById.get(exerciseId) ?? 0;
 
         const payload = {
           exerciseId,
           periodType,
           periodStart: start,
 
-          // adjust field names here if your table uses different ones
-          totalSetCount: st.setCount,
-          totalVolumeKg: st.volumeKg,
-          bestSetE1rm: st.bestE1rm,
-          bestExerciseStrengthScore: se.bestStrength,
-          sampleCount: se.sampleCount,
+          sessionCount: se.sampleCount,
+          totalQuantity: qt.totalQuantity,
+          totalSetCount: qt.setCount,
+
+          bestStrengthScore: se.bestStrength,
+          medianStrengthScore: null,
+
+          bestSetE1rm: qt.bestE1rm,
+          medianSetE1rm: null,
 
           updatedAt: now,
         };

@@ -130,7 +130,7 @@ export function ExercisePeriodDeltaView({ rows, period, className }: Props) {
     },
     {
       key: "bestE1rm",
-      label: "Best e1RM",
+      label: "Estimated Max",
       value: d.bestE1rmPct,
       render: (v) => `${v > 0 ? "+" : ""}${(v * 100).toFixed(1)}%`,
       directionFrom: dir,

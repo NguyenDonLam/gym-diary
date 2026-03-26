@@ -94,7 +94,11 @@ export default function ExerciseProgressionScreen() {
 
         <View className="px-4 pt-4">
           {/* Lifetime stats */}
-          <ExerciseStatsView stat={lifetime} className="mb-4" />
+          <ExerciseStatsView
+            stat={lifetime}
+            exercise={exercise}
+            className="mb-4"
+          />
 
           {/* Period stats */}
           <View>
@@ -131,7 +135,11 @@ export default function ExerciseProgressionScreen() {
               })}
             </View>
 
-            <ExercisePeriodStatsView stat={latest} className="mb-3" />
+            <ExercisePeriodStatsView
+              stat={latest}
+              exercise={exercise}
+              className="mb-3"
+            />
 
             <ExercisePeriodDeltaView
               rows={periodRows}

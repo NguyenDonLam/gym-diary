@@ -3,13 +3,15 @@ import React from "react";
 import { View, Text } from "react-native";
 import { Trophy, TrendingUp, BarChart3, Sigma } from "lucide-react-native";
 import type { ExerciseStat } from "@/src/features/exercise-stats/domain/types";
+import { Exercise } from "@packages/exercise";
 
 type Props = {
   stat: ExerciseStat | null | undefined;
+  exercise: Exercise | null | undefined;
   className?: string;
 };
 
-export function ExerciseStatsView({ stat, className }: Props) {
+export function ExerciseStatsView({ stat, exercise, className }: Props) {
   const ok = (n: number | null | undefined) =>
     typeof n === "number" && Number.isFinite(n) ? n : null;
 
@@ -29,17 +31,50 @@ export function ExerciseStatsView({ stat, className }: Props) {
   };
 
   const fmtDeltaPct = (
-    baseline: number | null | undefined,
+    Current: number | null | undefined,
     best: number | null | undefined,
     dp = 1,
   ) => {
-    const b0 = ok(baseline);
+    const b0 = ok(Current);
     const b1 = ok(best);
     if (b0 == null || b1 == null || b0 === 0) return "—";
     const p = ((b1 - b0) / b0) * 100;
     const sign = p > 0 ? "+" : "";
     return `${sign}${p.toFixed(dp)}%`;
   };
+
+  const fmtDuration = (seconds: number | null | undefined) => {
+    const s0 = ok(seconds);
+    if (s0 == null) return "—";
+
+    const s = Math.round(s0);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+
+    if (h > 0) return `${h}h ${m}m ${sec}s`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
+  };
+
+  const fmtQuantity = (
+    n: number | null | undefined,
+    unit: Exercise["quantityUnit"],
+  ) => {
+    if (unit === "time") return fmtDuration(n);
+    return ok(n) == null ? "—" : `${fmtInt(n)} reps`;
+  };
+
+  const quantityUnit = exercise?.quantityUnit ?? "reps";
+  const maxLabel = "Best Estimated Max";
+  const CurrentMaxLabel = exercise?.name
+    ? `Current ${exercise.name} max`
+    : "Current max";
+  const maxChangeLabel = exercise?.name
+    ? `${exercise.name} max change`
+    : "Max change";
+
+  const quantityLabel = quantityUnit === "time" ? "Total time" : "Total reps";
 
   const Row = ({
     label,
@@ -81,36 +116,22 @@ export function ExerciseStatsView({ stat, className }: Props) {
         className ?? "",
       ].join(" ")}
     >
-      {/* Highlights (different from program: two “best” KPIs) */}
-      <View className="flex-row justify-between mb-1">
+      <View className="flex-row justify-center mb-1">
         <View className="flex-row items-center gap-2">
           <View className="h-6 w-6 rounded-full bg-amber-400/20 items-center justify-center">
             <Trophy size={13} color="#FBBF24" />
           </View>
           <View className="items-center">
-            <Text className="text-neutral-500 text-[10px]">Best e1RM</Text>
+            <Text className="text-neutral-500 text-[10px]">{maxLabel}</Text>
             <Text className="text-neutral-50 text-lg font-semibold leading-tight">
               {fmtKg(stat.bestSetE1rm, 0)}
             </Text>
-          </View>
-        </View>
-
-        <View className="flex-row items-center gap-2">
-          <View className="items-center">
-            <Text className="text-neutral-500 text-[10px]">Best score</Text>
-            <Text className="text-neutral-50 text-lg font-semibold leading-tight">
-              {fmtNum(stat.bestExerciseStrengthScore, 1)}
-            </Text>
-          </View>
-          <View className="h-6 w-6 rounded-full bg-fuchsia-400/20 items-center justify-center">
-            <TrendingUp size={13} color="#E879F9" />
           </View>
         </View>
       </View>
 
       <View className="border-t border-neutral-800 my-2" />
 
-      {/* Totals (exercise schema: volume/sets/samples) */}
       <View className="flex-row items-center gap-2 mb-1">
         <BarChart3 size={14} color="#34D399" />
         <Text className="text-neutral-300 text-xs font-semibold">Totals</Text>
@@ -119,28 +140,15 @@ export function ExerciseStatsView({ stat, className }: Props) {
       <Row
         label="Total volume"
         value={fmtInt(stat.totalVolumeKg)}
-        sub="kg·reps"
+        sub="kg·qty"
+      />
+      <Row
+        label={quantityLabel}
+        value={fmtQuantity(stat.totalQuantity, quantityUnit)}
       />
       <Row label="Total sets" value={fmtInt(stat.totalSetCount)} />
       <Row label="Samples" value={fmtInt(stat.sampleCount)} />
 
-      <View className="border-t border-neutral-800 my-2" />
-
-      {/* Baseline (exercise schema: baseline score + baseline e1rm) */}
-      <View className="flex-row items-center gap-2 mb-0.5">
-        <Sigma size={14} color="#60A5FA" />
-        <Text className="text-neutral-300 text-xs font-semibold">Baseline</Text>
-      </View>
-
-      <Row label="Baseline e1RM" value={fmtKg(stat.baselineSetE1rm, 0)} />
-      <Row
-        label="Baseline score"
-        value={fmtNum(stat.baselineExerciseStrengthScore, 1)}
-      />
-      <Row
-        label="e1RM change"
-        value={fmtDeltaPct(stat.baselineSetE1rm, stat.bestSetE1rm, 1)}
-      />
     </View>
   );
 }

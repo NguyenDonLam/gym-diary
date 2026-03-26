@@ -49,7 +49,8 @@ export default function OngoingSessionPage() {
   const iconColor = colorScheme === "dark" ? "#F9FAFB" : "#111827";
   const isDark = colorScheme === "dark";
 
-  const { ongoingSession, refresh, mutationVersion } = useOngoingSession();
+  const { ongoingSession, refresh, mutationVersion, bumpMutationVersion } =
+    useOngoingSession();
 
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<ViewModel | null>(null);
@@ -119,13 +120,16 @@ export default function OngoingSessionPage() {
   const onSetCommit = useCallback(
     async (set: SessionSet) => {
       if (readOnly) return;
+
       try {
         await sessionSetRepository.save(set);
+        await refresh();
+        bumpMutationVersion();
       } catch (err) {
         console.error("Failed to save session set", err);
       }
     },
-    [readOnly],
+    [readOnly, refresh, bumpMutationVersion],
   );
 
   const handleAddExercises = useCallback(

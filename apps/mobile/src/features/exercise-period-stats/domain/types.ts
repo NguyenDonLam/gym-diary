@@ -13,6 +13,12 @@ export type ExercisePeriodStat = {
 
   sessionCount: number;
 
+  // Count of performed sets for this exercise.
+  totalSetCount: number;
+
+  // Count of performed reps for this exercise.
+  totalQuantity: number;
+
   bestStrengthScore: number | null;
   medianStrengthScore: number | null;
 
