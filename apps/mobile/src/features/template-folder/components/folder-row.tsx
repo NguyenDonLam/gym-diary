@@ -1,7 +1,7 @@
 // src/features/template-folders/components/folder-row.tsx
 import React from "react";
 import { View, Text, Pressable, TextInput, Alert } from "react-native";
-import { ChevronDown, ChevronLeft } from "lucide-react-native";
+import { ChevronDown, ChevronRight, MoreHorizontal } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 import type { TemplateFolder } from "@/src/features/template-folder/domain/types";
 
@@ -65,10 +65,12 @@ export default function FolderRow({
   const inputBg = isDark ? "bg-neutral-900" : "bg-white";
   const inputBorder = isDark ? "border-neutral-700" : "border-neutral-300";
   const iconColor = isDark ? "#9CA3AF" : "#6B7280";
+  const buttonClass =
+    "h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 bg-white dark:border-[#44475A] dark:bg-[#343746]";
 
   return (
     <View className="mb-2">
-      <View className="flex-row items-center justify-between py-2">
+      <View className="flex-row items-center justify-between rounded-2xl bg-neutral-50 px-2 py-2 dark:bg-[#21222C]">
         <Pressable className="flex-1 pr-2" onPress={onToggleOpen}>
           <Text
             className={`text-[13px] font-semibold ${titleText}`}
@@ -81,20 +83,23 @@ export default function FolderRow({
           </Text>
         </Pressable>
 
-        <View className="flex-row items-center">
-          <Pressable onPress={openActions} hitSlop={8} className="mr-1">
-            <Text className={`text-[18px] ${subText}`}>⋯</Text>
+        <View className="flex-row items-center gap-2">
+          <Pressable onPress={openActions} hitSlop={8} className={buttonClass}>
+            <MoreHorizontal width={17} height={17} color={iconColor} />
           </Pressable>
-          {isOpen ? (
-            <ChevronDown width={16} height={16} color={iconColor} />
-          ) : (
-            <ChevronLeft width={16} height={16} color={iconColor} />
-          )}
+
+          <Pressable onPress={onToggleOpen} hitSlop={8} className={buttonClass}>
+            {isOpen ? (
+              <ChevronDown width={17} height={17} color={iconColor} />
+            ) : (
+              <ChevronRight width={17} height={17} color={iconColor} />
+            )}
+          </Pressable>
         </View>
       </View>
 
       {renaming && (
-        <View className="mb-2 flex-row items-center">
+        <View className="mb-2 mt-2 flex-row items-center">
           <TextInput
             className={`flex-1 rounded-lg border px-3 py-1.5 text-[13px] ${inputText} ${inputBg} ${inputBorder}`}
             placeholder="Folder name"

@@ -1,20 +1,19 @@
-// src/features/template-workout/ui/form.tsx
 import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   Pressable,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
 import DraggableFlatList, {
   DragEndParams,
 } from "react-native-draggable-flatlist";
-import { ListChecks, Plus, X, Check } from "lucide-react-native";
+import { Dumbbell, ListChecks, Palette, Plus } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
+import ValueWheelSheet from "@/src/components/value-wheel-sheet";
 import { WorkoutProgramFormData } from "../domain/type";
 import { generateId } from "@/src/lib/id";
 import type { Exercise } from "@packages/exercise/type";
@@ -31,61 +30,51 @@ type WorkoutProgramFormProps = {
 const PROGRAM_COLOR_OPTIONS: {
   value: ProgramColor;
   label: string;
-  tileBg: string;
   dotBg: string;
 }[] = [
   {
     value: "neutral",
     label: "Neutral",
-    tileBg: "bg-neutral-100 dark:bg-neutral-800",
     dotBg: "bg-neutral-500",
   },
   {
     value: "red",
     label: "Red",
-    tileBg: "bg-red-100 dark:bg-red-800",
     dotBg: "bg-red-500",
   },
   {
     value: "orange",
     label: "Orange",
-    tileBg: "bg-orange-100 dark:bg-orange-800",
     dotBg: "bg-orange-500",
   },
   {
     value: "yellow",
     label: "Yellow",
-    tileBg: "bg-yellow-100 dark:bg-yellow-700",
     dotBg: "bg-yellow-400",
   },
   {
     value: "green",
     label: "Green",
-    tileBg: "bg-green-100 dark:bg-green-800",
     dotBg: "bg-green-500",
   },
   {
     value: "teal",
     label: "Teal",
-    tileBg: "bg-teal-100 dark:bg-teal-800",
     dotBg: "bg-teal-500",
   },
   {
     value: "blue",
     label: "Blue",
-    tileBg: "bg-blue-100 dark:bg-blue-800",
     dotBg: "bg-blue-500",
   },
   {
     value: "purple",
     label: "Purple",
-    tileBg: "bg-purple-100 dark:bg-purple-800",
     dotBg: "bg-purple-500",
   },
   {
     value: "pink",
     label: "Pink",
-    tileBg: "bg-pink-100 dark:bg-pink-800",
     dotBg: "bg-pink-500",
   },
 ];
@@ -97,9 +86,9 @@ export default function WorkoutProgramForm({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  const primaryIconColor = isDark ? "#111827" : "#F9FAFB";
-  const secondaryIconColor = isDark ? "#D1D5DB" : "#4B5563";
-  const accentIconColor = isDark ? "#F9FAFB" : "#111827";
+  const primaryIconColor = isDark ? "#282A36" : "#FFFFFF";
+  const secondaryIconColor = isDark ? "#F8F8F2" : "#111827";
+  const mutedIconColor = isDark ? "#6272A4" : "#6B7280";
 
   const { name, description, exercises, color } = formData;
 
@@ -109,6 +98,12 @@ export default function WorkoutProgramForm({
   const selectedExerciseIds = useMemo(
     () =>
       exercises.map((ex) => ex.exerciseId).filter((id): id is string => !!id),
+    [exercises],
+  );
+
+  const exerciseCount = exercises.length;
+  const setCount = useMemo(
+    () => exercises.reduce((total, exercise) => total + exercise.sets.length, 0),
     [exercises],
   );
 
@@ -203,77 +198,132 @@ export default function WorkoutProgramForm({
 
   const renderHeader = () => (
     <View>
-      <View className="mb-3 rounded-2xl border border-neutral-200 bg-white px-3 py-3 dark:border-[#44475A] dark:bg-[#282A36]">
-        <View className="mb-2 flex-row items-center justify-between">
+      <View className="mb-4 rounded-[28px] bg-neutral-950 px-4 pb-4 pt-4 dark:bg-[#21222C]">
+        <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
-            <View className="mr-2 h-6 w-6 items-center justify-center rounded-full bg-neutral-100/70 dark:bg-[#44475A]">
-              <ListChecks width={14} height={14} color={secondaryIconColor} />
+            <View className="mr-2 h-9 w-9 items-center justify-center rounded-2xl bg-white/10">
+              <ListChecks width={18} height={18} color="#FFFFFF" />
             </View>
 
-            <Text className="text-[11px] font-semibold text-neutral-800 dark:text-[#F8F8F2]">
-              Details
-            </Text>
+            <View>
+              <Text className="text-[11px] font-semibold uppercase text-white/50">
+                Program
+              </Text>
+              <Text className="text-[12px] text-white/75">
+                Build the workout template
+              </Text>
+            </View>
           </View>
 
           <Pressable
             onPress={() => setColorPickerOpen(true)}
-            className="flex-row items-center rounded-full px-2 py-[3px]"
+            className="h-9 flex-row items-center rounded-full bg-white/10 px-3"
+            hitSlop={8}
           >
             <View
-              className={`mr-1 h-3 w-3 rounded-full ${currentColorOption.dotBg}`}
+              className={`mr-2 h-3.5 w-3.5 rounded-full ${currentColorOption.dotBg}`}
             />
-
-            <Text className="text-[10px] text-neutral-600 dark:text-[#F8F8F2]">
-              {currentColorOption.label}
+            <Text className="mr-1.5 text-[11px] font-semibold text-white">
+              Colour
             </Text>
+            <Palette size={14} color="#FFFFFF" />
           </Pressable>
         </View>
 
         <TextInput
-          className="mt-1 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 dark:border-[#44475A] dark:bg-[#44475A] dark:text-[#F8F8F2]"
-          placeholder="Session name"
-          placeholderTextColor={isDark ? "#6272A4" : "#9CA3AF"}
+          className="rounded-2xl bg-white px-4 py-3 text-[22px] font-semibold text-neutral-950 dark:bg-[#343746] dark:text-[#F8F8F2]"
+          placeholder="Program name"
+          placeholderTextColor={isDark ? "#6272A4" : "#A3A3A3"}
           value={name}
           onChangeText={setName}
+          returnKeyType="next"
         />
 
         <TextInput
-          className="mt-2 min-h-[56px] max-h-24 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 text-[12px] text-neutral-900 dark:border-[#44475A] dark:bg-[#44475A] dark:text-[#F8F8F2]"
-          placeholder="Optional notes, focus or cues"
-          placeholderTextColor={isDark ? "#6272A4" : "#9CA3AF"}
+          className="mt-3 min-h-[78px] rounded-2xl bg-white/95 px-4 py-3 text-[13px] text-neutral-900 dark:bg-[#343746] dark:text-[#F8F8F2]"
+          placeholder="Notes, focus, warmups..."
+          placeholderTextColor={isDark ? "#6272A4" : "#A3A3A3"}
           value={description}
           onChangeText={setDescription}
           multiline
           textAlignVertical="top"
         />
-      </View>
 
-      <View className="mb-2 flex-row items-center justify-between">
-        <View className="flex-row items-center">
-          <View className="mr-2 h-6 w-6 items-center justify-center rounded-full bg-neutral-100 dark:bg-[#44475A]">
-            <View className="h-1.5 w-1.5 rounded-full bg-neutral-500 dark:bg-[#6272A4]" />
+        <View className="mt-4 flex-row gap-2">
+          <View className="flex-1 rounded-2xl bg-white/10 px-3 py-2">
+            <Text className="text-[20px] font-semibold text-white">
+              {exerciseCount}
+            </Text>
+            <Text className="text-[11px] text-white/55">
+              {exerciseCount === 1 ? "Exercise" : "Exercises"}
+            </Text>
           </View>
 
-          <Text className="text-[11px] text-neutral-600 dark:text-[#6272A4]">
-            Exercises
-          </Text>
+          <View className="flex-1 rounded-2xl bg-white/10 px-3 py-2">
+            <Text className="text-[20px] font-semibold text-white">
+              {setCount}
+            </Text>
+            <Text className="text-[11px] text-white/55">
+              {setCount === 1 ? "Planned set" : "Planned sets"}
+            </Text>
+          </View>
+
+          <View className="flex-1 rounded-2xl bg-white/10 px-3 py-2">
+            <Text className="text-[20px] font-semibold text-white">
+              {currentColorOption.label}
+            </Text>
+            <Text className="text-[11px] text-white/55">Colour</Text>
+          </View>
+        </View>
+      </View>
+
+      <View className="mb-3 flex-row items-center justify-between">
+        <View className="flex-row items-center">
+          <View className="mr-2 h-9 w-9 items-center justify-center rounded-2xl bg-white dark:bg-[#343746]">
+            <Dumbbell size={17} color={mutedIconColor} />
+          </View>
+
+          <View>
+            <Text className="text-[15px] font-semibold text-neutral-950 dark:text-[#F8F8F2]">
+              Exercises
+            </Text>
+            <Text className="text-[11px] text-neutral-500 dark:text-[#6272A4]">
+              Drag to reorder once added
+            </Text>
+          </View>
         </View>
 
         <Pressable
           onPress={() => setLibraryOpen(true)}
-          className="h-7 w-7 items-center justify-center rounded-full bg-neutral-900 dark:bg-[#BD93F9]"
+          className="h-10 flex-row items-center justify-center rounded-full bg-neutral-900 px-4 dark:bg-[#BD93F9]"
+          hitSlop={8}
         >
-          <Plus size={14} color={primaryIconColor} />
+          <Plus size={16} color={primaryIconColor} />
+          <Text className="ml-1.5 text-[13px] font-semibold text-white dark:text-[#282A36]">
+            Add
+          </Text>
         </Pressable>
       </View>
     </View>
   );
 
   const renderEmpty = () => (
-    <View className="mt-4 items-center">
-      <View className="h-10 w-10 items-center justify-center rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-600">
-        <Plus size={16} color={secondaryIconColor} />
+    <View className="mt-8 items-center rounded-[28px] border border-dashed border-neutral-300 bg-white px-5 py-8 dark:border-[#44475A] dark:bg-[#282A36]">
+      <View className="h-12 w-12 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-[#343746]">
+        <Plus size={20} color={secondaryIconColor} />
       </View>
+      <Text className="mt-3 text-[14px] font-semibold text-neutral-900 dark:text-[#F8F8F2]">
+        No exercises yet
+      </Text>
+      <Pressable
+        onPress={() => setLibraryOpen(true)}
+        className="mt-4 h-10 flex-row items-center rounded-full bg-neutral-900 px-4 dark:bg-[#BD93F9]"
+      >
+        <Plus size={15} color={primaryIconColor} />
+        <Text className="ml-1.5 text-[13px] font-semibold text-white dark:text-[#282A36]">
+          Add exercise
+        </Text>
+      </Pressable>
     </View>
   );
 
@@ -283,9 +333,7 @@ export default function WorkoutProgramForm({
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={56}
     >
-      <View className="flex-1 bg-white px-4 pt-3 dark:bg-[#2B2D3A]">
-        {renderHeader()}
-
+      <View className="flex-1 bg-neutral-50 px-4 pt-4 dark:bg-[#2B2D3A]">
         <DraggableFlatList
           style={{ flex: 1 }}
           containerStyle={{ flex: 1 }}
@@ -295,9 +343,9 @@ export default function WorkoutProgramForm({
           activationDistance={8}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
-            paddingTop: 8,
-            paddingBottom: 70,
+            paddingBottom: 84,
           }}
+          ListHeaderComponent={renderHeader}
           ListEmptyComponent={renderEmpty}
           renderItem={({ item, drag, isActive }) => (
             <View className={isActive ? "opacity-80" : ""}>
@@ -315,10 +363,10 @@ export default function WorkoutProgramForm({
           <View className="absolute inset-0 z-50">
             <ExerciseLibraryPicker
               title="Add exercises"
-              subtitle="Select exercises for this template"
+              subtitle="Select exercises for this program"
               mode="multi-select"
               initialSelectedIds={selectedExerciseIds}
-              confirmLabel="Add to template"
+              confirmLabel="Add to program"
               allowCreate
               showUsageSummary
               showBrowseAll
@@ -328,68 +376,32 @@ export default function WorkoutProgramForm({
           </View>
         ) : null}
 
-        {colorPickerOpen && (
-          <View
-            className="absolute inset-0 bg-[#21222C]/70"
-            style={{ zIndex: 60 }}
-          >
-            <View className="absolute inset-x-8 top-32 bottom-32 rounded-3xl bg-white px-4 py-3 dark:bg-[#343746]">
-              <View className="mb-2 flex-row items-center justify-between">
-                <Text className="text-[13px] text-neutral-900 dark:text-[#F8F8F2]">
-                  Choose program colour
-                </Text>
-
-                <Pressable
-                  onPress={() => setColorPickerOpen(false)}
-                  className="h-7 w-7 items-center justify-center rounded-full bg-neutral-100 dark:bg-[#44475A]"
-                >
-                  <X size={14} color={secondaryIconColor} />
-                </Pressable>
-              </View>
-
-              <ScrollView className="mt-2" keyboardShouldPersistTaps="handled">
-                <View className="flex-row flex-wrap gap-3">
-                  {PROGRAM_COLOR_OPTIONS.map((opt) => {
-                    const selected = opt.value === color;
-
-                    return (
-                      <Pressable
-                        key={opt.value}
-                        onPress={() => {
-                          setColor(opt.value);
-                          setColorPickerOpen(false);
-                        }}
-                        className={`h-16 w-16 items-center justify-center rounded-2xl ${
-                          opt.tileBg
-                        } ${
-                          selected
-                            ? "border-2 border-neutral-900 dark:border-[#F8F8F2]"
-                            : "border border-transparent"
-                        }`}
-                      >
-                        <View
-                          className={`mb-1 h-4 w-4 rounded-full ${opt.dotBg}`}
-                        />
-
-                        <Text className="text-[11px] text-neutral-900 dark:text-[#F8F8F2]">
-                          {opt.label}
-                        </Text>
-
-                        {selected && (
-                          <View className="mt-0.5">
-                            <Check size={10} color={accentIconColor} />
-                          </View>
-                        )}
-                      </Pressable>
-                    );
-                  })}
-                </View>
-
-                <View className="h-4" />
-              </ScrollView>
-            </View>
-          </View>
-        )}
+        {colorPickerOpen ? (
+          <ValueWheelSheet
+            title="Program colour"
+            subtitle="Pick the tag used in your workout list"
+            columns={[
+              {
+                id: "color",
+                label: "Colour",
+                selectedValue: color,
+                options: PROGRAM_COLOR_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: option.label,
+                  swatchClassName: option.dotBg,
+                })),
+              },
+            ]}
+            onCancel={() => setColorPickerOpen(false)}
+            onConfirm={(values) => {
+              const next = values.color as ProgramColor | undefined;
+              if (next) {
+                setColor(next);
+              }
+              setColorPickerOpen(false);
+            }}
+          />
+        ) : null}
       </View>
     </KeyboardAvoidingView>
   );

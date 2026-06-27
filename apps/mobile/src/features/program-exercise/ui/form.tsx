@@ -1,11 +1,12 @@
 import React, { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
-import { ExerciseProgramFormData } from "../domain/type";
-import { SetProgramFormData } from "../../program-set/domain/type";
-import { useExercises } from "../../exercise/hooks/use-exercises";
-import SetProgramForm from "@/src/features/program-set/ui/form";
-import { GripVertical, X, Plus, Minus } from "lucide-react-native";
+import { GripVertical, Minus, Plus, X } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
+
+import SetProgramForm from "@/src/features/program-set/ui/form";
+import { useExercises } from "../../exercise/hooks/use-exercises";
+import { SetProgramFormData } from "../../program-set/domain/type";
+import { ExerciseProgramFormData } from "../domain/type";
 
 type ExerciseProgramFormProps = {
   formData: ExerciseProgramFormData;
@@ -30,11 +31,6 @@ export default function ExerciseProgramForm({
   const textMain = isDark ? "text-[#F8F8F2]" : "text-neutral-900";
   const textSoft = isDark ? "text-[#6272A4]" : "text-neutral-500";
 
-  const handleBg = isDark ? "bg-[#343746]" : "bg-neutral-100";
-
-  const deleteBg = handleBg;
-  const deleteColor = isDark ? "#F8F8F2" : "#6B7280";
-
   const chipBg = isDark ? "bg-[#BD93F9]" : "bg-neutral-900";
   const chipText = isDark ? "text-[#282A36]" : "text-white";
 
@@ -44,10 +40,10 @@ export default function ExerciseProgramForm({
   const addSet = () => {
     const next: SetProgramFormData = {
       id: Math.random().toString(36).slice(2),
-      targetQuantity: 0,
+      targetQuantity: null,
       loadValue: "",
       loadUnit: "kg",
-      rpe: "",
+      rpe: "10",
     };
     update({ sets: [...formData.sets, next] });
   };
@@ -64,8 +60,8 @@ export default function ExerciseProgramForm({
         targetQuantity: reps,
         loadValue: "",
         loadUnit: "kg",
-        rpe: "",
-      })
+        rpe: "10",
+      }),
     );
     update({ sets: nextSets });
   };
@@ -78,26 +74,30 @@ export default function ExerciseProgramForm({
 
   return (
     <View
-      className={`mb-2 rounded-2xl border px-3 py-2 ${cardBg} ${cardBorder}`}
+      className={`mb-2 rounded-2xl border px-3 py-2.5 ${cardBg} ${cardBorder}`}
     >
-      {/* Header */}
-      <View className="mb-1 flex-row items-center justify-between">
+      <View className="mb-2 flex-row items-center justify-between">
         <View className="flex-row items-center flex-1">
           {onDrag ? (
             <Pressable
               onLongPress={onDrag}
               delayLongPress={120}
               hitSlop={8}
-              className={`mr-2 h-6 w-6 items-center justify-center rounded-full ${handleBg}`}
+              className={`mr-2 h-8 flex-row items-center rounded-xl border px-2 ${
+                isDark
+                  ? "border-[#6272A4] bg-[#343746]"
+                  : "border-neutral-300 bg-neutral-50"
+              }`}
             >
               <GripVertical size={14} color={isDark ? "#6272A4" : "#6B7280"} />
+
             </Pressable>
           ) : (
-            <View className="mr-2 h-6 w-6" />
+            <View className="mr-2 h-8 w-14" />
           )}
 
           <Text
-            className={`flex-1 text-[13px] font-medium ${textMain}`}
+            className={`flex-1 text-[15px] font-semibold ${textMain}`}
             numberOfLines={1}
           >
             {exerciseName}
@@ -107,103 +107,124 @@ export default function ExerciseProgramForm({
         <Pressable
           onPress={onRemove}
           hitSlop={8}
-          className={`h-6 w-6 items-center justify-center rounded-full ${deleteBg}`}
+          className={`h-8 w-8 items-center justify-center rounded-xl border ${
+            isDark
+              ? "border-[#44475A] bg-[#343746]"
+              : "border-neutral-200 bg-neutral-50"
+          }`}
         >
-          <X size={13} color={deleteColor} />
+          <X size={14} color="#EF4444" />
         </Pressable>
       </View>
 
-      {/* Presets */}
-      {formData.sets.length === 0 && (
-        <View className="mb-1 flex-row flex-wrap gap-1.5">
+      {formData.sets.length === 0 ? (
+        <View className="mb-2 flex-row flex-wrap gap-2">
           <Pressable
-            className={`rounded-full px-2.5 py-0.5 ${chipBg}`}
+            className={`rounded-full px-3 py-1.5 ${chipBg}`}
             onPress={() => applyPreset(1, 8)}
           >
-            <Text className={`text-[10px] font-semibold ${chipText}`}>1×8</Text>
+            <Text className={`text-[11px] font-semibold ${chipText}`}>1x8</Text>
           </Pressable>
 
           <Pressable
-            className={`rounded-full px-2.5 py-0.5 ${chipBg}`}
+            className={`rounded-full px-3 py-1.5 ${chipBg}`}
             onPress={() => applyPreset(2, 10)}
           >
-            <Text className={`text-[10px] font-semibold ${chipText}`}>
-              2×10
+            <Text className={`text-[11px] font-semibold ${chipText}`}>
+              2x10
             </Text>
           </Pressable>
 
           <Pressable
-            className={`rounded-full px-2.5 py-0.5 ${chipBg}`}
+            className={`rounded-full px-3 py-1.5 ${chipBg}`}
             onPress={() => applyPreset(3, 12)}
           >
-            <Text className={`text-[10px] font-semibold ${chipText}`}>
-              3×12
+            <Text className={`text-[11px] font-semibold ${chipText}`}>
+              3x12
             </Text>
           </Pressable>
         </View>
-      )}
+      ) : null}
 
-      {formData.sets.length > 0 && (
-        <View className="mt-1 mb-0.5 flex-row items-center gap-2 px-1">
-          <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-[#6272A4]">
-            Target Volume
+      {formData.sets.length > 0 ? (
+        <View className="mb-1 flex-row items-center gap-2 px-2">
+          <View className="w-7" />
+          <Text
+            className="text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]"
+            style={{ flex: 0.82 }}
+          >
+            Target
           </Text>
-          <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-[#6272A4]">
+          <Text
+            className="text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]"
+            style={{ flex: 1.55 }}
+          >
             Load
           </Text>
-          <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-[#6272A4]">
+          <Text
+            className="text-center text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]"
+            style={{ width: 70 }}
+          >
             Effort
           </Text>
         </View>
-      )}
+      ) : null}
 
-      {/* Sets */}
-      {formData.sets.map((s, setIndex) => (
+      {formData.sets.map((set, setIndex) => (
         <SetProgramForm
-          key={s.id}
-          formData={s}
+          key={set.id}
+          formData={set}
           index={setIndex}
+          quantityUnit={formData.quantityUnit}
           setFormData={(next) =>
             update({
               sets: formData.sets.map((curr) =>
-                curr.id === s.id ? next : curr,
+                curr.id === set.id ? next : curr,
               ),
             })
           }
         />
       ))}
 
-      {/* Controls */}
-      <View className="mt-1 flex-row justify-end gap-2">
-        <Pressable
-          onPress={removeLastSet}
-          disabled={formData.sets.length === 0}
-          hitSlop={8}
-          className={`h-6 w-6 items-center justify-center rounded-full ${
-            formData.sets.length === 0
-              ? "bg-neutral-200 dark:bg-[#44475A]"
-              : chipBg
-          }`}
-        >
-          <Minus
-            size={12}
-            color={
-              formData.sets.length === 0
-                ? "#6272A4"
-                : isDark
-                  ? "#282A36"
-                  : "#F9FAFB"
-            }
-          />
-        </Pressable>
+      <View className="mt-2 flex-row items-center justify-between">
+        <Text className={`text-[11px] ${textSoft}`}>
+          {formData.sets.length} {formData.sets.length === 1 ? "set" : "sets"}
+        </Text>
 
-        <Pressable
-          onPress={addSet}
-          hitSlop={8}
-          className={`h-6 w-6 items-center justify-center rounded-full ${chipBg}`}
-        >
-          <Plus size={12} color={isDark ? "#282A36" : "#F9FAFB"} />
-        </Pressable>
+        <View className="flex-row gap-2">
+          <Pressable
+            onPress={removeLastSet}
+            disabled={formData.sets.length === 0}
+            hitSlop={8}
+            className={`h-8 w-8 items-center justify-center rounded-full ${
+              formData.sets.length === 0
+                ? "bg-neutral-200 dark:bg-[#44475A]"
+                : chipBg
+            }`}
+          >
+            <Minus
+              size={12}
+              color={
+                formData.sets.length === 0
+                  ? "#6272A4"
+                  : isDark
+                    ? "#282A36"
+                    : "#F9FAFB"
+              }
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={addSet}
+            hitSlop={8}
+            className={`h-8 flex-row items-center justify-center rounded-full px-3 ${chipBg}`}
+          >
+            <Plus size={12} color={isDark ? "#282A36" : "#F9FAFB"} />
+            <Text className={`ml-1 text-[11px] font-semibold ${chipText}`}>
+              Set
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
