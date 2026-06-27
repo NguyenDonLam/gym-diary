@@ -13,6 +13,7 @@ const EFFORT_LEVELS = [
   { id: "medium", label: "Medium", rpe: 7 },
   { id: "intense", label: "Intense", rpe: 10 },
 ] as const;
+const DEFAULT_EFFORT = EFFORT_LEVELS[2];
 
 const LOAD_UNIT_OPTIONS: { id: SessionSet["loadUnit"]; label: string }[] = [
   { id: "kg", label: "kg" },
@@ -57,9 +58,9 @@ function isNumericLoadUnit(unit: SessionSet["loadUnit"]) {
 }
 
 function getEffortFromRpe(rpe: number | null | undefined) {
-  if (rpe == null) return EFFORT_LEVELS[1];
+  if (rpe == null) return DEFAULT_EFFORT;
   const found = EFFORT_LEVELS.find((lvl) => lvl.rpe === rpe);
-  return found ?? EFFORT_LEVELS[1];
+  return found ?? DEFAULT_EFFORT;
 }
 
 function getNextLoadUnit(current: SessionSet["loadUnit"]) {
@@ -174,7 +175,7 @@ export function SessionSetRow({
     if (!isNumericLoadUnit(v.loadUnit)) return true;
 
     const raw = parseNumericLoad(trimmed);
-    return raw != null && raw > 0;
+    return raw != null && raw >= 0;
   };
 
   const isValid = (v: SessionSet) =>
@@ -193,7 +194,7 @@ export function SessionSetRow({
   const ensureRpeDefault = (v: SessionSet): SessionSet => {
     if (v.rpe != null) return v;
     if (readOnly) return v;
-    const next: SessionSet = { ...v, rpe: EFFORT_LEVELS[1].rpe };
+    const next: SessionSet = { ...v, rpe: DEFAULT_EFFORT.rpe };
     latestRef.current = next;
     setValue(next);
     return next;
@@ -345,9 +346,9 @@ export function SessionSetRow({
     if (readOnly) return;
 
     const v = latestRef.current;
-    const currentRpe = v.rpe ?? EFFORT_LEVELS[1].rpe;
+    const currentRpe = v.rpe ?? DEFAULT_EFFORT.rpe;
     const idx = EFFORT_LEVELS.findIndex((lvl) => lvl.rpe === currentRpe);
-    const nextIdx = idx === -1 ? 1 : (idx + 1) % EFFORT_LEVELS.length;
+    const nextIdx = idx === -1 ? 2 : (idx + 1) % EFFORT_LEVELS.length;
     const nextLvl = EFFORT_LEVELS[nextIdx];
 
     apply({ rpe: nextLvl.rpe });

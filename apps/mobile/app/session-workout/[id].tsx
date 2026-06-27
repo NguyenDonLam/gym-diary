@@ -103,6 +103,20 @@ export default function SessionWorkoutPage() {
     [readOnly],
   );
 
+  const onSetAdd = useCallback(
+    async (set: SessionSet) => {
+      if (readOnly) return;
+
+      try {
+        await sessionSetRepository.save(set);
+      } catch (err) {
+        console.error("Failed to add session set", err);
+        throw err;
+      }
+    },
+    [readOnly],
+  );
+
   const handleAddExercises = useCallback(
     async (selectedExercises: Exercise[]) => {
       if (readOnly || !sessionId) return;
@@ -197,6 +211,7 @@ export default function SessionWorkoutPage() {
                 prev.map((e) => (e.id === next.id ? next : e)),
               )
             }
+            onSetAdd={onSetAdd}
             onSetCommit={onSetCommit}
           />
         ))}

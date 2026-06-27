@@ -78,6 +78,7 @@ function replaceSet(sets: SessionSet[] | undefined, next: SessionSet) {
 type Props = {
   value: SessionExerciseView;
   onChange: (next: SessionExerciseView) => void;
+  onSetAdd?: (set: SessionSet) => Promise<void> | void;
   onSetCommit?: (set: SessionSet) => void;
   readOnly?: boolean;
 };
@@ -85,6 +86,7 @@ type Props = {
 export function SessionExerciseCard({
   value,
   onChange,
+  onSetAdd,
   onSetCommit,
   readOnly = false,
 }: Props) {
@@ -108,7 +110,7 @@ export function SessionExerciseCard({
     onChange({ ...value, isOpen: !value.isOpen });
   };
 
-  const addSet = () => {
+  const addSet = async () => {
     if (readOnly) return;
 
     const last = sets[sets.length - 1];
@@ -118,14 +120,20 @@ export function SessionExerciseCard({
       orderIndex: sets.length,
       loadUnit: last?.loadUnit ?? "kg",
       loadValue: last?.loadValue ?? null,
-      rpe: last?.rpe ?? 7,
+      rpe: 10,
     });
 
-    onChange({
-      ...value,
-      isOpen: true,
-      sets: [...sets, newSet],
-    });
+    try {
+      await onSetAdd?.(newSet);
+
+      onChange({
+        ...value,
+        isOpen: true,
+        sets: [...sets, newSet],
+      });
+    } catch (err) {
+      console.error("Failed to add session set", err);
+    }
   };
 
   return (
