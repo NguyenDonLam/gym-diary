@@ -19,10 +19,14 @@ import {
 import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
 import { WorkoutProgramFactory } from "@/src/features/program-workout/domain/factory";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
+import { consumeProgramFormDraft } from "@/src/features/program-workout/data/program-form-draft-store";
 
 export default function ProgramWorkoutEditScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, draftKey } = useLocalSearchParams<{
+    id: string;
+    draftKey?: string;
+  }>();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
@@ -60,11 +64,17 @@ export default function ProgramWorkoutEditScreen() {
         }
 
         if (!cancelled) {
-          const form = WorkoutProgramFactory.formFromDomain(template);
+          let form = WorkoutProgramFactory.formFromDomain(template);
+          if (draftKey && typeof draftKey === "string") {
+            const draft = await consumeProgramFormDraft(draftKey);
+            if (draft) form = draft;
+          }
+
           setFormData(form);
           setHasLoadedTemplate(true);
         }
-      } catch {
+      } catch (error) {
+        console.warn("[program-workout/edit] failed to load template", error);
         if (!cancelled) {
           setLoadError("Failed to load template.");
         }
@@ -80,7 +90,7 @@ export default function ProgramWorkoutEditScreen() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, draftKey]);
 
   const canSave =
     hasLoadedTemplate &&

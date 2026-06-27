@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,9 +13,13 @@ import { WorkoutProgramFormData } from "@/src/features/program-workout/domain/ty
 import WorkoutProgramForm from "@/src/features/program-workout/ui/form";
 import { WorkoutProgramFactory } from "@/src/features/program-workout/domain/factory";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
+import { consumeProgramFormDraft } from "@/src/features/program-workout/data/program-form-draft-store";
 export default function ProgramWorkoutCreate() {
   const router = useRouter();
-  const { folderId } = useLocalSearchParams<{ folderId?: string }>();
+  const { folderId, draftKey } = useLocalSearchParams<{
+    folderId?: string;
+    draftKey?: string;
+  }>();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
@@ -24,6 +28,24 @@ export default function ProgramWorkoutCreate() {
     WorkoutProgramFactory.createForm({folderId})
   );
 
+  useEffect(() => {
+    if (!draftKey || typeof draftKey !== "string") return;
+
+    let cancelled = false;
+
+    consumeProgramFormDraft(draftKey)
+      .then((draft) => {
+        if (cancelled || !draft) return;
+        setFormData(draft);
+      })
+      .catch((error) => {
+        console.warn("[program-workout/new] failed to load draft", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [draftKey]);
 
   const [isSaving, setIsSaving] = useState(false);
 

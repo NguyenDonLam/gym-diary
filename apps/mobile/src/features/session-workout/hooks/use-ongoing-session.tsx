@@ -24,16 +24,37 @@ import type { SessionWorkout } from "../domain/types";
 import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
 import { SessionWorkoutFactory } from "../domain/factory";
+import { WorkoutProgramFactory } from "../../program-workout/domain/factory";
+import { saveProgramFormDraft } from "../../program-workout/data/program-form-draft-store";
 import { useExerciseStats } from "../../exercise-stats/hooks/use-exercise-stats";
 import { exerciseStatRepository } from "../../exercise-stats/data/repository";
 import { ExerciseStat } from "../../exercise-stats/domain/types";
 import { ExerciseStatFactory } from "../../exercise-stats/domain/factory";
 import { statService } from "../../history/services/stat-service";
+import {
+  applySessionChangesToProgram,
+  buildProgramFromSession,
+  cloneProgramAsNew,
+} from "../domain/program-save";
 
 const KEY = "ongoing";
 const LB_TO_KG = 0.45359237;
 
 type Aggregate = ScoreAggregateV1<SessionSet, SessionExercise, SessionWorkout>;
+
+export type EndSessionProgramAction =
+  | "none"
+  | "update-source-program"
+  | "save-as-new-program";
+
+export type FinishProgramSavePrompt =
+  | { kind: "none" }
+  | { kind: "one-off" }
+  | { kind: "program-changed"; programName: string };
+
+export type FinishProgramDraftRoute =
+  | { kind: "new"; draftKey: string }
+  | { kind: "edit"; programId: string; draftKey: string };
 
 type OngoingSessionContextValue = {
   mutationVersion: number;
@@ -42,6 +63,10 @@ type OngoingSessionContextValue = {
   ongoingSession: SessionWorkout | null;
   startSession: (programId?: string) => Promise<SessionWorkout>;
   endSession: () => Promise<void>;
+  getFinishProgramSavePrompt: () => Promise<FinishProgramSavePrompt>;
+  createFinishProgramDraft: (
+    programAction: Exclude<EndSessionProgramAction, "none">,
+  ) => Promise<FinishProgramDraftRoute | null>;
   discardSession: () => Promise<void>;
   refresh: () => Promise<void>;
 
@@ -249,113 +274,111 @@ export function OngoingSessionProvider({
     [setOngoingId, bumpMutationVersion],
   );
 
-  const syncCompletedSessionBackToProgram = useCallback(
-    async (session: SessionWorkout, now: Date) => {
-      const sourceProgramId = session.sourceProgramId;
-      if (!sourceProgramId) return;
+  const getLatestOngoingSession = useCallback(async () => {
+    if (!ongoingSession?.id) return ongoingSession;
 
-      const program = await workoutProgramRepository.get(sourceProgramId);
-      if (!program) return;
+    const latest = await sessionWorkoutRepository.get(ongoingSession.id);
+    return latest ?? ongoingSession;
+  }, [ongoingSession]);
 
-      let changed = false;
+  const getFinishProgramSavePrompt = useCallback(async () => {
+    const session = await getLatestOngoingSession();
+    if (!session) return { kind: "none" } as const;
 
-      const updatedProgram = {
-        ...program,
-        updatedAt: now,
-        exercises: (program.exercises ?? []).map((programExercise) => {
-          const sessionExercise = (session.exercises ?? []).find(
-            (ex) => ex.exerciseProgramId === programExercise.id,
-          );
+    if (!session.sourceProgramId) return { kind: "one-off" } as const;
 
-          if (!sessionExercise) return programExercise;
+    const program = await workoutProgramRepository.get(session.sourceProgramId);
+    if (!program) return { kind: "none" } as const;
 
-          let exerciseChanged = false;
+    const { changed } = applySessionChangesToProgram(
+      program,
+      session,
+      new Date(),
+    );
 
-          const updatedSets = (programExercise.sets ?? []).map((programSet) => {
-            const sessionSet = (sessionExercise.sets ?? []).find(
-              (s) =>
-                s.setProgramId === programSet.id &&
-                s.isCompleted &&
-                !s.isWarmup,
-            );
+    if (!changed) return { kind: "none" } as const;
 
-            if (!sessionSet) return programSet;
+    return {
+      kind: "program-changed",
+      programName: program.name,
+    } as const;
+  }, [getLatestOngoingSession]);
 
-            const hasLoadValue =
-              sessionSet.loadValue != null &&
-              sessionSet.loadValue.trim() !== "";
-            const hasTargetRpe = sessionSet.rpe != null;
-            const hasQuantity = sessionSet.quantity != null;
+  const createFinishProgramDraft = useCallback(
+    async (
+      action: Exclude<EndSessionProgramAction, "none">,
+    ): Promise<FinishProgramDraftRoute | null> => {
+      const session = await getLatestOngoingSession();
+      if (!session) return null;
 
-            const nextLoadUnit = hasLoadValue
-              ? sessionSet.loadUnit
-              : programSet.loadUnit;
+      const now = new Date();
 
-            const nextLoadValue = hasLoadValue
-              ? sessionSet.loadValue
-              : programSet.loadValue;
+      if (!session.sourceProgramId) {
+        if (action !== "save-as-new-program") return null;
 
-            const nextTargetRpe = hasTargetRpe
-              ? sessionSet.rpe
-              : programSet.targetRpe;
+        const program = buildProgramFromSession(session, now);
+        const draftKey = await saveProgramFormDraft(
+          WorkoutProgramFactory.formFromDomain(program),
+        );
+        return { kind: "new", draftKey };
+      }
 
-            const nextTargetQuantity = hasQuantity
-              ? sessionSet.quantity
-              : programSet.targetQuantity;
+      const sourceProgram = await workoutProgramRepository.get(
+        session.sourceProgramId,
+      );
+      if (!sourceProgram) return null;
 
-            const didChange =
-              nextLoadUnit !== programSet.loadUnit ||
-              nextLoadValue !== programSet.loadValue ||
-              nextTargetRpe !== programSet.targetRpe ||
-              nextTargetQuantity !== programSet.targetQuantity;
+      const { program: updatedProgram } = applySessionChangesToProgram(
+        sourceProgram,
+        session,
+        now,
+      );
 
-            if (!didChange) return programSet;
+      if (action === "update-source-program") {
+        const draftKey = await saveProgramFormDraft(
+          WorkoutProgramFactory.formFromDomain(updatedProgram),
+        );
+        return {
+          kind: "edit",
+          programId: sourceProgram.id,
+          draftKey,
+        };
+      }
 
-            changed = true;
-            exerciseChanged = true;
+      if (action === "save-as-new-program") {
+        const program = cloneProgramAsNew(
+          updatedProgram,
+          now,
+          `${sourceProgram.name} copy`,
+        );
+        const draftKey = await saveProgramFormDraft(
+          WorkoutProgramFactory.formFromDomain(program),
+        );
+        return { kind: "new", draftKey };
+      }
 
-            return {
-              ...programSet,
-              loadUnit: nextLoadUnit,
-              loadValue: nextLoadValue,
-              targetRpe: nextTargetRpe,
-              targetQuantity: nextTargetQuantity,
-              updatedAt: now,
-            };
-          });
-
-          if (!exerciseChanged) return programExercise;
-
-          return {
-            ...programExercise,
-            updatedAt: now,
-            sets: updatedSets,
-          };
-        }),
-      };
-
-      if (!changed) return;
-
-      await workoutProgramRepository.save(updatedProgram);
+      return null;
     },
-    [],
+    [getLatestOngoingSession],
   );
 
   const endSession = useCallback(async () => {
     if (!ongoingSession) return;
 
+    const sessionForFinish = await getLatestOngoingSession();
+    if (!sessionForFinish) return;
+
     if (!aggregate) {
       const now = new Date();
 
       const endedNoScores = SessionWorkoutFactory.create({
-        ...ongoingSession,
+        ...sessionForFinish,
         status: "completed",
         endedAt: now,
         updatedAt: now,
       });
 
       await sessionWorkoutRepository.save(endedNoScores);
-      await syncCompletedSessionBackToProgram(ongoingSession, now);
 
       await statService.updateProgramStat(endedNoScores.id);
       await statService.updateExerciseStat(endedNoScores.id);
@@ -369,13 +392,13 @@ export function OngoingSessionProvider({
     const now = new Date();
 
     const ended = SessionWorkoutFactory.create({
-      ...ongoingSession,
+      ...sessionForFinish,
       status: "completed",
       endedAt: now,
       updatedAt: now,
       strengthScore: aggregate.getWorkoutScore(),
       strengthScoreVersion: aggregate.version,
-      exercises: (ongoingSession.exercises ?? []).map((ex) => ({
+      exercises: (sessionForFinish.exercises ?? []).map((ex) => ({
         ...ex,
         updatedAt: now,
         strengthScore: aggregate.getExerciseScore(ex.id) ?? null,
@@ -385,7 +408,6 @@ export function OngoingSessionProvider({
     });
 
     await sessionWorkoutRepository.save(ended);
-    await syncCompletedSessionBackToProgram(ongoingSession, now);
 
     await statService.updateProgramStat(ended.id);
     await statService.updateExerciseStat(ended.id);
@@ -420,7 +442,7 @@ export function OngoingSessionProvider({
     aggregate,
     setOngoingId,
     bumpMutationVersion,
-    syncCompletedSessionBackToProgram,
+    getLatestOngoingSession,
   ]);
 
   const discardSession = useCallback(async () => {
@@ -468,6 +490,8 @@ export function OngoingSessionProvider({
         ongoingSession,
         startSession,
         endSession,
+        getFinishProgramSavePrompt,
+        createFinishProgramDraft,
         discardSession,
         refresh,
         aggregate,
