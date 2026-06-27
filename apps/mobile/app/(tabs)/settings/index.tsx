@@ -28,8 +28,8 @@ export default function SettingsScreen() {
         className={[
           "flex-1 rounded-full px-3 py-2",
           active
-            ? "bg-neutral-900 dark:bg-slate-50"
-            : "bg-white dark:bg-slate-950",
+            ? "bg-neutral-900 dark:bg-[#BD93F9] "
+            : "bg-white dark:bg-[#2B2D3A]",
           !isLast ? "mr-2" : "",
         ].join(" ")}
       >
@@ -49,7 +49,7 @@ export default function SettingsScreen() {
 
   return (
     <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
-      <View className="border-b border-zinc-200 px-4 pb-3 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
+      <View className="border-b border-zinc-200 px-4 pb-3 pt-3 dark:border-emerald-500 dark:bg-[#21222C]">
         <Text className="text-lg font-bold text-neutral-900 dark:text-[#F8F8F2]">
           Settings
         </Text>
@@ -59,7 +59,7 @@ export default function SettingsScreen() {
       </View>
 
       <View className="px-4 pt-4">
-        <View className="mb-3 rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
+        <View className="mb-3 rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746] ">
           <Text className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2]">
             Appearance
           </Text>
