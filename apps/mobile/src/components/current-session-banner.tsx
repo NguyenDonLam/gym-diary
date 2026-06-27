@@ -6,6 +6,8 @@ import { CheckCircle2 } from "lucide-react-native";
 
 import { useSessionTimer } from "@/src/features/program-workout/hooks/use-session-timer";
 import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
+import type { FinishProgramDraftRoute } from "@/src/features/session-workout/hooks/use-ongoing-session";
+import { confirmFinishSession } from "@/src/features/session-workout/ui/finish-session-prompt";
 
 type Props = {
   dbReady: boolean;
@@ -21,7 +23,12 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { ongoingSession, endSession } = useOngoingSession();
+  const {
+    ongoingSession,
+    endSession,
+    getFinishProgramSavePrompt,
+    createFinishProgramDraft,
+  } = useOngoingSession();
 
   const [current, setCurrent] = useState<typeof ongoingSession>(null);
   const [sessionStartMs, setSessionStartMs] = useState<number | null>(null);
@@ -145,6 +152,21 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
     });
   };
 
+  const openProgramDraft = (draft: FinishProgramDraftRoute) => {
+    if (draft.kind === "edit") {
+      router.push({
+        pathname: "/program-workout/[id]",
+        params: { id: draft.programId, draftKey: draft.draftKey },
+      });
+      return;
+    }
+
+    router.push({
+      pathname: "/program-workout/new",
+      params: { draftKey: draft.draftKey },
+    });
+  };
+
   const handleFinishPress = async () => {
     if (!sessionId) return;
 
@@ -153,24 +175,34 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
       return;
     }
 
-    clearAutoCompactTimer();
+    void confirmFinishSession({
+      getPrompt: getFinishProgramSavePrompt,
+      createProgramDraft: createFinishProgramDraft,
+      finish: () =>
+        new Promise<void>((resolve, reject) => {
+          clearAutoCompactTimer();
 
-    Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: HIDDEN_OFFSET,
-        duration: 160,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 160,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // provider handles DB write + clearing ongoing
-      endSession().catch((e) =>
-        console.warn("[current-session-banner] failed to finish session", e)
-      );
+          Animated.parallel([
+            Animated.timing(translateY, {
+              toValue: HIDDEN_OFFSET,
+              duration: 160,
+              useNativeDriver: true,
+            }),
+            Animated.timing(opacity, {
+              toValue: 0,
+              duration: 160,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            endSession().then(resolve).catch(reject);
+          });
+        }),
+      onFinished: ({ draft }) => {
+        if (draft) openProgramDraft(draft);
+      },
+      onError: (e) => {
+        console.warn("[current-session-banner] failed to finish session", e);
+      },
     });
   };
 

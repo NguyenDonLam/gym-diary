@@ -1,13 +1,16 @@
 import React from "react";
-import { Text, TextInput, View, Pressable } from "react-native";
-import { SetProgramFormData } from "../domain/type";
+import { Pressable, Text, TextInput, View } from "react-native";
+import { ChevronsUpDown, Flame, Gauge, Wind } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
-import { Wind, Gauge, Flame, ChevronsUpDown } from "lucide-react-native";
-import { LOAD_UNITS } from "@/db/enums";
+
+import ValueWheelSheet from "@/src/components/value-wheel-sheet";
+import { LOAD_UNITS, LoadUnit, QuantityUnit } from "@/db/enums";
+import { SetProgramFormData } from "../domain/type";
 
 type SetProgramFormProps = {
   formData: SetProgramFormData;
   index: number;
+  quantityUnit?: QuantityUnit;
   setFormData: (next: SetProgramFormData) => void;
 };
 
@@ -15,31 +18,26 @@ const BAND_OPTIONS = [
   {
     id: "green",
     label: "Green",
-    baseClass: "bg-emerald-100 dark:bg-emerald-950",
     dotClass: "bg-emerald-500 dark:bg-emerald-300",
   },
   {
     id: "purple",
     label: "Purple",
-    baseClass: "bg-violet-100 dark:bg-violet-950",
     dotClass: "bg-violet-500 dark:bg-violet-300",
   },
   {
     id: "black",
     label: "Black",
-    baseClass: "bg-neutral-900 dark:bg-neutral-100",
     dotClass: "bg-neutral-900 dark:bg-neutral-50",
   },
   {
     id: "red",
     label: "Red",
-    baseClass: "bg-red-100 dark:bg-red-950",
     dotClass: "bg-red-500 dark:bg-red-300",
   },
   {
     id: "yellow",
     label: "Yellow",
-    baseClass: "bg-amber-100 dark:bg-amber-950",
     dotClass: "bg-amber-400 dark:bg-amber-300",
   },
 ] as const;
@@ -50,8 +48,18 @@ const INTENSITY_LEVELS = [
   { id: "intense", label: "Intense", rpe: "10" },
 ] as const;
 
+const CUSTOM_LOAD_OPTIONS = [
+  { value: "0", label: "0" },
+  { value: "bodyweight", label: "Bodyweight" },
+  { value: "assisted", label: "Assisted" },
+  { value: "machine", label: "Machine" },
+  { value: "other", label: "Other" },
+];
+
 const KG_TO_LB = 2.2046226218;
 const LB_TO_KG = 0.45359237;
+
+type PickerKind = "loadType" | "effort" | null;
 
 function parseNumericLoad(raw: string | null | undefined): number | null {
   if (raw == null) return null;
@@ -70,13 +78,74 @@ function formatNumericLoad(value: number): string {
   return value.toFixed(2).replace(/\.?0+$/, "");
 }
 
+function cleanDecimalInput(raw: string) {
+  let cleaned = raw.replace(/[^0-9.,]/g, "");
+  const firstDot = cleaned.search(/[.,]/);
+
+  if (firstDot !== -1) {
+    const head = cleaned.slice(0, firstDot + 1);
+    const tail = cleaned.slice(firstDot + 1).replace(/[.,]/g, "");
+    cleaned = head + tail;
+  }
+
+  return cleaned.replace(",", ".");
+}
+
+function isNumericLoadUnit(unit: LoadUnit) {
+  return unit === "kg" || unit === "lb";
+}
+
+function isLoadUnit(value: string | undefined): value is LoadUnit {
+  return LOAD_UNITS.includes(value as LoadUnit);
+}
+
+function getLoadUnitLabel(unit: LoadUnit) {
+  if (unit === "kg" || unit === "lb") return unit;
+  return unit[0].toUpperCase() + unit.slice(1);
+}
+
+function getQuantityUnitLabel(unit: QuantityUnit) {
+  if (unit === "reps") return "reps";
+  return "time";
+}
+
+function getSelectedIntensity(rpe: string) {
+  const found = INTENSITY_LEVELS.find((level) => level.rpe === rpe);
+  return found ?? INTENSITY_LEVELS[2];
+}
+
+function getSelectedBand(loadValue: string) {
+  return BAND_OPTIONS.find((band) => band.id === loadValue) ?? BAND_OPTIONS[0];
+}
+
+function getCustomLoadOptions(current: string) {
+  const trimmed = current.trim();
+  if (
+    trimmed === "" ||
+    CUSTOM_LOAD_OPTIONS.some((option) => option.value === trimmed)
+  ) {
+    return CUSTOM_LOAD_OPTIONS;
+  }
+
+  return [{ value: trimmed, label: trimmed }, ...CUSTOM_LOAD_OPTIONS];
+}
+
+function renderIntensityIcon(id: string, color: string) {
+  const size = 13;
+  if (id === "light") return <Wind size={size} color={color} />;
+  if (id === "medium") return <Gauge size={size} color={color} />;
+  return <Flame size={size} color={color} />;
+}
+
 export default function SetProgramForm({
   formData,
   index,
+  quantityUnit = "reps",
   setFormData,
 }: SetProgramFormProps) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
+  const [picker, setPicker] = React.useState<PickerKind>(null);
 
   const rememberedNumericRef = React.useRef<{
     kg: string | null;
@@ -90,13 +159,12 @@ export default function SetProgramForm({
     setFormData({ ...formData, ...patch });
 
   React.useEffect(() => {
-    if (!formData.rpe) {
-      update({ rpe: "7" });
-    }
-  }, [formData.rpe]);
+    if (formData.rpe.trim() !== "") return;
+    setFormData({ ...formData, rpe: "10" });
+  }, [formData, setFormData]);
 
   React.useEffect(() => {
-    if (formData.loadUnit !== "kg" && formData.loadUnit !== "lb") return;
+    if (!isNumericLoadUnit(formData.loadUnit)) return;
 
     const parsed = parseNumericLoad(formData.loadValue);
     if (parsed == null) return;
@@ -116,238 +184,231 @@ export default function SetProgramForm({
     return hit ?? "0";
   };
 
-  const cycleUnit = () => {
-    const current = formData.loadUnit;
-    const idx = LOAD_UNITS.indexOf(current);
-    const next =
-      idx === -1 || idx === LOAD_UNITS.length - 1
-        ? LOAD_UNITS[0]
-        : LOAD_UNITS[idx + 1];
-
-    if (current === "kg" || current === "lb") {
-      const parsed = parseNumericLoad(formData.loadValue);
-      if (parsed != null) {
-        if (current === "kg") {
-          rememberedNumericRef.current.kg = formatNumericLoad(parsed);
-          rememberedNumericRef.current.lb = formatNumericLoad(
-            parsed * KG_TO_LB,
-          );
-        } else {
-          rememberedNumericRef.current.lb = formatNumericLoad(parsed);
-          rememberedNumericRef.current.kg = formatNumericLoad(
-            parsed * LB_TO_KG,
-          );
-        }
-      }
-    }
-
-    let nextLoadValue = "";
-
-    if (next === "band") {
-      nextLoadValue = BAND_OPTIONS[0].id;
-    } else if (next === "custom") {
-      nextLoadValue = "0";
-    } else if (next === "kg") {
-      nextLoadValue = getRememberedNumericValue("kg");
-    } else if (next === "lb") {
-      nextLoadValue = getRememberedNumericValue("lb");
-    }
-
-    update({ loadUnit: next, loadValue: nextLoadValue });
+  const handleChangeTargetQuantity = (raw: string) => {
+    const cleaned = raw.replace(/[^\d]/g, "");
+    update({
+      targetQuantity: cleaned === "" ? null : Number(cleaned),
+    });
   };
 
   const handleChangeLoadValue = (raw: string) => {
-    const unit = formData.loadUnit;
-
-    if (unit === "kg" || unit === "lb") {
-      let cleaned = raw.replace(/[^0-9.,]/g, "");
-      const firstDot = cleaned.search(/[.,]/);
-      if (firstDot !== -1) {
-        const head = cleaned.slice(0, firstDot + 1);
-        const tail = cleaned.slice(firstDot + 1).replace(/[.,]/g, "");
-        cleaned = head + tail;
-      }
-
-      update({ loadValue: cleaned });
-
-      const parsed = parseNumericLoad(cleaned);
-      if (parsed != null) {
-        if (unit === "kg") {
-          rememberedNumericRef.current.kg = formatNumericLoad(parsed);
-          rememberedNumericRef.current.lb = formatNumericLoad(
-            parsed * KG_TO_LB,
-          );
-        } else {
-          rememberedNumericRef.current.lb = formatNumericLoad(parsed);
-          rememberedNumericRef.current.kg = formatNumericLoad(
-            parsed * LB_TO_KG,
-          );
-        }
-      }
-      return;
-    }
-
-    if (unit === "custom") {
-      update({ loadValue: raw });
-      return;
-    }
-    // band ignores typing
+    if (!isNumericLoadUnit(formData.loadUnit)) return;
+    update({ loadValue: cleanDecimalInput(raw) });
   };
 
-  const cycleBand = () => {
-    const currentId = formData.loadValue;
-    const idx = BAND_OPTIONS.findIndex((b) => b.id === currentId);
-    const next =
-      idx === -1 || idx === BAND_OPTIONS.length - 1
-        ? BAND_OPTIONS[0]
-        : BAND_OPTIONS[idx + 1];
-
-    update({ loadValue: next.id });
-  };
+  const selectedIntensity = getSelectedIntensity(formData.rpe);
+  const selectedBand = getSelectedBand(formData.loadValue);
+  const quantityLabel = getQuantityUnitLabel(quantityUnit);
 
   const isBandUnit = formData.loadUnit === "band";
-  const isNumericUnit =
-    formData.loadUnit === "kg" || formData.loadUnit === "lb";
-  const loadKeyboardType: any = isNumericUnit ? "numeric" : "default";
+  const isCustomUnit = formData.loadUnit === "custom";
+  const isNumericUnit = isNumericLoadUnit(formData.loadUnit);
 
-  const selectedBand =
-    BAND_OPTIONS.find((b) => b.id === formData.loadValue) ?? BAND_OPTIONS[0];
+  const loadDisplay = (() => {
+    if (isBandUnit) return selectedBand.label;
+    if (isCustomUnit) return formData.loadValue.trim() || "Custom";
+    return formData.loadValue.trim() || "0";
+  })();
 
-  const intensityIndex =
-    INTENSITY_LEVELS.findIndex((l) => l.rpe === formData.rpe) !== -1
-      ? INTENSITY_LEVELS.findIndex((l) => l.rpe === formData.rpe)
-      : 1;
-
-  const selectedIntensity = INTENSITY_LEVELS[intensityIndex];
-
-  const cycleIntensity = () => {
-    const currentIdx = INTENSITY_LEVELS.findIndex(
-      (l) => l.rpe === formData.rpe,
-    );
-    const nextIndex =
-      currentIdx === -1 ? 1 : (currentIdx + 1) % INTENSITY_LEVELS.length;
-    const next = INTENSITY_LEVELS[nextIndex];
-    update({ rpe: next.rpe });
-  };
-
-  const outerField = "flex-1 px-1 py-1";
-  const shellBase = "rounded-xl px-2 py-0.5 flex-row items-center";
-
-  const renderIntensityIcon = (id: string, active: boolean) => {
-    const size = 14;
-    const color = active
-      ? isDark
-        ? "#F9FAFB"
-        : "#111827"
-      : isDark
-        ? "#9CA3AF"
-        : "#6B7280";
-
-    if (id === "light") return <Wind size={size} color={color} />;
-    if (id === "medium") return <Gauge size={size} color={color} />;
-    return <Flame size={size} color={color} />;
-  };
-
-  const unitIconColor = isDark ? "#9CA3AF" : "#6B7280";
+  const iconColor = isDark ? "#F8F8F2" : "#111827";
+  const mutedIconColor = isDark ? "#6272A4" : "#6B7280";
+  const placeholderColor = isDark ? "#6272A4" : "#A3A3A3";
+  const fieldClass =
+    "h-9 justify-center rounded-xl bg-white px-2 dark:bg-[#343746]";
 
   return (
-    <View className="mt-1 flex-row items-center gap-2">
-      <View className={outerField}>
-        <View
-          className={`${shellBase} ${isDark ? "bg-[#44475A]" : "bg-white"}`}
-        >
+    <View className="mt-1.5 flex-row items-center gap-2 rounded-2xl bg-neutral-100 px-2 py-1.5 dark:bg-[#21222C]">
+      <View className="h-7 w-7 items-center justify-center rounded-full bg-white dark:bg-[#343746]">
+        <Text className="text-[10px] font-semibold text-neutral-600 dark:text-[#F8F8F2]">
+          {index + 1}
+        </Text>
+      </View>
+
+      <View className={fieldClass} style={{ flex: 0.82 }}>
+        <TextInput
+          value={
+            formData.targetQuantity == null
+              ? ""
+              : String(formData.targetQuantity)
+          }
+          onChangeText={handleChangeTargetQuantity}
+          keyboardType="number-pad"
+          placeholder="-"
+          placeholderTextColor={placeholderColor}
+          selectTextOnFocus
+          className="p-0 text-center text-[14px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
+        />
+      </View>
+
+      <View
+        className="h-9 flex-row items-center rounded-xl bg-white dark:bg-[#343746]"
+        style={{ flex: 1.55 }}
+      >
+        {isNumericUnit ? (
           <TextInput
-            className="flex-1 text-center text-[11px] text-neutral-900 dark:text-[#F8F8F2]"
-            keyboardType="number-pad"
-            value={
-              formData.targetQuantity == null
-                ? ""
-                : String(formData.targetQuantity)
-            }
-            onChangeText={(raw) => {
-              const cleaned = raw.replace(/[^\d]/g, "");
-              if (cleaned.length === 0) {
-                update({ targetQuantity: undefined });
-                return;
-              }
-              update({ targetQuantity: Number(cleaned) });
-            }}
-            placeholder="..."
-            placeholderTextColor={isDark ? "#6272A4" : "#9CA3AF"}
+            value={formData.loadValue}
+            onChangeText={handleChangeLoadValue}
+            keyboardType="decimal-pad"
+            placeholder="0"
+            placeholderTextColor={placeholderColor}
+            selectTextOnFocus
+            className="min-w-0 flex-1 px-2 py-0 text-center text-[14px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
           />
-        </View>
-      </View>
-
-      <View className={outerField}>
-        <View
-          className={`${shellBase} ${isDark ? "bg-[#44475A]" : "bg-white"}`}
-        >
-          {!isBandUnit && (
-            <>
-              <TextInput
-                className="flex-1 text-center text-[11px] text-neutral-900 dark:text-[#F8F8F2]"
-                keyboardType={loadKeyboardType}
-                value={formData.loadValue}
-                onChangeText={handleChangeLoadValue}
-                placeholder="..."
-                placeholderTextColor={isDark ? "#6272A4" : "#9CA3AF"}
+        ) : (
+          <Pressable
+            onPress={() => setPicker("loadType")}
+            className="min-w-0 flex-1 flex-row items-center justify-center px-2"
+            hitSlop={6}
+          >
+            {isBandUnit ? (
+              <View
+                className={`mr-1.5 h-3 w-7 rounded-full ${selectedBand.dotClass}`}
               />
+            ) : null}
+            <Text
+              className="text-center text-[13px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.72}
+            >
+              {loadDisplay}
+            </Text>
+          </Pressable>
+        )}
 
-              <Pressable
-                onPress={cycleUnit}
-                hitSlop={8}
-                className="ml-1 flex-row items-center gap-0.5"
-              >
-                <Text className="text-[9px] text-neutral-600 dark:text-[#F8F8F2]">
-                  {formData.loadUnit}
-                </Text>
-                <ChevronsUpDown size={11} color={unitIconColor} />
-              </Pressable>
-            </>
-          )}
-
-          {isBandUnit && (
-            <>
-              <Pressable
-                onPress={cycleBand}
-                hitSlop={8}
-                className="flex-1 items-center"
-              >
-                <View
-                  className={`h-4 w-10 rounded-full ${selectedBand.dotClass}`}
-                />
-              </Pressable>
-
-              <Pressable
-                onPress={cycleUnit}
-                hitSlop={8}
-                className="ml-1 flex-row items-center gap-0.5"
-              >
-                <Text className="text-[9px] text-neutral-600 dark:text-[#F8F8F2]">
-                  band
-                </Text>
-                <ChevronsUpDown size={11} color={unitIconColor} />
-              </Pressable>
-            </>
-          )}
-        </View>
-      </View>
-
-      <View className={outerField}>
         <Pressable
-          onPress={cycleIntensity}
+          onPress={() => setPicker("loadType")}
+          className="mr-1 h-7 flex-row items-center rounded-lg border border-neutral-300 bg-neutral-100 px-2 dark:border-[#6272A4] dark:bg-[#282A36]"
           hitSlop={8}
-          className={`${shellBase} ${
-            isDark ? "bg-[#44475A]" : "bg-white"
-          } justify-center`}
         >
-          {renderIntensityIcon(selectedIntensity.id, true)}
-
-          <Text className="ml-1 text-[10px] text-neutral-900 dark:text-[#F8F8F2]">
-            {selectedIntensity.label}
+          <Text className="text-[10px] font-bold text-neutral-800 dark:text-[#F8F8F2]">
+            {getLoadUnitLabel(formData.loadUnit)}
           </Text>
+          <ChevronsUpDown size={11} color={mutedIconColor} />
         </Pressable>
       </View>
+
+      <Pressable
+        onPress={() => setPicker("effort")}
+        className="h-9 w-[70px] flex-row items-center justify-center rounded-xl bg-white px-1 dark:bg-[#343746]"
+        hitSlop={6}
+      >
+        {renderIntensityIcon(selectedIntensity.id, iconColor)}
+        <Text
+          className="ml-1 text-[10px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.72}
+        >
+          {selectedIntensity.label}
+        </Text>
+      </Pressable>
+
+      {picker === "loadType" ? (
+        <ValueWheelSheet
+          title="Load type"
+          subtitle={`Set ${index + 1} - ${quantityLabel}`}
+          columns={(values) => {
+            const activeUnit = isLoadUnit(values.unit)
+              ? values.unit
+              : formData.loadUnit;
+
+            return [
+              {
+                id: "unit",
+                label: "Unit",
+                selectedValue: formData.loadUnit,
+                options: LOAD_UNITS.map((unit) => ({
+                  value: unit,
+                  label: getLoadUnitLabel(unit),
+                })),
+              },
+              ...(activeUnit === "band"
+                ? [
+                    {
+                      id: "band",
+                      label: "Band",
+                      selectedValue: selectedBand.id,
+                      options: BAND_OPTIONS.map((band) => ({
+                        value: band.id,
+                        label: band.label,
+                        swatchClassName: band.dotClass,
+                      })),
+                    },
+                  ]
+                : []),
+              ...(activeUnit === "custom"
+                ? [
+                    {
+                      id: "custom",
+                      label: "Value",
+                      selectedValue:
+                        formData.loadUnit === "custom"
+                          ? formData.loadValue.trim() || "0"
+                          : "0",
+                      options: getCustomLoadOptions(
+                        formData.loadUnit === "custom"
+                          ? formData.loadValue
+                          : "0",
+                      ),
+                    },
+                  ]
+                : []),
+            ];
+          }}
+          onCancel={() => setPicker(null)}
+          onConfirm={(values) => {
+            const nextUnit = isLoadUnit(values.unit)
+              ? values.unit
+              : formData.loadUnit;
+
+            if (nextUnit === "band") {
+              update({
+                loadUnit: nextUnit,
+                loadValue: values.band ?? selectedBand.id,
+              });
+            } else if (nextUnit === "custom") {
+              update({
+                loadUnit: nextUnit,
+                loadValue:
+                  values.custom ??
+                  (formData.loadUnit === "custom" ? formData.loadValue : "0"),
+              });
+            } else {
+              update({
+                loadUnit: nextUnit,
+                loadValue: getRememberedNumericValue(nextUnit),
+              });
+            }
+
+            setPicker(null);
+          }}
+        />
+      ) : null}
+
+      {picker === "effort" ? (
+        <ValueWheelSheet
+          title="Effort"
+          subtitle={`Set ${index + 1}`}
+          columns={[
+            {
+              id: "rpe",
+              label: "RPE",
+              selectedValue: selectedIntensity.rpe,
+              options: INTENSITY_LEVELS.map((level) => ({
+                value: level.rpe,
+                label: level.label,
+                detail: level.rpe,
+              })),
+            },
+          ]}
+          onCancel={() => setPicker(null)}
+          onConfirm={(values) => {
+            update({ rpe: values.rpe ?? selectedIntensity.rpe });
+            setPicker(null);
+          }}
+        />
+      ) : null}
     </View>
   );
 }

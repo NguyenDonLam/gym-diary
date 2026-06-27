@@ -202,6 +202,32 @@ npx expo start
 
 Use the Expo CLI output to run on iOS simulator, Android emulator, or a physical device.
 
+### Windows 11 Expo Go LAN URL
+
+Sometimes on Windows 11, Expo may print a QR/link that points to
+`exp://127.0.0.1:8081`. That address only works on the computer itself, so a
+physical phone cannot connect to it.
+
+Find your computer's Wi-Fi IPv4 address:
+
+```powershell
+ipconfig
+```
+
+Then start Expo from the same PowerShell window with that IP:
+
+```powershell
+$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.x.x"; npx expo start
+```
+
+Replace `192.168.x.x` with the IPv4 address from `ipconfig`. This environment
+variable is temporary for that terminal session; it does not edit `node_modules`
+or any project files. Close the terminal, or run this to clear it:
+
+```powershell
+Remove-Item Env:REACT_NATIVE_PACKAGER_HOSTNAME
+```
+
 ---
 
 ## Seeding local data

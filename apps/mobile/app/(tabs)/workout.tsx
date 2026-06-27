@@ -14,6 +14,8 @@ import type { TemplateFolder } from "@/src/features/template-folder/domain/types
 import FolderRow from "@/src/features/template-folder/components/folder-row";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
 import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
+import type { FinishProgramDraftRoute } from "@/src/features/session-workout/hooks/use-ongoing-session";
+import { confirmFinishSession } from "@/src/features/session-workout/ui/finish-session-prompt";
 import { ProgramRow } from "@/src/features/program-workout/ui/template-row";
 import { UnassignedHeaderRow } from "@/src/components/unassigned-header-row";
 import {
@@ -37,8 +39,14 @@ export default function Workout() {
   const [unassignedOpen, setUnassignedOpen] = useState(true);
   const [openFolderIds, setOpenFolderIds] = useState<string[]>([]);
 
-  const { ongoingSession, startSession, endSession, discardSession } =
-    useOngoingSession();
+  const {
+    ongoingSession,
+    startSession,
+    endSession,
+    getFinishProgramSavePrompt,
+    createFinishProgramDraft,
+    discardSession,
+  } = useOngoingSession();
 
   // keep layout in sync with source templates (initial + external changes)
   useEffect(() => {
@@ -90,6 +98,21 @@ export default function Workout() {
     });
   };
 
+  const openProgramDraft = (draft: FinishProgramDraftRoute) => {
+    if (draft.kind === "edit") {
+      router.push({
+        pathname: "/program-workout/[id]",
+        params: { id: draft.programId, draftKey: draft.draftKey },
+      });
+      return;
+    }
+
+    router.push({
+      pathname: "/program-workout/new",
+      params: { draftKey: draft.draftKey },
+    });
+  };
+
   async function handleStartSession(program?: WorkoutProgram) {
     const startNewSession = async () => {
       await startSession(program?.id);
@@ -118,13 +141,26 @@ export default function Workout() {
           },
           {
             text: "Finish",
-            onPress: async () => {
-              try {
-                await endSession();
-                await startNewSession();
-              } catch (err) {
-                console.warn("[workout] failed to finish ongoing session", err);
-              }
+            onPress: () => {
+              void confirmFinishSession({
+                getPrompt: getFinishProgramSavePrompt,
+                createProgramDraft: createFinishProgramDraft,
+                finish: endSession,
+                onFinished: async ({ draft }) => {
+                  if (draft) {
+                    openProgramDraft(draft);
+                    return;
+                  }
+
+                  await startNewSession();
+                },
+                onError: (err) => {
+                  console.warn(
+                    "[workout] failed to finish ongoing session",
+                    err,
+                  );
+                },
+              });
             },
           },
           {

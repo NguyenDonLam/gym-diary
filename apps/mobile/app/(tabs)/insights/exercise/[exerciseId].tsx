@@ -14,6 +14,7 @@ import { exercisePeriodStatRepository } from "@/src/features/exercise-period-sta
 import { ExerciseStatsView } from "@/src/features/exercise-stats/components/exercise-stat-view";
 import { ExercisePeriodStatsView } from "@/src/features/exercise-period-stats/components/exercise-period-stats-view";
 import { ExercisePeriodDeltaView } from "@/src/features/exercise-period-stats/components/exercise-period-delta-view";
+import { ExerciseStrengthScoreTrendView } from "@/src/features/exercise-period-stats/components/exercise-strength-score-trend-view";
 
 type PeriodKey = "week" | "month" | "year";
 
@@ -142,6 +143,12 @@ export default function ExerciseProgressionScreen() {
             />
 
             <ExercisePeriodDeltaView
+              rows={periodRows}
+              period={period}
+              className="mb-3"
+            />
+
+            <ExerciseStrengthScoreTrendView
               rows={periodRows}
               period={period}
               className="mb-3"

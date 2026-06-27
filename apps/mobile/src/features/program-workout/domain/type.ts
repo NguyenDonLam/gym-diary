@@ -1,9 +1,10 @@
-import { ProgramColor } from "@/db/enums";
+import type { ProgramColor } from "@/db/enums";
 import {
   ExerciseProgram,
   ExerciseProgramFormData,
 } from "../../program-exercise/domain/type";
 
+export type { ProgramColor };
 
 export const COLOR_STRIP_MAP: Record<ProgramColor, string> = {
   neutral: "bg-neutral-400",

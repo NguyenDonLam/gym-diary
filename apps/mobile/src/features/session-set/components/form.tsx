@@ -13,6 +13,7 @@ const EFFORT_LEVELS = [
   { id: "medium", label: "Medium", rpe: 7 },
   { id: "intense", label: "Intense", rpe: 10 },
 ] as const;
+const DEFAULT_EFFORT = EFFORT_LEVELS[2];
 
 const LOAD_UNIT_OPTIONS: { id: SessionSet["loadUnit"]; label: string }[] = [
   { id: "kg", label: "kg" },
@@ -57,9 +58,9 @@ function isNumericLoadUnit(unit: SessionSet["loadUnit"]) {
 }
 
 function getEffortFromRpe(rpe: number | null | undefined) {
-  if (rpe == null) return EFFORT_LEVELS[1];
+  if (rpe == null) return DEFAULT_EFFORT;
   const found = EFFORT_LEVELS.find((lvl) => lvl.rpe === rpe);
-  return found ?? EFFORT_LEVELS[1];
+  return found ?? DEFAULT_EFFORT;
 }
 
 function getNextLoadUnit(current: SessionSet["loadUnit"]) {
@@ -93,7 +94,7 @@ function renderEffortIcon(
   id: (typeof EFFORT_LEVELS)[number]["id"],
   color: string,
 ) {
-  const size = 14;
+  const size = 16;
   if (id === "light") return <Wind size={size} color={color} />;
   if (id === "medium") return <Gauge size={size} color={color} />;
   return <Flame size={size} color={color} />;
@@ -174,7 +175,7 @@ export function SessionSetRow({
     if (!isNumericLoadUnit(v.loadUnit)) return true;
 
     const raw = parseNumericLoad(trimmed);
-    return raw != null && raw > 0;
+    return raw != null && raw >= 0;
   };
 
   const isValid = (v: SessionSet) =>
@@ -193,7 +194,7 @@ export function SessionSetRow({
   const ensureRpeDefault = (v: SessionSet): SessionSet => {
     if (v.rpe != null) return v;
     if (readOnly) return v;
-    const next: SessionSet = { ...v, rpe: EFFORT_LEVELS[1].rpe };
+    const next: SessionSet = { ...v, rpe: DEFAULT_EFFORT.rpe };
     latestRef.current = next;
     setValue(next);
     return next;
@@ -345,9 +346,9 @@ export function SessionSetRow({
     if (readOnly) return;
 
     const v = latestRef.current;
-    const currentRpe = v.rpe ?? EFFORT_LEVELS[1].rpe;
+    const currentRpe = v.rpe ?? DEFAULT_EFFORT.rpe;
     const idx = EFFORT_LEVELS.findIndex((lvl) => lvl.rpe === currentRpe);
-    const nextIdx = idx === -1 ? 1 : (idx + 1) % EFFORT_LEVELS.length;
+    const nextIdx = idx === -1 ? 2 : (idx + 1) % EFFORT_LEVELS.length;
     const nextLvl = EFFORT_LEVELS[nextIdx];
 
     apply({ rpe: nextLvl.rpe });
@@ -365,30 +366,30 @@ export function SessionSetRow({
 
   return (
     <View
-      className={`mb-1.5 rounded-xl px-2 py-1.5 ${shellBg} ${readOnly ? "opacity-70" : ""}`}
+      className={`mb-2 rounded-xl px-2.5 py-2 ${shellBg} ${readOnly ? "opacity-70" : ""}`}
     >
       <View className="flex-row items-center gap-2">
         <Pressable
           disabled={readOnly}
           onPress={fillFromTarget}
-          hitSlop={10}
-          className="w-5 items-center"
+          hitSlop={8}
+          className="h-10 w-9 items-center justify-center rounded-xl bg-neutral-50 dark:bg-neutral-900"
         >
           {showCompleted ? (
-            <CheckCircle2 width={18} height={18} color="#16A34A" />
+            <CheckCircle2 width={24} height={24} color="#16A34A" />
           ) : (
-            <Circle width={18} height={18} color={circleIdleColor} />
+            <Circle width={24} height={24} color={circleIdleColor} />
           )}
         </Pressable>
 
         <Pressable
           disabled={readOnly}
           onPress={() => repsRef.current?.focus()}
-          className="flex-1 rounded-xl bg-neutral-50 px-2 py-0.5 dark:bg-neutral-900"
+          className="h-10 flex-1 justify-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900"
         >
           <TextInput
             ref={repsRef}
-            className="text-center text-[11px] text-neutral-900 dark:text-neutral-50"
+            className="text-center text-[14px] font-semibold text-neutral-900 dark:text-neutral-50"
             keyboardType="numeric"
             editable={!readOnly}
             placeholder={repsPlaceholder}
@@ -399,21 +400,21 @@ export function SessionSetRow({
           />
         </Pressable>
 
-        <View className="flex-1 flex-row items-center rounded-xl bg-neutral-50 px-2 py-0.5 dark:bg-neutral-900">
+        <View className="h-10 flex-1 flex-row items-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900">
           {isBandUnit ? (
             <Pressable
               disabled={readOnly}
               onPress={cycleBand}
               hitSlop={8}
-              className="flex-1 items-center justify-center"
+              className="h-full flex-1 items-center justify-center"
             >
               <View
-                className={`h-4 w-10 rounded-full ${selectedBand.dotClass}`}
+                className={`h-5 w-12 rounded-full ${selectedBand.dotClass}`}
               />
             </Pressable>
           ) : (
             <TextInput
-              className="flex-1 text-center text-[11px] text-neutral-900 dark:text-neutral-50"
+              className="flex-1 text-center text-[14px] font-semibold text-neutral-900 dark:text-neutral-50"
               keyboardType={loadKeyboardType}
               editable={!readOnly}
               placeholder={weightPlaceholder}
@@ -428,9 +429,9 @@ export function SessionSetRow({
             disabled={readOnly}
             onPress={cycleLoadUnit}
             hitSlop={8}
-            className="ml-1 min-w-[38px] items-center justify-center rounded-lg bg-neutral-200 px-1.5 py-1 dark:bg-neutral-800"
+            className="ml-1 h-8 min-w-[46px] items-center justify-center rounded-lg bg-neutral-200 px-2 dark:bg-neutral-800"
           >
-            <Text className="text-[10px] font-medium text-neutral-900 dark:text-neutral-50">
+            <Text className="text-[11px] font-semibold text-neutral-900 dark:text-neutral-50">
               {getLoadUnitLabel(value.loadUnit)}
             </Text>
           </Pressable>
@@ -440,10 +441,10 @@ export function SessionSetRow({
           disabled={readOnly}
           onPress={cycleEffort}
           hitSlop={8}
-          className="w-20 flex-row items-center justify-center gap-1 rounded-xl bg-neutral-50 px-1.5 py-0.5 dark:bg-neutral-900"
+          className="h-10 w-[88px] flex-row items-center justify-center gap-1 rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900"
         >
           {renderEffortIcon(effort.id, activeIcon)}
-          <Text className="text-[9px] text-neutral-900 dark:text-neutral-50">
+          <Text className="text-[11px] font-semibold text-neutral-900 dark:text-neutral-50">
             {effort.label}
           </Text>
         </Pressable>

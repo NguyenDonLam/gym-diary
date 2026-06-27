@@ -132,6 +132,20 @@ export default function OngoingSessionPage() {
     [readOnly, refresh, bumpMutationVersion],
   );
 
+  const onSetAdd = useCallback(
+    async (set: SessionSet) => {
+      if (readOnly) return;
+
+      try {
+        await sessionSetRepository.save(set);
+      } catch (err) {
+        console.error("Failed to add session set", err);
+        throw err;
+      }
+    },
+    [readOnly],
+  );
+
   const handleAddExercises = useCallback(
     async (selectedExercises: Exercise[]) => {
       if (readOnly || !view) return;
@@ -259,6 +273,7 @@ export default function OngoingSessionPage() {
                     },
               );
             }}
+            onSetAdd={onSetAdd}
             onSetCommit={onSetCommit}
           />
         ))}

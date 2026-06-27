@@ -502,9 +502,14 @@ export default function ExerciseLibraryPicker({
                 setNewExerciseName(q.trim());
                 setCreateOpen(true);
               }}
-              className="h-[50px] w-[50px] items-center justify-center rounded-2xl bg-neutral-900 dark:bg-[#BD93F9]"
+              accessibilityRole="button"
+              accessibilityLabel="Create new exercise"
+              className="h-[50px] flex-row items-center justify-center gap-1.5 rounded-2xl bg-neutral-900 px-4 dark:bg-[#BD93F9]"
             >
-              <Plus size={18} color={isDark ? "#282A36" : "#FFFFFF"} />
+              <Plus size={17} color={isDark ? "#282A36" : "#FFFFFF"} />
+              <Text className="text-[13px] font-semibold text-white dark:text-[#282A36]">
+                New exercise
+              </Text>
             </Pressable>
           ) : null}
         </View>
@@ -619,7 +624,7 @@ export default function ExerciseLibraryPicker({
         >
           <View className="absolute inset-x-8 top-32 rounded-2xl bg-white px-4 py-3 dark:bg-[#343746]">
             <Text className="mb-2 text-[13px] font-semibold text-neutral-900 dark:text-[#F8F8F2]">
-              New exercise
+              Create exercise
             </Text>
 
             <TextInput
@@ -648,7 +653,7 @@ export default function ExerciseLibraryPicker({
                 className="h-7 items-center justify-center rounded-full bg-neutral-900 px-3 dark:bg-[#BD93F9]"
               >
                 <Text className="text-[12px] font-medium text-white dark:text-[#282A36]">
-                  Save
+                  Create
                 </Text>
               </Pressable>
             </View>
