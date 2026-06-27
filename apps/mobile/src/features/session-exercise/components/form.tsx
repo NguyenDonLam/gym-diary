@@ -2,7 +2,7 @@
 
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import { ChevronDown, ChevronRight, Clock3 } from "lucide-react-native";
+import { ChevronDown, ChevronRight, Clock3, Plus } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
 import { SessionExercise } from "@/src/features/session-exercise/domain/types";
@@ -93,6 +93,7 @@ export function SessionExerciseCard({
   const { colorScheme } = useColorScheme();
   const chevronColor = colorScheme === "dark" ? "#E5E7EB" : "#4B5563";
   const subtleIcon = colorScheme === "dark" ? "#9CA3AF" : "#6B7280";
+  const primaryIcon = colorScheme === "dark" ? "#282A36" : "#FFFFFF";
 
   const sets = value.sets ?? [];
   const lastSets = value.lastSessionSets ?? [];
@@ -215,17 +216,17 @@ export function SessionExerciseCard({
           ) : null}
 
           {sets.length > 0 && (
-            <View className="mb-1 flex-row items-center gap-2 px-1">
-              <Text className="w-5 text-[9px] text-neutral-500 dark:text-neutral-500">
+            <View className="mb-1.5 flex-row items-center gap-2 px-1">
+              <Text className="w-9 text-center text-[10px] text-neutral-500 dark:text-neutral-500">
                 ✓
               </Text>
-              <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-neutral-500">
+              <Text className="flex-1 text-center text-[10px] text-neutral-500 dark:text-neutral-500">
                 Volume
               </Text>
-              <Text className="flex-1 text-center text-[9px] text-neutral-500 dark:text-neutral-500">
+              <Text className="flex-1 text-center text-[10px] text-neutral-500 dark:text-neutral-500">
                 Load
               </Text>
-              <Text className="w-16 text-center text-[9px] text-neutral-500 dark:text-neutral-500">
+              <Text className="w-[88px] text-center text-[10px] text-neutral-500 dark:text-neutral-500">
                 Effort
               </Text>
             </View>
@@ -267,10 +268,11 @@ export function SessionExerciseCard({
           {!readOnly && (
             <Pressable
               onPress={addSet}
-              className="mt-2 self-end h-6 w-6 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800"
+              className="mt-3 h-10 self-end flex-row items-center justify-center gap-1.5 rounded-full bg-neutral-900 px-3 dark:bg-[#BD93F9]"
             >
-              <Text className="text-[14px] text-neutral-700 dark:text-neutral-200">
-                +
+              <Plus size={18} color={primaryIcon} />
+              <Text className="text-[13px] font-semibold text-white dark:text-[#282A36]">
+                Set
               </Text>
             </Pressable>
           )}
