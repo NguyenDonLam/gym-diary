@@ -1,13 +1,14 @@
 // apps/mobile/app/session-workout/session-exercise-progress.tsx
 
 import React from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, type LayoutChangeEvent } from "react-native";
 import { BarChart3, List, Sigma, Trophy } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
 export type TrendPoint = {
   id?: string;
   label: string; // e.g. "W-3"
+  occurredAt?: string; // ISO timestamp used for time-relative chart spacing.
   bestScore: number;
   volumeScore: number;
   bestLabel: string; // e.g. "62.5×8"
@@ -34,9 +35,16 @@ function formatDelta(n: number) {
   return `${sign}${Math.round(n)}`;
 }
 
+function getPointTime(point: TrendPoint): number | null {
+  if (!point.occurredAt) return null;
+  const time = new Date(point.occurredAt).getTime();
+  return Number.isFinite(time) ? time : null;
+}
+
 function DotPlot({ points, metric }: { points: TrendPoint[]; metric: Metric }) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
+  const [plotWidth, setPlotWidth] = React.useState(0);
 
   const values = points.map((p) =>
     metric === "best" ? p.bestScore : p.volumeScore
@@ -48,6 +56,7 @@ function DotPlot({ points, metric }: { points: TrendPoint[]; metric: Metric }) {
 
   const plotH = 56;
   const dot = 8;
+  const hitWidth = 36;
 
   const grid = isDark ? "#262626" : "#E5E7EB";
   const axisText = isDark ? "#A3A3A3" : "#6B7280";
@@ -69,6 +78,30 @@ function DotPlot({ points, metric }: { points: TrendPoint[]; metric: Metric }) {
     if (range <= 0) return Math.round((plotH - dot) / 2);
     const t = clamp01((v - min) / range);
     return Math.round((1 - t) * (plotH - dot));
+  };
+
+  const pointTimes = points.map(getPointTime);
+  const useTimeScale = pointTimes.every(
+    (time): time is number => time != null,
+  );
+  const fallbackXValues = points.map((_, i) => i);
+  const xValues: number[] = useTimeScale
+    ? pointTimes.filter((time): time is number => time != null)
+    : fallbackXValues;
+  const xMin = Math.min(...xValues);
+  const xMax = Math.max(...xValues);
+  const xRange = xMax - xMin;
+
+  const onPlotLayout = (event: LayoutChangeEvent) => {
+    setPlotWidth(event.nativeEvent.layout.width);
+  };
+
+  const xFor = (x: number) => {
+    if (plotWidth <= 0) return hitWidth / 2;
+    if (xRange <= 0) return Math.round(plotWidth / 2);
+
+    const innerWidth = Math.max(0, plotWidth - hitWidth);
+    return Math.round(hitWidth / 2 + ((x - xMin) / xRange) * innerWidth);
   };
 
   const yVals = clean.map(yFor);
@@ -119,7 +152,10 @@ function DotPlot({ points, metric }: { points: TrendPoint[]; metric: Metric }) {
           </Text>
         </View>
 
-        <View style={{ flex: 1, height: plotH, position: "relative" }}>
+        <View
+          onLayout={onPlotLayout}
+          style={{ flex: 1, height: plotH, position: "relative" }}
+        >
           <View
             style={{
               position: "absolute",
@@ -154,76 +190,93 @@ function DotPlot({ points, metric }: { points: TrendPoint[]; metric: Metric }) {
             }}
           />
 
-          <View className="flex-row" style={{ height: plotH }}>
-            {points.map((p, i) => {
-              const y = yVals[i];
-              const isSel = i === selected;
-              const pointKey = `${p.id ?? p.label}-${i}`;
+          {points.map((p, i) => {
+            const x = xFor(xValues[i]);
+            const y = yVals[i];
+            const isSel = i === selected;
+            const pointKey = `${p.id ?? p.label}-${i}`;
 
-              const dotColor = isSel ? highlight : baseDot;
-              const stemColor = isSel ? highlight : stem;
+            const dotColor = isSel ? highlight : baseDot;
+            const stemColor = isSel ? highlight : stem;
 
-              const stemTop = y + Math.round(dot / 2);
-              const stemHeight = Math.max(0, plotH - stemTop - 1);
+            const dotSize = isSel ? dot + 2 : dot;
+            const stemTop = y + Math.round(dot / 2);
+            const stemHeight = Math.max(0, plotH - stemTop - 1);
 
-              return (
-                <Pressable
-                  key={pointKey}
-                  onPress={() => setSelected(i)}
+            return (
+              <Pressable
+                key={pointKey}
+                onPress={() => setSelected(i)}
+                style={{
+                  position: "absolute",
+                  left: x - hitWidth / 2,
+                  top: 0,
+                  width: hitWidth,
+                  height: plotH,
+                  alignItems: "center",
+                }}
+                hitSlop={6}
+              >
+                <View
                   style={{
-                    flex: 1,
-                    height: plotH,
-                    position: "relative",
-                    alignItems: "center",
-                    justifyContent: "flex-start",
+                    position: "absolute",
+                    left: (hitWidth - 2) / 2,
+                    top: stemTop,
+                    width: 2,
+                    height: stemHeight,
+                    borderRadius: 2,
+                    backgroundColor: stemColor,
+                    opacity: isSel ? 0.9 : 0.55,
                   }}
-                  hitSlop={6}
-                >
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: stemTop,
-                      width: 2,
-                      height: stemHeight,
-                      borderRadius: 2,
-                      backgroundColor: stemColor,
-                      opacity: isSel ? 0.9 : 0.55,
-                    }}
-                  />
+                />
 
-                  <View
-                    style={{
-                      position: "absolute",
-                      top: y,
-                      width: isSel ? dot + 2 : dot,
-                      height: isSel ? dot + 2 : dot,
-                      borderRadius: (isSel ? dot + 2 : dot) / 2,
-                      backgroundColor: dotColor,
-                    }}
-                  />
-                </Pressable>
-              );
-            })}
-          </View>
+                <View
+                  style={{
+                    position: "absolute",
+                    left: (hitWidth - dotSize) / 2,
+                    top: y,
+                    width: dotSize,
+                    height: dotSize,
+                    borderRadius: dotSize / 2,
+                    backgroundColor: dotColor,
+                  }}
+                />
+              </Pressable>
+            );
+          })}
         </View>
       </View>
 
-      <View className="mt-1 flex-row" style={{ paddingLeft: 34 }}>
-        {points.map((p, i) => {
-          const show = i % 2 === 0 || i === points.length - 1;
-          const isSel = i === selected;
-          const pointKey = `${p.id ?? p.label}-${i}`;
-          return (
-            <View key={pointKey} style={{ flex: 1, alignItems: "center" }}>
-              <Text
-                className="text-[9px]"
-                style={{ color: isSel ? highlight : axisText }}
+      <View className="mt-1 flex-row">
+        <View style={{ width: 34 }} />
+        <View style={{ flex: 1, height: 12, position: "relative" }}>
+          {points.map((p, i) => {
+            const show = i % 2 === 0 || i === points.length - 1;
+            const isSel = i === selected;
+            const pointKey = `${p.id ?? p.label}-${i}`;
+            const x = xFor(xValues[i]);
+
+            return (
+              <View
+                key={pointKey}
+                style={{
+                  position: "absolute",
+                  left: x - hitWidth / 2,
+                  width: hitWidth,
+                  alignItems: "center",
+                }}
               >
-                {show ? p.label : ""}
-              </Text>
-            </View>
-          );
-        })}
+                <Text
+                  className="text-[9px]"
+                  numberOfLines={1}
+                  style={{ color: isSel ? highlight : axisText }}
+                >
+                  {show ? p.label : ""}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
       </View>
     </View>
   );

@@ -43,6 +43,7 @@ type ProgressSession = {
 export type SessionExerciseProgressHistoryPoint = {
   id: string;
   label: string;
+  occurredAt: string;
   bestScore: number;
   volumeScore: number;
   bestLabel: string;
@@ -174,6 +175,7 @@ function toProgressPoint(
   return {
     id: session.sessionExerciseId,
     label: formatDateLabel(session.startedAt),
+    occurredAt: session.startedAt.toISOString(),
     bestScore,
     volumeScore: volumeScore > 0 ? volumeScore : quantityTotal,
     bestLabel,
