@@ -2,7 +2,13 @@
 
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import { ChevronDown, ChevronRight, Clock3, Plus } from "lucide-react-native";
+import {
+  ChevronDown,
+  ChevronRight,
+  Clock3,
+  LineChart,
+  Plus,
+} from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
 import { SessionExercise } from "@/src/features/session-exercise/domain/types";
@@ -10,6 +16,10 @@ import { SessionSet } from "@/src/features/session-set/domain/types";
 import { SessionSetRow } from "../../session-set/components/form";
 import { SessionSetFactory } from "../../session-set/domain/factory";
 import { useOngoingSession } from "../../session-workout/hooks/use-ongoing-session";
+import {
+  SessionExerciseProgress,
+  type TrendPoint,
+} from "./session-exercise-progress";
 
 type LastSetSnapshot = {
   id: string;
@@ -20,6 +30,8 @@ type LastSetSnapshot = {
 export type SessionExerciseView = SessionExercise & {
   isOpen?: boolean;
   lastSessionSets?: LastSetSnapshot[];
+  progressHistory?: TrendPoint[];
+  isProgressOpen?: boolean;
 };
 
 type StatusColors = {
@@ -97,6 +109,7 @@ export function SessionExerciseCard({
 
   const sets = value.sets ?? [];
   const lastSets = value.lastSessionSets ?? [];
+  const progressHistory = value.progressHistory ?? [];
 
   const completedCount = sets.reduce(
     (acc, s) => acc + (s.isCompleted === true ? 1 : 0),
@@ -109,6 +122,10 @@ export function SessionExerciseCard({
 
   const toggleOpen = () => {
     onChange({ ...value, isOpen: !value.isOpen });
+  };
+
+  const toggleProgressOpen = () => {
+    onChange({ ...value, isProgressOpen: !value.isProgressOpen });
   };
 
   const addSet = async () => {
@@ -215,9 +232,40 @@ export function SessionExerciseCard({
             </Text>
           ) : null}
 
+          {progressHistory.length > 0 ? (
+            <View className="mb-2">
+              <Pressable
+                onPress={toggleProgressOpen}
+                className="flex-row items-center justify-between rounded-xl bg-white px-2.5 py-2 dark:bg-neutral-900"
+              >
+                <View className="flex-row items-center">
+                  <LineChart width={14} height={14} color={subtleIcon} />
+                  <Text className="ml-1.5 text-[11px] font-medium text-neutral-700 dark:text-neutral-200">
+                    Progress
+                  </Text>
+                  <Text className="ml-1 text-[10px] text-neutral-500 dark:text-neutral-500">
+                    {progressHistory.length} sessions
+                  </Text>
+                </View>
+
+                {value.isProgressOpen ? (
+                  <ChevronDown width={14} height={14} color={chevronColor} />
+                ) : (
+                  <ChevronRight width={14} height={14} color={chevronColor} />
+                )}
+              </Pressable>
+
+              {value.isProgressOpen ? (
+                <View className="mt-2">
+                  <SessionExerciseProgress history={progressHistory} />
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
           {sets.length > 0 && (
             <View className="mb-1.5 flex-row items-center gap-2 px-1">
-              <Text className="w-9 text-center text-[10px] text-neutral-500 dark:text-neutral-500">
+              <Text className="w-12 text-center text-[10px] text-neutral-500 dark:text-neutral-500">
                 ✓
               </Text>
               <Text className="flex-1 text-center text-[10px] text-neutral-500 dark:text-neutral-500">

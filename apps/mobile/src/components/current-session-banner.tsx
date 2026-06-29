@@ -117,7 +117,6 @@ export function CurrentSessionBanner({ dbReady, onFinish }: Props) {
       createProgramDraft: createFinishProgramDraft,
       finish: () =>
         new Promise<void>((resolve, reject) => {
-          clearAutoCompactTimer();
 
           Animated.parallel([
             Animated.timing(translateY, {

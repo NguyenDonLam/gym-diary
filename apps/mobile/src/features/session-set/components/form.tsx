@@ -114,7 +114,8 @@ export function SessionSetRow({
   readOnly = false,
 }: Props) {
   const { colorScheme } = useColorScheme();
-  const circleIdleColor = colorScheme === "dark" ? "#6B7280" : "#9CA3AF";
+  const circleIdleColor = colorScheme === "dark" ? "#D4D4D4" : "#4B5563";
+  const completedActionColor = colorScheme === "dark" ? "#052E16" : "#FFFFFF";
   const activeIcon = colorScheme === "dark" ? "#F9FAFB" : "#111827";
   const shellBg = colorScheme === "dark" ? "bg-neutral-900/80" : "bg-white";
   const { aggregate, getContextForSet } = useOngoingSession();
@@ -229,10 +230,13 @@ export function SessionSetRow({
     onSetCommit?.(nextSet);
   };
 
-  const fillFromTarget = () => {
+  const completeSet = () => {
     if (readOnly) return;
-    if (programTarget == null) return;
-    apply({ quantity: programTarget });
+
+    if (programTarget != null && latestRef.current.quantity == null) {
+      apply({ quantity: programTarget });
+    }
+
     setTimeout(commitIfValid, 0);
   };
 
@@ -371,12 +375,18 @@ export function SessionSetRow({
       <View className="flex-row items-center gap-2">
         <Pressable
           disabled={readOnly}
-          onPress={fillFromTarget}
-          hitSlop={8}
-          className="h-10 w-9 items-center justify-center rounded-xl bg-neutral-50 dark:bg-neutral-900"
+          accessibilityRole="button"
+          accessibilityLabel={showCompleted ? "Set logged" : "Log set"}
+          accessibilityState={{ disabled: readOnly, selected: showCompleted }}
+          onPress={completeSet}
+          className={`h-12 w-12 items-center justify-center rounded-xl border ${
+            showCompleted
+              ? "border-emerald-600 bg-emerald-600 dark:border-emerald-400 dark:bg-emerald-400"
+              : "border-neutral-200 bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800"
+          }`}
         >
           {showCompleted ? (
-            <CheckCircle2 width={24} height={24} color="#16A34A" />
+            <CheckCircle2 width={24} height={24} color={completedActionColor} />
           ) : (
             <Circle width={24} height={24} color={circleIdleColor} />
           )}
@@ -385,7 +395,7 @@ export function SessionSetRow({
         <Pressable
           disabled={readOnly}
           onPress={() => repsRef.current?.focus()}
-          className="h-10 flex-1 justify-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900"
+          className="h-12 flex-1 justify-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900"
         >
           <TextInput
             ref={repsRef}
@@ -400,7 +410,7 @@ export function SessionSetRow({
           />
         </Pressable>
 
-        <View className="h-10 flex-1 flex-row items-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900">
+        <View className="h-12 flex-1 flex-row items-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900">
           {isBandUnit ? (
             <Pressable
               disabled={readOnly}
@@ -429,7 +439,7 @@ export function SessionSetRow({
             disabled={readOnly}
             onPress={cycleLoadUnit}
             hitSlop={8}
-            className="ml-1 h-8 min-w-[46px] items-center justify-center rounded-lg bg-neutral-200 px-2 dark:bg-neutral-800"
+            className="ml-1 h-9 min-w-[46px] items-center justify-center rounded-lg bg-neutral-200 px-2 dark:bg-neutral-800"
           >
             <Text className="text-[11px] font-semibold text-neutral-900 dark:text-neutral-50">
               {getLoadUnitLabel(value.loadUnit)}
@@ -441,7 +451,7 @@ export function SessionSetRow({
           disabled={readOnly}
           onPress={cycleEffort}
           hitSlop={8}
-          className="h-10 w-[88px] flex-row items-center justify-center gap-1 rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900"
+          className="h-12 w-[88px] flex-row items-center justify-center gap-1 rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900"
         >
           {renderEffortIcon(effort.id, activeIcon)}
           <Text className="text-[11px] font-semibold text-neutral-900 dark:text-neutral-50">
