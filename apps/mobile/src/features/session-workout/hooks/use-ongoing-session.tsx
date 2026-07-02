@@ -4,9 +4,11 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useCallback,
 } from "react";
+import { AppState, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import type { StrengthScoreContext } from "@packages/strength-score/strategies";
@@ -36,11 +38,20 @@ import {
   buildProgramFromSession,
   cloneProgramAsNew,
 } from "../domain/program-save";
+import { notifyWorkoutAutoEnded } from "../notifications/auto-end-notification";
 
 const KEY = "ongoing";
+const AUTO_END_AFTER_KEY = "settings:auto-end-workout-after-minutes";
+const LAST_INTERACTION_KEY = "ongoing:last-interaction-at";
+const LAST_INTERACTION_PERSIST_INTERVAL_MS = 15_000;
 const LB_TO_KG = 0.45359237;
+const MAX_TIMEOUT_MS = 2_147_483_647;
 
 type Aggregate = ScoreAggregateV1<SessionSet, SessionExercise, SessionWorkout>;
+export type AutoEndAfterMinutes = number | false;
+type EndSessionOptions = {
+  endedAt?: Date;
+};
 
 export type EndSessionProgramAction =
   | "none"
@@ -62,13 +73,16 @@ type OngoingSessionContextValue = {
 
   ongoingSession: SessionWorkout | null;
   startSession: (programId?: string) => Promise<SessionWorkout>;
-  endSession: () => Promise<void>;
+  endSession: (options?: EndSessionOptions) => Promise<void>;
   getFinishProgramSavePrompt: () => Promise<FinishProgramSavePrompt>;
   createFinishProgramDraft: (
     programAction: Exclude<EndSessionProgramAction, "none">,
   ) => Promise<FinishProgramDraftRoute | null>;
   discardSession: () => Promise<void>;
   refresh: () => Promise<void>;
+  autoEndAfterMinutes: AutoEndAfterMinutes;
+  setAutoEndAfterMinutes: (value: AutoEndAfterMinutes) => Promise<void>;
+  recordUserInteraction: () => void;
 
   aggregate: Aggregate | null;
   getContextForSet: (set: SessionSet) => StrengthScoreContext;
@@ -77,6 +91,29 @@ type OngoingSessionContextValue = {
 const OngoingSessionContext = createContext<OngoingSessionContextValue | null>(
   null,
 );
+
+function parseAutoEndAfterMinutes(
+  raw: string | null,
+): AutoEndAfterMinutes {
+  if (raw == null || raw === "false") return false;
+
+  const parsed = Number.parseFloat(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return false;
+
+  return parsed;
+}
+
+function normalizeAutoEndAfterMinutes(
+  value: AutoEndAfterMinutes,
+): AutoEndAfterMinutes {
+  if (value === false) return false;
+  if (!Number.isFinite(value) || value <= 0) return false;
+  return value;
+}
+
+function serializeAutoEndAfterMinutes(value: AutoEndAfterMinutes): string {
+  return value === false ? "false" : String(value);
+}
 
 function createAggregate(
   session: SessionWorkout,
@@ -173,6 +210,18 @@ export function OngoingSessionProvider({
   );
   const { lookupExerciseStat } = useExerciseStats();
   const [mutationVersion, setMutationVersion] = useState(0);
+  const [autoEndAfterMinutes, setAutoEndAfterMinutesState] =
+    useState<AutoEndAfterMinutes>(false);
+  const autoEndAfterMinutesRef = useRef<AutoEndAfterMinutes>(false);
+  const ongoingSessionRef = useRef<SessionWorkout | null>(null);
+  const lastInteractionAtRef = useRef(Date.now());
+  const lastInteractionPersistedAtRef = useRef(0);
+  const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoEndInFlightRef = useRef(false);
+  const runAutoEndCheckRef = useRef<() => void>(() => {});
+  const endSessionRef = useRef<
+    (options?: EndSessionOptions) => Promise<void>
+  >(async () => {});
 
   const bumpMutationVersion = useCallback(() => {
     setMutationVersion((v) => v + 1);
@@ -182,6 +231,132 @@ export function OngoingSessionProvider({
     if (!ongoingSession) return null;
     return createAggregate(ongoingSession, lookupExerciseStat);
   }, [ongoingSession, lookupExerciseStat]);
+
+  useEffect(() => {
+    autoEndAfterMinutesRef.current = autoEndAfterMinutes;
+  }, [autoEndAfterMinutes]);
+
+  useEffect(() => {
+    ongoingSessionRef.current = ongoingSession;
+  }, [ongoingSession]);
+
+  const clearAutoEndTimer = useCallback(() => {
+    if (!autoEndTimerRef.current) return;
+    clearTimeout(autoEndTimerRef.current);
+    autoEndTimerRef.current = null;
+  }, []);
+
+  const scheduleAutoEndTimer = useCallback(() => {
+    clearAutoEndTimer();
+
+    const minutes = autoEndAfterMinutesRef.current;
+    if (minutes === false || !ongoingSessionRef.current) return;
+
+    const thresholdMs = minutes * 60_000;
+    const idleMs = Date.now() - lastInteractionAtRef.current;
+    const delayMs = Math.max(0, thresholdMs - idleMs);
+
+    autoEndTimerRef.current = setTimeout(
+      () => runAutoEndCheckRef.current(),
+      Math.min(delayMs, MAX_TIMEOUT_MS),
+    );
+  }, [clearAutoEndTimer]);
+
+  const persistLastInteractionAt = useCallback(
+    async (time: number, force = false) => {
+      if (
+        !force &&
+        time - lastInteractionPersistedAtRef.current <
+          LAST_INTERACTION_PERSIST_INTERVAL_MS
+      ) {
+        return;
+      }
+
+      lastInteractionPersistedAtRef.current = time;
+
+      try {
+        await AsyncStorage.setItem(LAST_INTERACTION_KEY, String(time));
+      } catch (e) {
+        console.warn("[ongoing-session] failed to persist interaction", e);
+      }
+    },
+    [],
+  );
+
+  const clearStoredLastInteraction = useCallback(async () => {
+    clearAutoEndTimer();
+    lastInteractionPersistedAtRef.current = 0;
+
+    try {
+      await AsyncStorage.removeItem(LAST_INTERACTION_KEY);
+    } catch (e) {
+      console.warn("[ongoing-session] failed to clear interaction", e);
+    }
+  }, [clearAutoEndTimer]);
+
+  const setAutoEndAfterMinutes = useCallback(
+    async (value: AutoEndAfterMinutes) => {
+      const normalized = normalizeAutoEndAfterMinutes(value);
+      setAutoEndAfterMinutesState(normalized);
+      autoEndAfterMinutesRef.current = normalized;
+
+      try {
+        await AsyncStorage.setItem(
+          AUTO_END_AFTER_KEY,
+          serializeAutoEndAfterMinutes(normalized),
+        );
+      } catch (e) {
+        console.warn("[ongoing-session] failed to persist auto-end setting", e);
+      }
+
+      scheduleAutoEndTimer();
+    },
+    [scheduleAutoEndTimer],
+  );
+
+  const recordUserInteraction = useCallback(() => {
+    if (!ongoingId && !ongoingSessionRef.current) return;
+
+    const now = Date.now();
+    lastInteractionAtRef.current = now;
+    void persistLastInteractionAt(now);
+    scheduleAutoEndTimer();
+  }, [ongoingId, persistLastInteractionAt, scheduleAutoEndTimer]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const [storedAutoEndAfter, storedLastInteraction] = await Promise.all([
+          AsyncStorage.getItem(AUTO_END_AFTER_KEY),
+          AsyncStorage.getItem(LAST_INTERACTION_KEY),
+        ]);
+
+        if (cancelled) return;
+
+        const parsedAutoEndAfter = parseAutoEndAfterMinutes(storedAutoEndAfter);
+        setAutoEndAfterMinutesState(parsedAutoEndAfter);
+        autoEndAfterMinutesRef.current = parsedAutoEndAfter;
+
+        const parsedLastInteraction = Number.parseInt(
+          storedLastInteraction ?? "",
+          10,
+        );
+
+        if (Number.isFinite(parsedLastInteraction) && parsedLastInteraction > 0) {
+          lastInteractionAtRef.current = parsedLastInteraction;
+          lastInteractionPersistedAtRef.current = parsedLastInteraction;
+        }
+      } catch (e) {
+        console.warn("[ongoing-session] failed to load auto-end setting", e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -241,7 +416,10 @@ export function OngoingSessionProvider({
 
   const setOngoingId = useCallback(async (id: string | null) => {
     setOngoingIdState(id);
-    if (id === null) setOngoingSession(null);
+    if (id === null) {
+      ongoingSessionRef.current = null;
+      setOngoingSession(null);
+    }
 
     try {
       if (id) await AsyncStorage.setItem(KEY, id);
@@ -265,13 +443,24 @@ export function OngoingSessionProvider({
 
       await sessionWorkoutRepository.save(session);
 
+      const now = Date.now();
+      lastInteractionAtRef.current = now;
+      await persistLastInteractionAt(now, true);
+
       await setOngoingId(session.id);
       bumpMutationVersion();
       setOngoingSession(session);
+      ongoingSessionRef.current = session;
+      scheduleAutoEndTimer();
 
       return session;
     },
-    [setOngoingId, bumpMutationVersion],
+    [
+      setOngoingId,
+      bumpMutationVersion,
+      persistLastInteractionAt,
+      scheduleAutoEndTimer,
+    ],
   );
 
   const getLatestOngoingSession = useCallback(async () => {
@@ -362,19 +551,24 @@ export function OngoingSessionProvider({
     [getLatestOngoingSession],
   );
 
-  const endSession = useCallback(async () => {
+  const endSession = useCallback(async (options?: EndSessionOptions) => {
     if (!ongoingSession) return;
 
     const sessionForFinish = await getLatestOngoingSession();
     if (!sessionForFinish) return;
 
-    if (!aggregate) {
-      const now = new Date();
+    const now = new Date();
+    const requestedEndedAt = options?.endedAt ?? now;
+    const startedAt = sessionForFinish.startedAt;
+    const endedAt = new Date(
+      Math.max(startedAt.getTime(), requestedEndedAt.getTime()),
+    );
 
+    if (!aggregate) {
       const endedNoScores = SessionWorkoutFactory.create({
         ...sessionForFinish,
         status: "completed",
-        endedAt: now,
+        endedAt,
         updatedAt: now,
       });
 
@@ -386,15 +580,14 @@ export function OngoingSessionProvider({
       setOngoingSession(endedNoScores);
       bumpMutationVersion();
       await setOngoingId(null);
+      await clearStoredLastInteraction();
       return;
     }
-
-    const now = new Date();
 
     const ended = SessionWorkoutFactory.create({
       ...sessionForFinish,
       status: "completed",
-      endedAt: now,
+      endedAt,
       updatedAt: now,
       strengthScore: aggregate.getWorkoutScore(),
       strengthScoreVersion: aggregate.version,
@@ -436,6 +629,7 @@ export function OngoingSessionProvider({
     }
 
     await setOngoingId(null);
+    await clearStoredLastInteraction();
     bumpMutationVersion();
   }, [
     ongoingSession,
@@ -443,11 +637,78 @@ export function OngoingSessionProvider({
     setOngoingId,
     bumpMutationVersion,
     getLatestOngoingSession,
+    clearStoredLastInteraction,
   ]);
+
+  useEffect(() => {
+    endSessionRef.current = endSession;
+  }, [endSession]);
+
+  const runAutoEndCheck = useCallback(() => {
+    void (async () => {
+      const minutes = autoEndAfterMinutesRef.current;
+      if (minutes === false || !ongoingSessionRef.current) return;
+      if (autoEndInFlightRef.current) return;
+
+      const thresholdMs = minutes * 60_000;
+      const now = Date.now();
+      const idleMs = now - lastInteractionAtRef.current;
+
+      if (idleMs < thresholdMs) {
+        scheduleAutoEndTimer();
+        return;
+      }
+
+      autoEndInFlightRef.current = true;
+
+      try {
+        await endSessionRef.current({
+          endedAt: new Date(now - thresholdMs),
+        });
+        await notifyWorkoutAutoEnded(minutes);
+      } catch (e) {
+        console.warn("[ongoing-session] failed to auto-end session", e);
+      } finally {
+        autoEndInFlightRef.current = false;
+      }
+    })();
+  }, [scheduleAutoEndTimer]);
+
+  useEffect(() => {
+    runAutoEndCheckRef.current = runAutoEndCheck;
+  }, [runAutoEndCheck]);
+
+  useEffect(() => {
+    scheduleAutoEndTimer();
+    return clearAutoEndTimer;
+  }, [
+    ongoingSession?.id,
+    autoEndAfterMinutes,
+    scheduleAutoEndTimer,
+    clearAutoEndTimer,
+  ]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        runAutoEndCheckRef.current();
+        return;
+      }
+
+      if (ongoingSessionRef.current) {
+        void persistLastInteractionAt(lastInteractionAtRef.current, true);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [persistLastInteractionAt]);
 
   const discardSession = useCallback(async () => {
     if (!ongoingId) {
       await setOngoingId(null);
+      await clearStoredLastInteraction();
       setOngoingSession(null);
       return;
     }
@@ -463,8 +724,9 @@ export function OngoingSessionProvider({
 
     await sessionWorkoutRepository.save(discarded);
     await setOngoingId(null);
+    await clearStoredLastInteraction();
     setOngoingSession(null);
-  }, [ongoingId, ongoingSession, setOngoingId]);
+  }, [ongoingId, ongoingSession, setOngoingId, clearStoredLastInteraction]);
 
   function getContextForSet(set: SessionSet): StrengthScoreContext {
     const exSession =
@@ -494,13 +756,18 @@ export function OngoingSessionProvider({
         createFinishProgramDraft,
         discardSession,
         refresh,
+        autoEndAfterMinutes,
+        setAutoEndAfterMinutes,
+        recordUserInteraction,
         aggregate,
         getContextForSet,
         mutationVersion,
         bumpMutationVersion,
       }}
     >
-      {children}
+      <View style={{ flex: 1 }} onTouchStart={recordUserInteraction}>
+        {children}
+      </View>
     </OngoingSessionContext.Provider>
   );
 }

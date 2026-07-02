@@ -23,7 +23,10 @@ import { sessionSetRepository } from "@/src/features/session-set/data/repository
 import ExerciseLibraryPicker from "@/src/features/exercise/components/exercise-library-picker";
 import type { Exercise } from "@packages/exercise/type";
 import { SessionExerciseFactory } from "@/src/features/session-exercise/domain/factory";
-import { sessionExerciseRepository } from "@/src/features/session-exercise/data/repository";
+import {
+  sessionExerciseRepository,
+  type SessionExerciseProgressHistoryPoint,
+} from "@/src/features/session-exercise/data/repository";
 
 type ViewModel = {
   id: string;
@@ -33,12 +36,48 @@ type ViewModel = {
   mode: "ongoing" | "completed";
 };
 
-function toView(session: SessionWorkout, mode: ViewModel["mode"]): ViewModel {
+type ProgressHistoryLookup = Record<
+  string,
+  SessionExerciseProgressHistoryPoint[]
+>;
+
+async function getProgressHistoryLookup(
+  exercises: SessionExerciseView[],
+): Promise<ProgressHistoryLookup> {
+  const exerciseIds = exercises
+    .map((ex) => ex.exerciseId)
+    .filter((id): id is string => Boolean(id));
+
+  return sessionExerciseRepository.getProgressHistoryByExerciseIds(exerciseIds);
+}
+
+function toView(
+  session: SessionWorkout,
+  mode: ViewModel["mode"],
+  progressHistoryByExerciseId: ProgressHistoryLookup = {},
+  previous?: ViewModel | null,
+): ViewModel {
+  const previousExercises = previous?.id === session.id ? previous.exercises : [];
+  const previousById = new Map(previousExercises.map((ex) => [ex.id, ex]));
+
   return {
     id: session.id,
     name: session.name ?? null,
     status: session.status ?? null,
-    exercises: (session.exercises ?? []).map((ex) => ({ ...ex, isOpen: true })),
+    exercises: (session.exercises ?? []).map((ex) => {
+      const previousExercise = previousById.get(ex.id);
+
+      return {
+        ...ex,
+        isOpen: previousExercise?.isOpen ?? true,
+        isProgressOpen: previousExercise?.isProgressOpen ?? false,
+        progressHistory: ex.exerciseId
+          ? progressHistoryByExerciseId[ex.exerciseId] ??
+            previousExercise?.progressHistory ??
+            []
+          : [],
+      };
+    }),
     mode,
   };
 }
@@ -74,14 +113,35 @@ export default function OngoingSessionPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refresh]);
 
   useEffect(() => {
     if (!ongoingSession) return;
 
+    let cancelled = false;
+
     lastSessionIdRef.current = ongoingSession.id;
-    setView(toView(ongoingSession, "ongoing"));
-  }, [ongoingSession?.id, mutationVersion]);
+    setView((prev) => toView(ongoingSession, "ongoing", {}, prev));
+
+    (async () => {
+      try {
+        const progressHistoryByExerciseId = await getProgressHistoryLookup(
+          ongoingSession.exercises ?? [],
+        );
+
+        if (cancelled) return;
+        setView((prev) =>
+          toView(ongoingSession, "ongoing", progressHistoryByExerciseId, prev),
+        );
+      } catch (err) {
+        console.error("Failed to load exercise progress history", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ongoingSession, mutationVersion]);
 
   useEffect(() => {
     if (ongoingSession) return;
@@ -104,7 +164,14 @@ export default function OngoingSessionPage() {
           return;
         }
 
-        setView(toView(s, "completed"));
+        const progressHistoryByExerciseId = await getProgressHistoryLookup(
+          s.exercises ?? [],
+        );
+
+        if (cancelled) return;
+        setView((prev) =>
+          toView(s, "completed", progressHistoryByExerciseId, prev),
+        );
       } catch {
         if (!cancelled) setView(null);
       }
@@ -152,6 +219,10 @@ export default function OngoingSessionPage() {
 
       try {
         const created: SessionExerciseView[] = [];
+        const progressHistoryByExerciseId =
+          await sessionExerciseRepository.getProgressHistoryByExerciseIds(
+            selectedExercises.map((exercise) => exercise.id),
+          );
 
         for (const [index, exercise] of selectedExercises.entries()) {
           const domain = SessionExerciseFactory.domainFromExercise(exercise, {
@@ -164,6 +235,8 @@ export default function OngoingSessionPage() {
           created.push({
             ...domain,
             isOpen: true,
+            isProgressOpen: false,
+            progressHistory: progressHistoryByExerciseId[exercise.id] ?? [],
             lastSessionSets: [],
           });
         }
