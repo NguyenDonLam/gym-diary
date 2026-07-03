@@ -1,6 +1,13 @@
 // apps/mobile/app/(tabs)/workout.tsx
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, Pressable, Alert, ActivityIndicator, useColorScheme } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  Alert,
+  ActivityIndicator,
+  useColorScheme,
+} from "react-native";
 import { useRouter } from "expo-router";
 import DraggableFlatList, {
   RenderItemParams,
@@ -18,12 +25,20 @@ import type { FinishProgramDraftRoute } from "@/src/features/session-workout/hoo
 import { confirmFinishSession } from "@/src/features/session-workout/ui/finish-session-prompt";
 import { ProgramRow } from "@/src/features/program-workout/ui/template-row";
 import { UnassignedHeaderRow } from "@/src/components/unassigned-header-row";
+import { useSessionTimer } from "@/src/features/program-workout/hooks/use-session-timer";
 import {
   applyDragResult,
   buildRows,
   Row,
 } from "@/src/features/program-workout/utils";
-import { ChevronRight, Play } from "lucide-react-native";
+import {
+  CheckCircle2,
+  ChevronRight,
+  FolderPlus,
+  Play,
+  Plus,
+  Timer,
+} from "lucide-react-native";
 
 export default function Workout() {
   const router = useRouter();
@@ -47,6 +62,16 @@ export default function Workout() {
     createFinishProgramDraft,
     discardSession,
   } = useOngoingSession();
+
+  const activeSessionStartMs = useMemo(() => {
+    if (!ongoingSession) return null;
+
+    const ms = new Date(ongoingSession.startedAt).getTime();
+    return Number.isNaN(ms) ? null : ms;
+  }, [ongoingSession]);
+
+  const { label: activeSessionTime } = useSessionTimer(activeSessionStartMs);
+  const activeSessionName = ongoingSession?.name ?? "Session in progress";
 
   // keep layout in sync with source templates (initial + external changes)
   useEffect(() => {
@@ -98,6 +123,15 @@ export default function Workout() {
     });
   };
 
+  const handleOpenOngoingSession = () => {
+    if (!ongoingSession) return;
+
+    router.push({
+      pathname: "/session-workout/[id]",
+      params: { id: ongoingSession.id },
+    });
+  };
+
   const openProgramDraft = (draft: FinishProgramDraftRoute) => {
     if (draft.kind === "edit") {
       router.push({
@@ -110,6 +144,22 @@ export default function Workout() {
     router.push({
       pathname: "/program-workout/new",
       params: { draftKey: draft.draftKey },
+    });
+  };
+
+  const handleFinishOngoingSession = () => {
+    if (!ongoingSession) return;
+
+    void confirmFinishSession({
+      getPrompt: getFinishProgramSavePrompt,
+      createProgramDraft: createFinishProgramDraft,
+      finish: endSession,
+      onFinished: ({ draft }) => {
+        if (draft) openProgramDraft(draft);
+      },
+      onError: (err) => {
+        console.warn("[workout] failed to finish current session", err);
+      },
     });
   };
 
@@ -366,59 +416,149 @@ export default function Workout() {
               Total: {programs.length}
             </Text>
 
-            <Pressable
-              onPress={() => handleStartSession()}
-              android_ripple={{ color: "rgba(255,255,255,0.08)" }}
-              className="mt-3 overflow-hidden rounded-2xl border border-neutral-300 bg-white dark:border-[#6272A4] dark:bg-[#21222C]"
-            >
-              {({ pressed }) => (
-                <View
-                  className={`flex-row items-center justify-between px-4 py-4 ${
-                    pressed ? "opacity-80" : "opacity-100"
-                  }`}
-                >
-                  <View className="flex-row items-center flex-1">
-                    <View className="mr-3 rounded-full bg-neutral-900/10 p-2 dark:bg-[#BD93F9]/20">
-                      <Play
-                        size={16}
-                        color={isDark ? "#BD93F9" : "#111827"}
-                        fill={isDark ? "#BD93F9" : "#111827"}
-                      />
-                    </View>
+            {ongoingSession ? (
+              <View className="mt-3 overflow-hidden rounded-2xl border-2 border-emerald-500 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-500/10">
+                <View className="flex-row items-stretch">
+                  <Pressable
+                    onPress={handleOpenOngoingSession}
+                    android_ripple={{
+                      color: isDark
+                        ? "rgba(16,185,129,0.18)"
+                        : "rgba(16,185,129,0.12)",
+                    }}
+                    className="flex-1"
+                  >
+                    {({ pressed }) => (
+                      <View
+                        className={`flex-row items-center justify-between px-4 py-4 ${
+                          pressed ? "opacity-80" : "opacity-100"
+                        }`}
+                      >
+                        <View className="flex-row items-center flex-1 pr-3">
+                          <View className="mr-3 rounded-full bg-emerald-500/15 p-2 dark:bg-emerald-400/20">
+                            <Timer
+                              size={17}
+                              color={isDark ? "#34D399" : "#047857"}
+                            />
+                          </View>
 
-                    <View className="flex-1 pr-3">
-                      <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
-                        Start one-off session
-                      </Text>
-                      <Text className="mt-1 text-xs text-neutral-600 dark:text-[#6272A4]">
-                        Start a workout without using a saved program
-                      </Text>
-                    </View>
-                  </View>
+                          <View className="flex-1">
+                            <Text className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
+                              Current session
+                            </Text>
+                            <Text
+                              numberOfLines={1}
+                              className="mt-1 text-sm font-semibold text-neutral-950 dark:text-[#F8F8F2]"
+                            >
+                              {activeSessionName}
+                            </Text>
+                          </View>
+                        </View>
 
-                  <ChevronRight
-                    size={18}
-                    color={isDark ? "#6272A4" : "#6b7280"}
-                  />
+                        <View className="flex-row items-center">
+                          <Text className="mr-2 font-mono text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                            {activeSessionTime}
+                          </Text>
+                          <ChevronRight
+                            size={18}
+                            color={isDark ? "#34D399" : "#047857"}
+                          />
+                        </View>
+                      </View>
+                    )}
+                  </Pressable>
+
+                  <Pressable
+                    onPress={handleFinishOngoingSession}
+                    accessibilityRole="button"
+                    accessibilityLabel="End current session"
+                    android_ripple={{
+                      color: isDark
+                        ? "rgba(255,255,255,0.14)"
+                        : "rgba(255,255,255,0.2)",
+                    }}
+                    className="w-24 items-center justify-center bg-emerald-600 px-3 dark:bg-emerald-500"
+                  >
+                    {({ pressed }) => (
+                      <View
+                        className={`items-center justify-center ${
+                          pressed ? "opacity-80" : "opacity-100"
+                        }`}
+                      >
+                        <CheckCircle2 size={18} color="#ffffff" />
+                        <Text className="mt-1 text-xs font-bold text-white">
+                          End
+                        </Text>
+                      </View>
+                    )}
+                  </Pressable>
                 </View>
-              )}
-            </Pressable>
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => handleStartSession()}
+                android_ripple={{ color: "rgba(255,255,255,0.08)" }}
+                className="mt-3 overflow-hidden rounded-2xl border border-neutral-300 bg-white dark:border-[#6272A4] dark:bg-[#21222C]"
+              >
+                {({ pressed }) => (
+                  <View
+                    className={`flex-row items-center justify-between px-4 py-4 ${
+                      pressed ? "opacity-80" : "opacity-100"
+                    }`}
+                  >
+                    <View className="flex-row items-center flex-1">
+                      <View className="mr-3 rounded-full bg-neutral-900/10 p-2 dark:bg-[#BD93F9]/20">
+                        <Play
+                          size={16}
+                          color={isDark ? "#BD93F9" : "#111827"}
+                          fill={isDark ? "#BD93F9" : "#111827"}
+                        />
+                      </View>
+
+                      <View className="flex-1 pr-3">
+                        <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
+                          Start one-off session
+                        </Text>
+                        <Text className="mt-1 text-xs text-neutral-600 dark:text-[#6272A4]">
+                          Start a workout without using a saved program
+                        </Text>
+                      </View>
+                    </View>
+
+                    <ChevronRight
+                      size={18}
+                      color={isDark ? "#6272A4" : "#6b7280"}
+                    />
+                  </View>
+                )}
+              </Pressable>
+            )}
 
             <View className="mt-3 flex-row gap-2">
               <Pressable
-                className="rounded-full bg-neutral-900 px-3 py-1.5 dark:bg-[#BD93F9]"
+                className="flex-1 flex-row items-center justify-center rounded-lg bg-neutral-900 px-3 py-2.5 dark:bg-[#BD93F9]"
                 onPress={handleCreateTemplate}
               >
-                <Text className="text-[13px] font-semibold text-white dark:text-[#282A36]">
+                <Plus
+                  size={15}
+                  color={isDark ? "#282A36" : "#ffffff"}
+                  strokeWidth={2.5}
+                />
+                <Text className="ml-1.5 text-[13px] font-semibold text-white dark:text-[#282A36]">
                   New program
                 </Text>
               </Pressable>
 
               <Pressable
-                className="rounded-full bg-neutral-100 px-3 py-1.5 dark:bg-[#44475A]"
+                className="flex-1 flex-row items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-2.5 dark:border-[#6272A4] dark:bg-[#21222C]"
                 onPress={handleCreateFolder}
               >
-                <Text className="text-[13px] font-semibold text-neutral-900 dark:text-[#F8F8F2]">
+                <FolderPlus
+                  size={15}
+                  color={isDark ? "#F8F8F2" : "#111827"}
+                  strokeWidth={2.3}
+                />
+                <Text className="ml-1.5 text-[13px] font-semibold text-neutral-900 dark:text-[#F8F8F2]">
                   New folder
                 </Text>
               </Pressable>

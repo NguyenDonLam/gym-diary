@@ -1,6 +1,12 @@
 import "../global.css";
 import React, { Suspense, useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { Stack } from "expo-router";
 import { SQLiteProvider } from "expo-sqlite";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
@@ -15,14 +21,43 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "nativewind";
-import { CurrentSessionBanner } from "@/src/components/current-session-banner";
-import { OngoingSessionProvider } from "@/src/features/session-workout/hooks/use-ongoing-session";
+import {
+  OngoingSessionProvider,
+  useOngoingSession,
+} from "@/src/features/session-workout/hooks/use-ongoing-session";
 
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const THEME_KEY = "theme";
 const queryClient = new QueryClient();
+
+function getActiveSessionFrameRadius(width: number, height: number) {
+  const shortestSide = Math.min(width, height);
+
+  return Math.round(Math.min(Math.max(shortestSide * 0.14, 44), 72));
+}
+
+function ActiveSessionFrame({ children }: { children: React.ReactNode }) {
+  const { ongoingSession } = useOngoingSession();
+  const { width, height } = useWindowDimensions();
+
+  return (
+    <View
+      className="flex-1 bg-white dark:bg-[#21222C]"
+      style={
+        ongoingSession
+          ? [
+              styles.activeSessionFrame,
+              { borderRadius: getActiveSessionFrameRadius(width, height) },
+            ]
+          : null
+      }
+    >
+      {children}
+    </View>
+  );
+}
 
 function BootScreen({ title, detail }: { title: string; detail?: string }) {
   return (
@@ -91,14 +126,12 @@ export default function RootLayout() {
               useSuspense
             >
               <OngoingSessionProvider>
-                <View className="flex-1 bg-white dark:bg-[#21222C]">
+                <ActiveSessionFrame>
                   <SafeAreaView
                     className="flex-1 bg-white dark:bg-[#21222C]"
                     edges={["top", "bottom"]}
                   >
                     <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
-                      <CurrentSessionBanner dbReady={success} />
-
                       <Stack screenOptions={{ headerShown: false }}>
                         <Stack.Screen name="(tabs)" />
                         <Stack.Screen name="program-workout" />
@@ -122,7 +155,7 @@ export default function RootLayout() {
                       ) : null}
                     </View>
                   </SafeAreaView>
-                </View>
+                </ActiveSessionFrame>
               </OngoingSessionProvider>
             </SQLiteProvider>
           </Suspense>
@@ -131,3 +164,11 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  activeSessionFrame: {
+    borderColor: "#10B981",
+    borderWidth: 9,
+    overflow: "hidden",
+  },
+});
