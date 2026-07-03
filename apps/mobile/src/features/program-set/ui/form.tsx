@@ -48,14 +48,6 @@ const INTENSITY_LEVELS = [
   { id: "intense", label: "Intense", rpe: "10" },
 ] as const;
 
-const CUSTOM_LOAD_OPTIONS = [
-  { value: "0", label: "0" },
-  { value: "bodyweight", label: "Bodyweight" },
-  { value: "assisted", label: "Assisted" },
-  { value: "machine", label: "Machine" },
-  { value: "other", label: "Other" },
-];
-
 const KG_TO_LB = 2.2046226218;
 const LB_TO_KG = 0.45359237;
 
@@ -116,18 +108,6 @@ function getSelectedIntensity(rpe: string) {
 
 function getSelectedBand(loadValue: string) {
   return BAND_OPTIONS.find((band) => band.id === loadValue) ?? BAND_OPTIONS[0];
-}
-
-function getCustomLoadOptions(current: string) {
-  const trimmed = current.trim();
-  if (
-    trimmed === "" ||
-    CUSTOM_LOAD_OPTIONS.some((option) => option.value === trimmed)
-  ) {
-    return CUSTOM_LOAD_OPTIONS;
-  }
-
-  return [{ value: trimmed, label: trimmed }, ...CUSTOM_LOAD_OPTIONS];
 }
 
 function renderIntensityIcon(id: string, color: string) {
@@ -192,6 +172,11 @@ export default function SetProgramForm({
   };
 
   const handleChangeLoadValue = (raw: string) => {
+    if (formData.loadUnit === "custom") {
+      update({ loadValue: raw });
+      return;
+    }
+
     if (!isNumericLoadUnit(formData.loadUnit)) return;
     update({ loadValue: cleanDecimalInput(raw) });
   };
@@ -244,15 +229,16 @@ export default function SetProgramForm({
         className="h-9 flex-row items-center rounded-xl bg-white dark:bg-[#343746]"
         style={{ flex: 1.55 }}
       >
-        {isNumericUnit ? (
+        {isNumericUnit || isCustomUnit ? (
           <TextInput
             value={formData.loadValue}
             onChangeText={handleChangeLoadValue}
-            keyboardType="decimal-pad"
-            placeholder="0"
+            keyboardType={isCustomUnit ? "default" : "decimal-pad"}
+            placeholder={isCustomUnit ? "Load" : "0"}
             placeholderTextColor={placeholderColor}
             selectTextOnFocus
             className="min-w-0 flex-1 px-2 py-0 text-center text-[14px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
+            returnKeyType="done"
           />
         ) : (
           <Pressable
@@ -337,23 +323,6 @@ export default function SetProgramForm({
                     },
                   ]
                 : []),
-              ...(activeUnit === "custom"
-                ? [
-                    {
-                      id: "custom",
-                      label: "Value",
-                      selectedValue:
-                        formData.loadUnit === "custom"
-                          ? formData.loadValue.trim() || "0"
-                          : "0",
-                      options: getCustomLoadOptions(
-                        formData.loadUnit === "custom"
-                          ? formData.loadValue
-                          : "0",
-                      ),
-                    },
-                  ]
-                : []),
             ];
           }}
           onCancel={() => setPicker(null)}
@@ -371,8 +340,7 @@ export default function SetProgramForm({
               update({
                 loadUnit: nextUnit,
                 loadValue:
-                  values.custom ??
-                  (formData.loadUnit === "custom" ? formData.loadValue : "0"),
+                  formData.loadUnit === "custom" ? formData.loadValue : "",
               });
             } else {
               update({

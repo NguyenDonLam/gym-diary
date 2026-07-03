@@ -24,6 +24,7 @@ import { sessionSetRepository } from "@/src/features/session-set/data/repository
 import ExerciseLibraryPicker from "@/src/features/exercise/components/exercise-library-picker";
 import type { Exercise } from "@packages/exercise/type";
 import { SessionExerciseFactory } from "@/src/features/session-exercise/domain/factory";
+import { useKeyboardHeight } from "@/src/hooks/use-keyboard-height";
 
 type ProgressHistoryLookup = Record<
   string,
@@ -98,6 +99,7 @@ export default function SessionWorkoutPage() {
   const [exercises, setExercises] = useState<SessionExerciseView[]>([]);
   const [loading, setLoading] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const keyboardHeight = useKeyboardHeight();
 
   useEffect(() => {
     if (!sessionId) {
@@ -126,6 +128,11 @@ export default function SessionWorkoutPage() {
   }, [sessionId]);
 
   const readOnly = sessionStatus !== "in_progress";
+  const scrollBottomPadding = readOnly
+    ? 24
+    : keyboardHeight > 0
+      ? keyboardHeight + 120
+      : 96;
 
   const onSetCommit = useCallback(
     async (set: SessionSet) => {
@@ -225,10 +232,13 @@ export default function SessionWorkoutPage() {
 
       <ScrollView
         className="flex-1 bg-white dark:bg-[#2B2D3A]"
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 12,
-          paddingBottom: readOnly ? 24 : 96,
+          paddingBottom: scrollBottomPadding,
         }}
       >
         {loading && exercises.length === 0 && (

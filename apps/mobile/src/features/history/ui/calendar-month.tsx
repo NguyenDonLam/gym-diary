@@ -1,5 +1,7 @@
 import React, { memo, useCallback, useMemo } from "react";
 import { View, Text, Pressable } from "react-native";
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
+import { useColorScheme } from "nativewind";
 import { COLOR_STRIP_MAP } from "@/src/features/program-workout/domain/type";
 import { buildMonthMatrix, firstDayOfMonth } from "./date";
 import { ProgramColor } from "@/db/enums";
@@ -22,6 +24,8 @@ export const CalendarMonth = memo(function CalendarMonth({
   onDayPress,
   onMonthChange,
 }: Props) {
+  const { colorScheme } = useColorScheme();
+  const navIconColor = colorScheme === "dark" ? "#E4E4E7" : "#27272A";
   const monthFirst = useMemo(() => firstDayOfMonth(monthDate), [monthDate]);
 
   const monthLabel = useMemo(
@@ -52,9 +56,11 @@ export const CalendarMonth = memo(function CalendarMonth({
       <View className="flex-row items-center justify-between mb-1">
         <Pressable
           onPress={goPrev}
-          className="p-1 rounded-md bg-zinc-100 dark:bg-zinc-900"
+          accessibilityRole="button"
+          accessibilityLabel="Previous month"
+          className="h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-900"
         >
-          <Text className="text-zinc-800 dark:text-zinc-200">{"<"}</Text>
+          <ChevronLeft size={22} color={navIconColor} strokeWidth={2.4} />
         </Pressable>
 
         <Text className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
@@ -63,9 +69,11 @@ export const CalendarMonth = memo(function CalendarMonth({
 
         <Pressable
           onPress={goNext}
-          className="p-1 rounded-md bg-zinc-100 dark:bg-zinc-900"
+          accessibilityRole="button"
+          accessibilityLabel="Next month"
+          className="h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-900"
         >
-          <Text className="text-zinc-800 dark:text-zinc-200">{">"}</Text>
+          <ChevronRight size={22} color={navIconColor} strokeWidth={2.4} />
         </Pressable>
       </View>
 

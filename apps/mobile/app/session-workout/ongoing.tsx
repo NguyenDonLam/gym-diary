@@ -27,6 +27,7 @@ import {
   sessionExerciseRepository,
   type SessionExerciseProgressHistoryPoint,
 } from "@/src/features/session-exercise/data/repository";
+import { useKeyboardHeight } from "@/src/hooks/use-keyboard-height";
 
 type ViewModel = {
   id: string;
@@ -94,6 +95,7 @@ export default function OngoingSessionPage() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<ViewModel | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const keyboardHeight = useKeyboardHeight();
 
   const lastSessionIdRef = useRef<string | null>(null);
 
@@ -183,6 +185,11 @@ export default function OngoingSessionPage() {
   }, [ongoingSession, mutationVersion]);
 
   const readOnly = view?.mode === "completed";
+  const scrollBottomPadding = readOnly
+    ? 24
+    : keyboardHeight > 0
+      ? keyboardHeight + 120
+      : 96;
 
   const onSetCommit = useCallback(
     async (set: SessionSet) => {
@@ -304,10 +311,13 @@ export default function OngoingSessionPage() {
 
       <ScrollView
         className="flex-1 bg-white dark:bg-[#2B2D3A]"
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 12,
-          paddingBottom: readOnly ? 24 : 96,
+          paddingBottom: scrollBottomPadding,
         }}
       >
         {loading && !view && (
