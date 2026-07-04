@@ -16,6 +16,12 @@ import { SessionSet } from "@/src/features/session-set/domain/types";
 import { SessionSetRow } from "../../session-set/components/form";
 import { SessionSetFactory } from "../../session-set/domain/factory";
 import { useOngoingSession } from "../../session-workout/hooks/use-ongoing-session";
+import { useRestTimer } from "../../session-workout/hooks/use-rest-timer";
+import { findRestTimerTargetForSet } from "../../session-workout/domain/rest-timer-target";
+import {
+  DEFAULT_REST_SECONDS,
+  normalizeRestSeconds,
+} from "../../program-set/domain/rest";
 import {
   SessionExerciseProgress,
   type TrendPoint,
@@ -32,6 +38,10 @@ export type SessionExerciseView = SessionExercise & {
   lastSessionSets?: LastSetSnapshot[];
   progressHistory?: TrendPoint[];
   isProgressOpen?: boolean;
+};
+
+type SetCommitEvent = {
+  becameCompleted: boolean;
 };
 
 type StatusColors = {
@@ -105,7 +115,7 @@ type Props = {
   value: SessionExerciseView;
   onChange: (next: SessionExerciseView) => void;
   onSetAdd?: (set: SessionSet) => Promise<void> | void;
-  onSetCommit?: (set: SessionSet) => void;
+  onSetCommit?: (set: SessionSet, event?: SetCommitEvent) => void;
   readOnly?: boolean;
 };
 
@@ -133,23 +143,39 @@ export function SessionExerciseCard({
   const colors = getExerciseCardColors(completedCount, totalSets);
 
   const { aggregate } = useOngoingSession();
+  const { startRestTimer } = useRestTimer();
+  const latestValueRef = React.useRef(value);
+
+  React.useEffect(() => {
+    latestValueRef.current = value;
+  }, [value]);
+
+  const emitChange = (next: SessionExerciseView) => {
+    latestValueRef.current = next;
+    onChange(next);
+  };
 
   const toggleOpen = () => {
-    onChange({ ...value, isOpen: !value.isOpen });
+    const current = latestValueRef.current;
+    emitChange({ ...current, isOpen: !current.isOpen });
   };
 
   const toggleProgressOpen = () => {
-    onChange({ ...value, isProgressOpen: !value.isProgressOpen });
+    const current = latestValueRef.current;
+    emitChange({ ...current, isProgressOpen: !current.isProgressOpen });
   };
 
   const addSet = async () => {
     if (readOnly) return;
 
-    const last = sets[sets.length - 1];
+    const current = latestValueRef.current;
+    const currentSets = current.sets ?? [];
+    const last = currentSets[currentSets.length - 1];
 
     const newSet = SessionSetFactory.create({
-      sessionExerciseId: value.id,
-      orderIndex: sets.length,
+      sessionExerciseId: current.id,
+      orderIndex: currentSets.length,
+      restSeconds: last?.restSeconds ?? DEFAULT_REST_SECONDS,
       loadUnit: last?.loadUnit ?? "kg",
       loadValue: last?.loadValue ?? null,
       rpe: 10,
@@ -158,14 +184,34 @@ export function SessionExerciseCard({
     try {
       await onSetAdd?.(newSet);
 
-      onChange({
-        ...value,
+      const nextCurrent = latestValueRef.current;
+      emitChange({
+        ...nextCurrent,
         isOpen: true,
-        sets: [...sets, newSet],
+        sets: [...(nextCurrent.sets ?? []), newSet],
       });
     } catch (err) {
       console.error("Failed to add session set", err);
     }
+  };
+
+  const startRestForSet = (set: SessionSet) => {
+    if (readOnly) return;
+
+    const durationSeconds = normalizeRestSeconds(set.restSeconds);
+    if (durationSeconds <= 0) return;
+
+    const target = findRestTimerTargetForSet([latestValueRef.current], set.id);
+    if (!target) return;
+
+    void startRestTimer({
+      sessionId: target.sessionId,
+      setId: set.id,
+      exerciseName: target.exerciseName,
+      setIndex: target.setIndex,
+      durationSeconds,
+      source: "manual",
+    });
   };
 
   return (
@@ -305,31 +351,34 @@ export function SessionExerciseCard({
                 value={set}
                 quantityUnit={value.quantityUnit}
                 readOnly={readOnly}
+                onRestStart={startRestForSet}
                 setValue={(next) => {
                   if (readOnly) return;
-                  onChange({
-                    ...value,
-                    sets: replaceSet(value.sets, next),
+                  const current = latestValueRef.current;
+                  emitChange({
+                    ...current,
+                    sets: replaceSet(current.sets, next),
                   });
                 }}
-                onSetCommit={(nextSet) => {
+                onSetCommit={(nextSet, event) => {
                   if (readOnly) return;
 
+                  const current = latestValueRef.current;
                   const exScore =
-                    value.quantityUnit === "time"
+                    current.quantityUnit === "time"
                       ? null
                       : aggregate?.getExerciseScore(
                           nextSet.sessionExerciseId,
                         ) ?? null;
 
-                  onChange({
-                    ...value,
-                    sets: replaceSet(value.sets, nextSet),
+                  emitChange({
+                    ...current,
+                    sets: replaceSet(current.sets, nextSet),
                     strengthScore: exScore,
                     strengthScoreVersion: aggregate?.version ?? -1,
                   });
 
-                  onSetCommit?.(nextSet);
+                  onSetCommit?.(nextSet, event);
                 }}
               />
             ))}

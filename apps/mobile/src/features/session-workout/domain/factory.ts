@@ -42,6 +42,7 @@ export class SessionWorkoutFactory {
             orderIndex: setProgram.orderIndex ?? setIndex,
 
             targetQuantity: null,
+            restSeconds: setProgram.restSeconds,
             quantity: null,
             loadUnit: setProgram.loadUnit,
             loadValue: setProgram.loadValue,
@@ -129,6 +130,7 @@ export class SessionWorkoutFactory {
           orderIndex: s.orderIndex,
 
           targetQuantity: s.targetQuantity ?? null,
+          restSeconds: s.restSeconds,
           quantity: s.quantity,
           loadUnit: s.loadUnit,
           loadValue: s.loadValue,
@@ -282,6 +284,7 @@ export class SessionWorkoutFactory {
           orderIndex: s.orderIndex,
 
           targetQuantity: s.targetQuantity ?? null,
+          restSeconds: s.restSeconds,
           quantity: s.quantity,
           loadUnit: s.loadUnit,
           loadValue: s.loadValue,

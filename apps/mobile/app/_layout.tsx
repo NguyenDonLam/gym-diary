@@ -25,6 +25,7 @@ import {
   OngoingSessionProvider,
   useOngoingSession,
 } from "@/src/features/session-workout/hooks/use-ongoing-session";
+import { RestTimerProvider } from "@/src/features/session-workout/hooks/use-rest-timer";
 
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -126,36 +127,38 @@ export default function RootLayout() {
               useSuspense
             >
               <OngoingSessionProvider>
-                <ActiveSessionFrame>
-                  <SafeAreaView
-                    className="flex-1 bg-white dark:bg-[#21222C]"
-                    edges={["top", "bottom"]}
-                  >
-                    <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
-                      <Stack screenOptions={{ headerShown: false }}>
-                        <Stack.Screen name="(tabs)" />
-                        <Stack.Screen name="program-workout" />
-                        <Stack.Screen name="program-workout/new" />
-                        <Stack.Screen name="program-workout/[id]" />
-                        <Stack.Screen name="session-workout/[id]" />
-                      </Stack>
+                <RestTimerProvider>
+                  <ActiveSessionFrame>
+                    <SafeAreaView
+                      className="flex-1 bg-white dark:bg-[#21222C]"
+                      edges={["top", "bottom"]}
+                    >
+                      <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
+                        <Stack screenOptions={{ headerShown: false }}>
+                          <Stack.Screen name="(tabs)" />
+                          <Stack.Screen name="program-workout" />
+                          <Stack.Screen name="program-workout/new" />
+                          <Stack.Screen name="program-workout/[id]" />
+                          <Stack.Screen name="session-workout/[id]" />
+                        </Stack>
 
-                      {seedErr ? (
-                        <View className="absolute bottom-3 left-3 right-3 rounded-xl bg-[#111827] p-3 dark:bg-[#3A3D4F]">
-                          <Text className="font-semibold text-[#E5E7EB] dark:text-[#FF5555]">
-                            Seeding failed
-                          </Text>
-                          <Text
-                            selectable
-                            className="mt-1 text-[#9CA3AF] dark:text-[#F8F8F2]"
-                          >
-                            {seedErr}
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  </SafeAreaView>
-                </ActiveSessionFrame>
+                        {seedErr ? (
+                          <View className="absolute bottom-3 left-3 right-3 rounded-xl bg-[#111827] p-3 dark:bg-[#3A3D4F]">
+                            <Text className="font-semibold text-[#E5E7EB] dark:text-[#FF5555]">
+                              Seeding failed
+                            </Text>
+                            <Text
+                              selectable
+                              className="mt-1 text-[#9CA3AF] dark:text-[#F8F8F2]"
+                            >
+                              {seedErr}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                    </SafeAreaView>
+                  </ActiveSessionFrame>
+                </RestTimerProvider>
               </OngoingSessionProvider>
             </SQLiteProvider>
           </Suspense>

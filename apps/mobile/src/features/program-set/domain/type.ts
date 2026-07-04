@@ -5,6 +5,7 @@ export type SetProgram = {
   exerciseProgramId: string;
   orderIndex: number; // 1, 2, 3, …
   targetQuantity: number | null;
+  restSeconds: number;
   loadUnit: LoadUnit;
   loadValue: string | null;
   targetRpe: number | null;
@@ -16,6 +17,7 @@ export type SetProgram = {
 export type SetProgramFormData = {
   id: string; // local UUID for the form
   targetQuantity: number | null; // raw text input
+  restSeconds: number;
   loadUnit: LoadUnit;
   loadValue: string; // raw text input (number, color name, etc.)
   rpe: string; // raw text input

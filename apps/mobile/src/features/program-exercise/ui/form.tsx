@@ -6,6 +6,7 @@ import { useColorScheme } from "nativewind";
 import SetProgramForm from "@/src/features/program-set/ui/form";
 import { useExercises } from "../../exercise/hooks/use-exercises";
 import { SetProgramFormData } from "../../program-set/domain/type";
+import { DEFAULT_REST_SECONDS } from "../../program-set/domain/rest";
 import { ExerciseProgramFormData } from "../domain/type";
 
 type ExerciseProgramFormProps = {
@@ -41,6 +42,7 @@ export default function ExerciseProgramForm({
     const next: SetProgramFormData = {
       id: Math.random().toString(36).slice(2),
       targetQuantity: null,
+      restSeconds: DEFAULT_REST_SECONDS,
       loadValue: "",
       loadUnit: "kg",
       rpe: "10",
@@ -71,6 +73,7 @@ export default function ExerciseProgramForm({
       () => ({
         id: Math.random().toString(36).slice(2),
         targetQuantity: quantity,
+        restSeconds: DEFAULT_REST_SECONDS,
         loadValue: "",
         loadUnit: "kg",
         rpe: "10",

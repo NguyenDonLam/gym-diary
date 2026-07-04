@@ -25,11 +25,19 @@ import ExerciseLibraryPicker from "@/src/features/exercise/components/exercise-l
 import type { Exercise } from "@packages/exercise/type";
 import { SessionExerciseFactory } from "@/src/features/session-exercise/domain/factory";
 import { useKeyboardHeight } from "@/src/hooks/use-keyboard-height";
+import { RestTimerBanner } from "@/src/features/session-workout/components/rest-timer-banner";
+import { findRestTimerTargetForSet } from "@/src/features/session-workout/domain/rest-timer-target";
+import { useRestTimer } from "@/src/features/session-workout/hooks/use-rest-timer";
+import { normalizeRestSeconds } from "@/src/features/program-set/domain/rest";
 
 type ProgressHistoryLookup = Record<
   string,
   SessionExerciseProgressHistoryPoint[]
 >;
+
+type SetCommitEvent = {
+  becameCompleted: boolean;
+};
 
 async function getProgressHistoryLookup(
   exercises: { exerciseId: string | null }[],
@@ -88,6 +96,7 @@ export default function SessionWorkoutPage() {
   const { colorScheme } = useColorScheme();
   const iconColor = colorScheme === "dark" ? "#F9FAFB" : "#111827";
   const isDark = colorScheme === "dark";
+  const { startRestTimer } = useRestTimer();
 
   const rawId = params.id;
   const sessionId = Array.isArray(rawId) ? rawId[0] : rawId;
@@ -134,16 +143,40 @@ export default function SessionWorkoutPage() {
       ? keyboardHeight + 120
       : 96;
 
+  const startRestAfterCompletedSet = useCallback(
+    (set: SessionSet, event?: SetCommitEvent) => {
+      if (readOnly || set.isCompleted !== true) return;
+      if (event && !event.becameCompleted) return;
+
+      const currentTarget = findRestTimerTargetForSet(exercises, set.id);
+      if (!currentTarget) return;
+
+      const durationSeconds = normalizeRestSeconds(set.restSeconds);
+      if (durationSeconds <= 0) return;
+
+      void startRestTimer({
+        sessionId: currentTarget.sessionId,
+        setId: set.id,
+        exerciseName: currentTarget.exerciseName,
+        setIndex: currentTarget.setIndex,
+        durationSeconds,
+        source: "auto",
+      });
+    },
+    [exercises, readOnly, startRestTimer],
+  );
+
   const onSetCommit = useCallback(
-    async (set: SessionSet) => {
+    async (set: SessionSet, event?: SetCommitEvent) => {
       if (readOnly) return;
       try {
+        startRestAfterCompletedSet(set, event);
         await sessionSetRepository.save(set);
       } catch (err) {
         console.error("Failed to save session set", err);
       }
     },
-    [readOnly],
+    [readOnly, startRestAfterCompletedSet],
   );
 
   const onSetAdd = useCallback(
@@ -229,6 +262,8 @@ export default function SessionWorkoutPage() {
 
         <View style={{ width: 20, marginLeft: 8 }} />
       </View>
+
+      <RestTimerBanner sessionId={sessionId} />
 
       <ScrollView
         className="flex-1 bg-white dark:bg-[#2B2D3A]"

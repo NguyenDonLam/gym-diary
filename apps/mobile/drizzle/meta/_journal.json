@@ -36,6 +36,13 @@
       "when": 1774483382656,
       "tag": "0004_regular_omega_flight",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1783147200000,
+      "tag": "0005_rest_periods",
+      "breakpoints": true
     }
   ]
 }

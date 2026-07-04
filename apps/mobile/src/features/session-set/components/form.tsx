@@ -8,6 +8,7 @@ import {
   Wind,
   Gauge,
   Flame,
+  Clock3,
   Pause,
   Play,
   RotateCcw,
@@ -17,6 +18,11 @@ import { useColorScheme } from "nativewind";
 import { SessionSet } from "@/src/features/session-set/domain/types";
 import { useOngoingSession } from "../../session-workout/hooks/use-ongoing-session";
 import type { QuantityUnit } from "@/db/enums";
+import {
+  DEFAULT_REST_SECONDS,
+  formatRestDuration,
+  normalizeRestSeconds,
+} from "../../program-set/domain/rest";
 
 const EFFORT_LEVELS = [
   { id: "light", label: "Light", rpe: 5 },
@@ -119,7 +125,11 @@ type Props = {
   value: SessionSet;
   setValue: (next: SessionSet) => void;
   quantityUnit?: QuantityUnit;
-  onSetCommit?: (set: SessionSet) => void;
+  onSetCommit?: (
+    set: SessionSet,
+    event?: { becameCompleted: boolean },
+  ) => void;
+  onRestStart?: (set: SessionSet) => void;
   readOnly?: boolean;
 };
 
@@ -128,6 +138,7 @@ export function SessionSetRow({
   setValue,
   quantityUnit = "reps",
   onSetCommit,
+  onRestStart,
   readOnly = false,
 }: Props) {
   const { colorScheme } = useColorScheme();
@@ -135,7 +146,8 @@ export function SessionSetRow({
   const completedActionColor = colorScheme === "dark" ? "#052E16" : "#FFFFFF";
   const activeIcon = colorScheme === "dark" ? "#F9FAFB" : "#111827";
   const shellBg = colorScheme === "dark" ? "bg-neutral-900/80" : "bg-white";
-  const { aggregate, getContextForSet } = useOngoingSession();
+  const { aggregate, getContextForSet, recordUserInteraction } =
+    useOngoingSession();
 
   const repsRef = useRef<TextInput | null>(null);
   const isTimeQuantity = quantityUnit === "time";
@@ -221,12 +233,14 @@ export function SessionSetRow({
     hasValidQuantity(v) && hasOptionalValidLoad(v) && v.rpe != null;
 
   const showCompleted = value.isCompleted === true;
+  const restSeconds = normalizeRestSeconds(value.restSeconds);
 
   const apply = (patch: Partial<SessionSet>) => {
     if (readOnly) return latestRef.current;
     const next: SessionSet = { ...latestRef.current, ...patch };
     latestRef.current = next;
     setValue(next);
+    recordUserInteraction();
     return next;
   };
 
@@ -335,6 +349,8 @@ export function SessionSetRow({
     if (!isValid(v)) return;
 
     const finalSet = v.isCompleted ? v : { ...v, isCompleted: true };
+    const becameCompleted =
+      v.isCompleted !== true && finalSet.isCompleted === true;
 
     const update = isTimeQuantity
       ? null
@@ -360,7 +376,7 @@ export function SessionSetRow({
       setStopwatchRunning(false);
     }
 
-    onSetCommit?.(nextSet);
+    onSetCommit?.(nextSet, { becameCompleted });
   };
 
   const completeSet = () => {
@@ -578,6 +594,27 @@ export function SessionSetRow({
     startStopwatch();
   };
 
+  const handleRestStart = () => {
+    if (readOnly || restSeconds <= 0) return;
+    onSetCommit?.(latestRef.current, { becameCompleted: false });
+    onRestStart?.(latestRef.current);
+  };
+
+  const handleChangeRestSeconds = (raw: string) => {
+    if (readOnly) return;
+
+    const cleaned = raw.replace(/[^\d]/g, "");
+    const nextRestSeconds =
+      cleaned === "" ? 0 : Math.max(0, Number.parseInt(cleaned, 10));
+
+    apply({ restSeconds: nextRestSeconds });
+  };
+
+  const commitRestSeconds = () => {
+    if (readOnly) return;
+    onSetCommit?.(latestRef.current, { becameCompleted: false });
+  };
+
   return (
     <View
       className={`mb-2 rounded-xl px-2.5 py-2 ${shellBg} ${readOnly ? "opacity-70" : ""}`}
@@ -692,6 +729,68 @@ export function SessionSetRow({
           </Text>
         </Pressable>
       </View>
+
+      {onRestStart ? (
+        <View className="mt-2 flex-row items-center justify-between gap-2">
+          <View className="min-w-0 flex-1 flex-row items-center">
+            <Clock3 size={13} color={activeIcon} />
+            <Text
+              className="ml-1.5 text-[11px] font-semibold text-neutral-500 dark:text-neutral-400"
+              numberOfLines={1}
+            >
+              Rest after set
+            </Text>
+          </View>
+
+          <View className="h-8 flex-row items-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900">
+            <TextInput
+              value={String(restSeconds)}
+              onChangeText={handleChangeRestSeconds}
+              onEndEditing={commitRestSeconds}
+              keyboardType="number-pad"
+              editable={!readOnly}
+              placeholder={String(DEFAULT_REST_SECONDS)}
+              placeholderTextColor="#9CA3AF"
+              selectTextOnFocus
+              className="w-12 p-0 text-center text-[13px] font-semibold text-neutral-900 dark:text-neutral-50"
+            />
+            <Text className="ml-0.5 text-[10px] font-semibold text-neutral-500 dark:text-neutral-400">
+              s
+            </Text>
+          </View>
+
+          <Pressable
+            disabled={readOnly || restSeconds <= 0}
+            onPress={handleRestStart}
+            hitSlop={8}
+            className={`h-8 flex-row items-center rounded-xl px-2.5 ${
+              readOnly || restSeconds <= 0
+                ? "bg-neutral-200 dark:bg-neutral-800"
+                : "bg-neutral-900 dark:bg-[#BD93F9]"
+            }`}
+          >
+            <Play
+              size={12}
+              color={
+                readOnly || restSeconds <= 0
+                  ? activeIcon
+                  : colorScheme === "dark"
+                    ? "#282A36"
+                    : "#FFFFFF"
+              }
+            />
+            <Text
+              className={`ml-1 text-[11px] font-semibold ${
+                readOnly || restSeconds <= 0
+                  ? "text-neutral-700 dark:text-neutral-200"
+                  : "text-white dark:text-[#282A36]"
+              }`}
+            >
+              {formatRestDuration(restSeconds)}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }
