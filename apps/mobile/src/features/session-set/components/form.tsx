@@ -1,12 +1,22 @@
 // apps/mobile/app/session-workout/session-set-row.tsx
 
-import React, { useEffect, useRef } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
-import { CheckCircle2, Circle, Wind, Gauge, Flame } from "lucide-react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { AppState, View, Text, TextInput, Pressable } from "react-native";
+import {
+  CheckCircle2,
+  Circle,
+  Wind,
+  Gauge,
+  Flame,
+  Pause,
+  Play,
+  RotateCcw,
+} from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
 import { SessionSet } from "@/src/features/session-set/domain/types";
 import { useOngoingSession } from "../../session-workout/hooks/use-ongoing-session";
+import type { QuantityUnit } from "@/db/enums";
 
 const EFFORT_LEVELS = [
   { id: "light", label: "Light", rpe: 5 },
@@ -52,6 +62,11 @@ const BAND_OPTIONS = [
 
 const KG_TO_LB = 2.2046226218;
 const LB_TO_KG = 0.45359237;
+
+function cleanSeconds(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.floor(value));
+}
 
 function isNumericLoadUnit(unit: SessionSet["loadUnit"]) {
   return unit === "kg" || unit === "lb";
@@ -103,6 +118,7 @@ function renderEffortIcon(
 type Props = {
   value: SessionSet;
   setValue: (next: SessionSet) => void;
+  quantityUnit?: QuantityUnit;
   onSetCommit?: (set: SessionSet) => void;
   readOnly?: boolean;
 };
@@ -110,6 +126,7 @@ type Props = {
 export function SessionSetRow({
   value,
   setValue,
+  quantityUnit = "reps",
   onSetCommit,
   readOnly = false,
 }: Props) {
@@ -121,6 +138,13 @@ export function SessionSetRow({
   const { aggregate, getContextForSet } = useOngoingSession();
 
   const repsRef = useRef<TextInput | null>(null);
+  const isTimeQuantity = quantityUnit === "time";
+  const [stopwatchRunning, setStopwatchRunning] = useState(false);
+  const [stopwatchStartedAtMs, setStopwatchStartedAtMs] = useState<
+    number | null
+  >(null);
+  const [stopwatchBaseSeconds, setStopwatchBaseSeconds] = useState(0);
+  const [stopwatchTick, setStopwatchTick] = useState(0);
 
   const latestRef = useRef<SessionSet>(value);
   const rememberedNumericRef = useRef<{
@@ -156,7 +180,12 @@ export function SessionSetRow({
       ? tpl.targetQuantity
       : null;
 
-  const repsPlaceholder = programTarget != null ? String(programTarget) : "...";
+  const quantityPlaceholder =
+    programTarget != null
+      ? String(programTarget)
+      : isTimeQuantity
+        ? "sec"
+        : "...";
 
   const prevWeightStr =
     tpl?.loadValue != null && String(tpl.loadValue).trim() !== ""
@@ -164,7 +193,7 @@ export function SessionSetRow({
       : "";
   const weightPlaceholder = prevWeightStr !== "" ? prevWeightStr : "...";
 
-  const repsValue = value.quantity == null ? "" : String(value.quantity);
+  const quantityValue = value.quantity == null ? "" : String(value.quantity);
   const loadValue = value.loadValue ?? "";
 
   const hasValidLoad = (v: SessionSet) => {
@@ -179,8 +208,17 @@ export function SessionSetRow({
     return raw != null && raw >= 0;
   };
 
+  const hasOptionalValidLoad = (v: SessionSet) => {
+    if (!isTimeQuantity) return hasValidLoad(v);
+    if (v.loadValue == null || v.loadValue.trim() === "") return true;
+    return hasValidLoad(v);
+  };
+
+  const hasValidQuantity = (v: SessionSet) =>
+    v.quantity != null && Number.isFinite(v.quantity) && v.quantity > 0;
+
   const isValid = (v: SessionSet) =>
-    v.quantity != null && hasValidLoad(v) && v.rpe != null;
+    hasValidQuantity(v) && hasOptionalValidLoad(v) && v.rpe != null;
 
   const showCompleted = value.isCompleted === true;
 
@@ -192,6 +230,92 @@ export function SessionSetRow({
     return next;
   };
 
+  const getCurrentStopwatchSeconds = () => {
+    if (!stopwatchRunning || stopwatchStartedAtMs == null) {
+      return Math.max(0, latestRef.current.quantity ?? stopwatchBaseSeconds);
+    }
+
+    const elapsed = Math.floor((Date.now() - stopwatchStartedAtMs) / 1000);
+    return Math.max(0, stopwatchBaseSeconds + elapsed);
+  };
+
+  useEffect(() => {
+    if (!isTimeQuantity || !stopwatchRunning || stopwatchStartedAtMs == null) {
+      return;
+    }
+
+    const id = setInterval(() => {
+      setStopwatchTick((tick) => tick + 1);
+    }, 250);
+
+    return () => clearInterval(id);
+  }, [isTimeQuantity, stopwatchRunning, stopwatchStartedAtMs]);
+
+  useEffect(() => {
+    if (!isTimeQuantity || !stopwatchRunning || readOnly) return;
+
+    const elapsed =
+      stopwatchStartedAtMs == null
+        ? 0
+        : Math.floor((Date.now() - stopwatchStartedAtMs) / 1000);
+    const seconds = Math.max(0, stopwatchBaseSeconds + elapsed);
+
+    if (latestRef.current.quantity !== seconds) {
+      const next: SessionSet = { ...latestRef.current, quantity: seconds };
+      latestRef.current = next;
+      setValue(next);
+    }
+  }, [
+    isTimeQuantity,
+    readOnly,
+    setValue,
+    stopwatchBaseSeconds,
+    stopwatchRunning,
+    stopwatchStartedAtMs,
+    stopwatchTick,
+  ]);
+
+  useEffect(() => {
+    if (!isTimeQuantity || !stopwatchRunning || readOnly) return;
+
+    const syncElapsed = () => {
+      const elapsed =
+        stopwatchStartedAtMs == null
+          ? 0
+          : Math.floor((Date.now() - stopwatchStartedAtMs) / 1000);
+      const seconds = Math.max(0, stopwatchBaseSeconds + elapsed);
+
+      if (latestRef.current.quantity !== seconds) {
+        const next: SessionSet = { ...latestRef.current, quantity: seconds };
+        latestRef.current = next;
+        setValue(next);
+      }
+    };
+
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        syncElapsed();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [
+    isTimeQuantity,
+    readOnly,
+    setValue,
+    stopwatchRunning,
+    stopwatchStartedAtMs,
+    stopwatchBaseSeconds,
+  ]);
+
+  useEffect(() => {
+    if (isTimeQuantity && !readOnly) return;
+
+    setStopwatchRunning(false);
+    setStopwatchStartedAtMs(null);
+    setStopwatchBaseSeconds(0);
+  }, [isTimeQuantity, readOnly]);
+
   const ensureRpeDefault = (v: SessionSet): SessionSet => {
     if (v.rpe != null) return v;
     if (readOnly) return v;
@@ -201,8 +325,9 @@ export function SessionSetRow({
     return next;
   };
 
-  const commitIfValid = () => {
+  const commitIfValid = (options?: { allowTimeCommit?: boolean }) => {
     if (readOnly) return;
+    if (isTimeQuantity && options?.allowTimeCommit !== true) return;
 
     const v0 = latestRef.current;
     const v = ensureRpeDefault(v0);
@@ -211,11 +336,13 @@ export function SessionSetRow({
 
     const finalSet = v.isCompleted ? v : { ...v, isCompleted: true };
 
-    const update = aggregate?.upsertSet(finalSet, getContextForSet(finalSet));
+    const update = isTimeQuantity
+      ? null
+      : aggregate?.upsertSet(finalSet, getContextForSet(finalSet));
 
     const nextSet: SessionSet =
       update?.setScore == null
-        ? finalSet
+        ? { ...finalSet, e1rm: isTimeQuantity ? null : finalSet.e1rm }
         : {
             ...finalSet,
             e1rm: update.setScore,
@@ -227,24 +354,80 @@ export function SessionSetRow({
       setValue(nextSet);
     }
 
+    if (isTimeQuantity) {
+      setStopwatchBaseSeconds(0);
+      setStopwatchStartedAtMs(null);
+      setStopwatchRunning(false);
+    }
+
     onSetCommit?.(nextSet);
   };
 
   const completeSet = () => {
     if (readOnly) return;
 
+    if (isTimeQuantity && stopwatchRunning) {
+      const seconds = getCurrentStopwatchSeconds();
+      apply({ quantity: seconds });
+      setStopwatchBaseSeconds(seconds);
+      setStopwatchStartedAtMs(null);
+      setStopwatchRunning(false);
+      setTimeout(() => commitIfValid({ allowTimeCommit: true }), 0);
+      return;
+    }
+
     if (programTarget != null && latestRef.current.quantity == null) {
       apply({ quantity: programTarget });
     }
 
-    setTimeout(commitIfValid, 0);
+    setTimeout(() => commitIfValid({ allowTimeCommit: true }), 0);
+  };
+
+  const startStopwatch = () => {
+    if (readOnly || !isTimeQuantity || stopwatchRunning) return;
+
+    const baseSeconds = cleanSeconds(latestRef.current.quantity);
+
+    setStopwatchBaseSeconds(baseSeconds);
+    setStopwatchStartedAtMs(Date.now());
+    setStopwatchRunning(true);
+  };
+
+  const pauseStopwatch = () => {
+    if (readOnly || !isTimeQuantity || !stopwatchRunning) return;
+
+    const seconds = getCurrentStopwatchSeconds();
+
+    apply({ quantity: seconds });
+    setStopwatchBaseSeconds(seconds);
+    setStopwatchStartedAtMs(null);
+    setStopwatchRunning(false);
+    setTimeout(() => commitIfValid({ allowTimeCommit: true }), 0);
+  };
+
+  const resetStopwatch = () => {
+    if (readOnly || !isTimeQuantity) return;
+
+    setStopwatchBaseSeconds(0);
+    setStopwatchStartedAtMs(null);
+    setStopwatchRunning(false);
+    apply({ quantity: null, isCompleted: false, e1rm: null });
   };
 
   const onChangeReps = (raw: string) => {
     if (readOnly) return;
-    const trimmed = raw.trim();
-    const num = trimmed === "" ? null : Number(trimmed);
-    apply({ quantity: num === null || Number.isNaN(num) ? null : num });
+
+    if (stopwatchRunning) {
+      setStopwatchRunning(false);
+      setStopwatchStartedAtMs(null);
+    }
+
+    const cleaned = isTimeQuantity ? raw.replace(/[^\d]/g, "") : raw.trim();
+    const num = cleaned === "" ? null : Number(cleaned);
+    const quantity = num === null || Number.isNaN(num) ? null : num;
+
+    setStopwatchBaseSeconds(Math.max(0, quantity ?? 0));
+    apply({ quantity });
   };
 
   const onChangeLoad = (raw: string) => {
@@ -329,7 +512,9 @@ export function SessionSetRow({
       loadValue: nextLoadValue,
     });
 
-    setTimeout(commitIfValid, 0);
+    if (!isTimeQuantity) {
+      setTimeout(commitIfValid, 0);
+    }
   };
 
   const cycleBand = () => {
@@ -343,7 +528,9 @@ export function SessionSetRow({
         : BAND_OPTIONS[idx + 1];
 
     apply({ loadValue: next.id });
-    setTimeout(commitIfValid, 0);
+    if (!isTimeQuantity) {
+      setTimeout(commitIfValid, 0);
+    }
   };
 
   const cycleEffort = () => {
@@ -356,7 +543,9 @@ export function SessionSetRow({
     const nextLvl = EFFORT_LEVELS[nextIdx];
 
     apply({ rpe: nextLvl.rpe });
-    setTimeout(commitIfValid, 0);
+    if (!isTimeQuantity) {
+      setTimeout(commitIfValid, 0);
+    }
   };
 
   const effort = getEffortFromRpe(value.rpe);
@@ -367,6 +556,27 @@ export function SessionSetRow({
       : "default";
   const selectedBand =
     BAND_OPTIONS.find((b) => b.id === value.loadValue) ?? BAND_OPTIONS[0];
+  const hasStopwatchValue = cleanSeconds(value.quantity) > 0;
+  const timerButtonIsReset = !stopwatchRunning && hasStopwatchValue;
+  const timerButtonColor =
+    timerButtonIsReset || readOnly
+      ? activeIcon
+      : colorScheme === "dark"
+        ? "#282A36"
+        : "#FFFFFF";
+  const handleTimerPress = () => {
+    if (stopwatchRunning) {
+      pauseStopwatch();
+      return;
+    }
+
+    if (hasStopwatchValue) {
+      resetStopwatch();
+      return;
+    }
+
+    startStopwatch();
+  };
 
   return (
     <View
@@ -392,23 +602,46 @@ export function SessionSetRow({
           )}
         </Pressable>
 
-        <Pressable
-          disabled={readOnly}
-          onPress={() => repsRef.current?.focus()}
-          className="h-12 flex-1 justify-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900"
-        >
+        <View className="h-12 flex-1 flex-row items-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900">
           <TextInput
             ref={repsRef}
-            className="text-center text-[14px] font-semibold text-neutral-900 dark:text-neutral-50"
-            keyboardType="numeric"
+            className="min-w-0 flex-1 text-center text-[14px] font-semibold text-neutral-900 dark:text-neutral-50"
+            keyboardType={isTimeQuantity ? "number-pad" : "numeric"}
             editable={!readOnly}
-            placeholder={repsPlaceholder}
+            placeholder={quantityPlaceholder}
             placeholderTextColor="#9CA3AF"
-            value={repsValue}
+            value={quantityValue}
             onChangeText={onChangeReps}
-            onEndEditing={commitIfValid}
+            onEndEditing={() => commitIfValid()}
           />
-        </Pressable>
+
+          {isTimeQuantity ? (
+            <>
+              <Text className="mx-1 text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">
+                s
+              </Text>
+
+              <Pressable
+                disabled={readOnly}
+                onPress={handleTimerPress}
+                hitSlop={6}
+                className={`ml-1 h-9 w-8 items-center justify-center rounded-lg ${
+                  timerButtonIsReset || readOnly
+                    ? "bg-neutral-200 dark:bg-neutral-800"
+                    : "bg-neutral-900 dark:bg-[#BD93F9]"
+                }`}
+              >
+                {stopwatchRunning ? (
+                  <Pause size={14} color={timerButtonColor} />
+                ) : timerButtonIsReset ? (
+                  <RotateCcw size={13} color={timerButtonColor} />
+                ) : (
+                  <Play size={14} color={timerButtonColor} />
+                )}
+              </Pressable>
+            </>
+          ) : null}
+        </View>
 
         <View className="h-12 flex-1 flex-row items-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900">
           {isBandUnit ? (
@@ -431,7 +664,7 @@ export function SessionSetRow({
               placeholderTextColor="#9CA3AF"
               value={loadValue}
               onChangeText={onChangeLoad}
-              onEndEditing={commitIfValid}
+              onEndEditing={() => commitIfValid()}
             />
           )}
 

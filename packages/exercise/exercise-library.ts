@@ -1,6 +1,19 @@
-import { Exercise } from "./type";
+import type { Exercise } from "./type";
 
-export const DEFAULT_EXERCISES: { id: string; name: string }[] = [
+type DefaultExercise = Pick<Exercise, "id" | "name" | "quantityUnit">;
+type DefaultExerciseInput = Omit<DefaultExercise, "quantityUnit"> &
+  Partial<Pick<DefaultExercise, "quantityUnit">>;
+
+const DEFAULT_QUANTITY_UNIT: DefaultExercise["quantityUnit"] = "reps";
+
+const withDefaultQuantityUnit = (
+  exercise: DefaultExerciseInput,
+): DefaultExercise => ({
+  quantityUnit: DEFAULT_QUANTITY_UNIT,
+  ...exercise,
+});
+
+const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
   // DUMBBELL – CHEST
   { id: "9b4a0bbd-9e8e-4c3f-9c5e-4a4f7a1b0001", name: "Dumbbell Bench Press" },
   {
@@ -75,6 +88,7 @@ export const DEFAULT_EXERCISES: { id: string; name: string }[] = [
   {
     id: "1a2b3c4d-5e6f-4709-8d6e-7f8091a20017",
     name: "Dumbbell Farmer's Carry",
+    quantityUnit: "time",
   },
 
   // BARBELL – SQUAT / HINGE
@@ -219,6 +233,7 @@ export const DEFAULT_EXERCISES: { id: string; name: string }[] = [
   {
     id: "d0d8efb5-5d3b-4ff8-83f9-3ebcfe843ae0",
     name: "Kettlebell Farmer's Carry",
+    quantityUnit: "time",
   },
   // CABLE – CHEST
   { id: "5debf7ed-e889-4d94-b1a0-e3284c9c009c", name: "Cable Chest Fly" },
@@ -356,14 +371,39 @@ export const DEFAULT_EXERCISES: { id: string; name: string }[] = [
     id: "b8aa81df-60f0-4400-ac27-088833c049b2",
     name: "Hanging Leg Raise",
   },
-  { id: "49ec6fe2-b02f-450a-9b55-3041cb411d20", name: "Plank" },
+  {
+    id: "49ec6fe2-b02f-450a-9b55-3041cb411d20",
+    name: "Plank",
+    quantityUnit: "time",
+  },
+  {
+    id: "8f6c0f20-8d6f-4cc7-94d8-995bf81f203f",
+    name: "Front Lever",
+    quantityUnit: "time",
+  },
   {
     id: "4d78cf2b-32ff-4d16-8116-27961cd3c261",
     name: "Back Extension",
   },
   // OTHER – STRONGMAN
-  { id: "cb1cf8a4-231d-4115-8adb-4c8c698b7d0a", name: "Sled Push" },
-  { id: "548c8cb6-8e03-40e0-859b-68ef43f131d8", name: "Sled Pull" },
-  { id: "6ac23e2f-46ed-476e-a3f1-dfc4e84112eb", name: "Yoke Carry" },
+  {
+    id: "cb1cf8a4-231d-4115-8adb-4c8c698b7d0a",
+    name: "Sled Push",
+    quantityUnit: "time",
+  },
+  {
+    id: "548c8cb6-8e03-40e0-859b-68ef43f131d8",
+    name: "Sled Pull",
+    quantityUnit: "time",
+  },
+  {
+    id: "6ac23e2f-46ed-476e-a3f1-dfc4e84112eb",
+    name: "Yoke Carry",
+    quantityUnit: "time",
+  },
   { id: "5d221f42-7bc6-4f62-a2d6-90e6c5510f17", name: "Tire Flip" },
 ];
+
+export const DEFAULT_EXERCISES: DefaultExercise[] = EXERCISE_LIBRARY.map(
+  withDefaultQuantityUnit,
+);

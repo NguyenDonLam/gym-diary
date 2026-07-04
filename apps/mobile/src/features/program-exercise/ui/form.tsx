@@ -53,11 +53,24 @@ export default function ExerciseProgramForm({
     update({ sets: formData.sets.slice(0, -1) });
   };
 
-  const applyPreset = (count: number, reps: number) => {
+  const presetOptions =
+    formData.quantityUnit === "time"
+      ? [
+          { count: 1, quantity: 30, label: "1x30s" },
+          { count: 2, quantity: 45, label: "2x45s" },
+          { count: 3, quantity: 60, label: "3x60s" },
+        ]
+      : [
+          { count: 1, quantity: 8, label: "1x8" },
+          { count: 2, quantity: 10, label: "2x10" },
+          { count: 3, quantity: 12, label: "3x12" },
+        ];
+
+  const applyPreset = (count: number, quantity: number) => {
     const nextSets: SetProgramFormData[] = Array.from({ length: count }).map(
       () => ({
         id: Math.random().toString(36).slice(2),
-        targetQuantity: reps,
+        targetQuantity: quantity,
         loadValue: "",
         loadUnit: "kg",
         rpe: "10",
@@ -119,30 +132,17 @@ export default function ExerciseProgramForm({
 
       {formData.sets.length === 0 ? (
         <View className="mb-2 flex-row flex-wrap gap-2">
-          <Pressable
-            className={`rounded-full px-3 py-1.5 ${chipBg}`}
-            onPress={() => applyPreset(1, 8)}
-          >
-            <Text className={`text-[11px] font-semibold ${chipText}`}>1x8</Text>
-          </Pressable>
-
-          <Pressable
-            className={`rounded-full px-3 py-1.5 ${chipBg}`}
-            onPress={() => applyPreset(2, 10)}
-          >
-            <Text className={`text-[11px] font-semibold ${chipText}`}>
-              2x10
-            </Text>
-          </Pressable>
-
-          <Pressable
-            className={`rounded-full px-3 py-1.5 ${chipBg}`}
-            onPress={() => applyPreset(3, 12)}
-          >
-            <Text className={`text-[11px] font-semibold ${chipText}`}>
-              3x12
-            </Text>
-          </Pressable>
+          {presetOptions.map((preset) => (
+            <Pressable
+              key={preset.label}
+              className={`rounded-full px-3 py-1.5 ${chipBg}`}
+              onPress={() => applyPreset(preset.count, preset.quantity)}
+            >
+              <Text className={`text-[11px] font-semibold ${chipText}`}>
+                {preset.label}
+              </Text>
+            </Pressable>
+          ))}
         </View>
       ) : null}
 

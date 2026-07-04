@@ -7,6 +7,7 @@ import { Exercise } from "@packages/exercise/type";
 import { exerciseRepository } from "@/src/features/exercise/data/exercise-repository";
 import { exerciseFactory } from "@/src/features/exercise/domain/factory";
 import { exerciseStatRepository } from "@/src/features/exercise-stats/data/repository";
+import type { QuantityUnit } from "@/db/enums";
 
 type ExerciseUsageSummary = {
   exerciseId: string;
@@ -40,6 +41,10 @@ function getExerciseId(e: Exercise) {
 
 function getExerciseName(e: Exercise) {
   return e.name ?? "";
+}
+
+function getQuantityUnitLabel(unit: QuantityUnit) {
+  return unit === "time" ? "Time" : "Reps";
 }
 
 function compareByName(a: Exercise, b: Exercise) {
@@ -177,8 +182,26 @@ function ExerciseRow(props: {
         </View>
 
         <View className="items-end">
+          <View
+            className={`rounded-full px-2 py-0.5 ${
+              props.selected
+                ? "bg-white/15 dark:bg-[#282A36]/10"
+                : "bg-neutral-100 dark:bg-[#21222C]"
+            }`}
+          >
+            <Text
+              className={`text-[10px] font-semibold ${
+                props.selected
+                  ? "text-white dark:text-[#282A36]"
+                  : "text-neutral-500 dark:text-[#6272A4]"
+              }`}
+            >
+              {getQuantityUnitLabel(props.exercise.quantityUnit ?? "reps")}
+            </Text>
+          </View>
+
           <Text
-            className={`text-base ${
+            className={`mt-1 text-base ${
               props.selected
                 ? "text-white dark:text-[#282A36]"
                 : "text-neutral-400 dark:text-[#6272A4]"
@@ -227,6 +250,8 @@ export default function ExerciseLibraryPicker({
 
   const [createOpen, setCreateOpen] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState("");
+  const [newExerciseQuantityUnit, setNewExerciseQuantityUnit] =
+    useState<QuantityUnit>("reps");
 
   const selectable = mode === "single-select" || mode === "multi-select";
 
@@ -382,7 +407,10 @@ export default function ExerciseLibraryPicker({
     if (!baseName) return;
 
     try {
-      const exercise = exerciseFactory.create({ name: baseName });
+      const exercise = exerciseFactory.create({
+        name: baseName,
+        quantityUnit: newExerciseQuantityUnit,
+      });
       const saved = await exerciseRepository.save(exercise);
 
       await load();
@@ -399,6 +427,7 @@ export default function ExerciseLibraryPicker({
 
       setCreateOpen(false);
       setNewExerciseName("");
+      setNewExerciseQuantityUnit("reps");
       setQ("");
 
       if (mode !== "multi-select") {
@@ -500,6 +529,7 @@ export default function ExerciseLibraryPicker({
             <Pressable
               onPress={() => {
                 setNewExerciseName(q.trim());
+                setNewExerciseQuantityUnit("reps");
                 setCreateOpen(true);
               }}
               accessibilityRole="button"
@@ -635,11 +665,40 @@ export default function ExerciseLibraryPicker({
               onChangeText={setNewExerciseName}
             />
 
+            <View className="mb-3 flex-row rounded-xl bg-neutral-100 p-1 dark:bg-[#21222C]">
+              {(["reps", "time"] as const).map((unit) => {
+                const selected = newExerciseQuantityUnit === unit;
+
+                return (
+                  <Pressable
+                    key={unit}
+                    onPress={() => setNewExerciseQuantityUnit(unit)}
+                    className={`h-9 flex-1 items-center justify-center rounded-lg ${
+                      selected
+                        ? "bg-white dark:bg-[#BD93F9]"
+                        : "bg-transparent"
+                    }`}
+                  >
+                    <Text
+                      className={`text-[12px] font-semibold ${
+                        selected
+                          ? "text-neutral-900 dark:text-[#282A36]"
+                          : "text-neutral-500 dark:text-[#6272A4]"
+                      }`}
+                    >
+                      {getQuantityUnitLabel(unit)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
             <View className="flex-row items-center justify-end gap-2">
               <Pressable
                 onPress={() => {
                   setCreateOpen(false);
                   setNewExerciseName("");
+                  setNewExerciseQuantityUnit("reps");
                 }}
                 className="h-7 items-center justify-center rounded-full bg-neutral-100 px-3 dark:bg-[#44475A]"
               >

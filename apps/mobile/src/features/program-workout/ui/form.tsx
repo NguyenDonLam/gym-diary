@@ -151,7 +151,7 @@ export default function WorkoutProgramForm({
           exerciseId: ex.id,
           isCustom: false,
           sets: [],
-          quantityUnit: "reps",
+          quantityUnit: ex.quantityUnit ?? "reps",
         });
 
         existingIds.add(ex.id);

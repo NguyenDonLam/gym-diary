@@ -121,8 +121,16 @@ function createAggregate(
   session: SessionWorkout,
   lookupExerciseStat: Record<string, ExerciseStat>,
 ): Aggregate {
+  const quantityUnitByExerciseSessionId = new Map(
+    (session.exercises ?? []).map((ex) => [ex.id, ex.quantityUnit]),
+  );
+
   const setStrategy = new SetE1rmScoreStrategy<SessionSet>(
     (s) => {
+      if (quantityUnitByExerciseSessionId.get(s.sessionExerciseId) === "time") {
+        return null;
+      }
+
       if (s.loadUnit === "band" || s.loadUnit === "custom") return null;
 
       if (s.loadValue == null) return null;
@@ -135,7 +143,10 @@ function createAggregate(
       if (s.loadUnit === "lb") return raw * LB_TO_KG;
       return raw;
     },
-    (s) => s.quantity,
+    (s) =>
+      quantityUnitByExerciseSessionId.get(s.sessionExerciseId) === "time"
+        ? null
+        : s.quantity,
     (s) => 10 - (s.rpe ?? 10),
   );
 

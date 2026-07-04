@@ -87,6 +87,20 @@ function replaceSet(sets: SessionSet[] | undefined, next: SessionSet) {
   return xs.map((s) => (s.id === next.id ? next : s));
 }
 
+function formatDuration(secondsRaw: number | null | undefined) {
+  if (secondsRaw == null || !Number.isFinite(secondsRaw) || secondsRaw <= 0) {
+    return "?";
+  }
+
+  const seconds = Math.round(secondsRaw);
+  const minutes = Math.floor(seconds / 60);
+  const remaining = seconds % 60;
+
+  if (minutes <= 0) return `${remaining}s`;
+  if (remaining === 0) return `${minutes}m`;
+  return `${minutes}m ${remaining}s`;
+}
+
 type Props = {
   value: SessionExerciseView;
   onChange: (next: SessionExerciseView) => void;
@@ -201,7 +215,11 @@ export function SessionExerciseCard({
                 <View className="flex-1 flex-row flex-wrap justify-end gap-1">
                   {lastSets.map((s, idx) => {
                     const repsLabel =
-                      s.reps != null && s.reps > 0 ? String(s.reps) : "?";
+                      value.quantityUnit === "time"
+                        ? formatDuration(s.reps)
+                        : s.reps != null && s.reps > 0
+                          ? String(s.reps)
+                          : "?";
                     const load = (s.load ?? "").trim();
                     const label =
                       load !== "" ? `${load}×${repsLabel}` : repsLabel;
@@ -269,7 +287,7 @@ export function SessionExerciseCard({
                 ✓
               </Text>
               <Text className="flex-1 text-center text-[10px] text-neutral-500 dark:text-neutral-500">
-                Volume
+                {value.quantityUnit === "time" ? "Time" : "Volume"}
               </Text>
               <Text className="flex-1 text-center text-[10px] text-neutral-500 dark:text-neutral-500">
                 Load
@@ -285,6 +303,7 @@ export function SessionExerciseCard({
               <SessionSetRow
                 key={set.id}
                 value={set}
+                quantityUnit={value.quantityUnit}
                 readOnly={readOnly}
                 setValue={(next) => {
                   if (readOnly) return;
@@ -297,8 +316,11 @@ export function SessionExerciseCard({
                   if (readOnly) return;
 
                   const exScore =
-                    aggregate?.getExerciseScore(nextSet.sessionExerciseId) ??
-                    null;
+                    value.quantityUnit === "time"
+                      ? null
+                      : aggregate?.getExerciseScore(
+                          nextSet.sessionExerciseId,
+                        ) ?? null;
 
                   onChange({
                     ...value,
