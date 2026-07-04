@@ -13,14 +13,15 @@ export function ThemeToggle() {
   const handleToggle = useCallback(() => {
     const next = isDark ? "light" : "dark";
 
-    requestAnimationFrame(async () => {
-      setColorScheme(next);
+    void (async () => {
       try {
         await AsyncStorage.setItem(THEME_KEY, next);
       } catch (e) {
         console.warn("[theme] failed to persist theme", e);
+      } finally {
+        setColorScheme(next);
       }
-    });
+    })();
   }, [isDark, setColorScheme]);
 
   return (

@@ -6,9 +6,9 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
-  useColorScheme,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useColorScheme } from "nativewind";
 import DraggableFlatList, {
   RenderItemParams,
   DragEndParams,
@@ -42,7 +42,8 @@ import {
 
 export default function Workout() {
   const router = useRouter();
-  const isDark = useColorScheme() === "dark";
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { programs, deleteProgram, isLoading } = useWorkoutPrograms();
 
   const [folders, setFolders] = useState<TemplateFolder[]>([]);

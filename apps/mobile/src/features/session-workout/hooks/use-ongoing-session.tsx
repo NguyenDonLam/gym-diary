@@ -42,6 +42,7 @@ import { notifyWorkoutAutoEnded } from "../notifications/auto-end-notification";
 
 const KEY = "ongoing";
 const AUTO_END_AFTER_KEY = "settings:auto-end-workout-after-minutes";
+const DEFAULT_AUTO_END_AFTER_MINUTES = 20;
 const LAST_INTERACTION_KEY = "ongoing:last-interaction-at";
 const LAST_INTERACTION_PERSIST_INTERVAL_MS = 15_000;
 const LB_TO_KG = 0.45359237;
@@ -95,7 +96,8 @@ const OngoingSessionContext = createContext<OngoingSessionContextValue | null>(
 function parseAutoEndAfterMinutes(
   raw: string | null,
 ): AutoEndAfterMinutes {
-  if (raw == null || raw === "false") return false;
+  if (raw == null) return DEFAULT_AUTO_END_AFTER_MINUTES;
+  if (raw === "false") return false;
 
   const parsed = Number.parseFloat(raw);
   if (!Number.isFinite(parsed) || parsed <= 0) return false;
@@ -211,8 +213,10 @@ export function OngoingSessionProvider({
   const { lookupExerciseStat } = useExerciseStats();
   const [mutationVersion, setMutationVersion] = useState(0);
   const [autoEndAfterMinutes, setAutoEndAfterMinutesState] =
-    useState<AutoEndAfterMinutes>(false);
-  const autoEndAfterMinutesRef = useRef<AutoEndAfterMinutes>(false);
+    useState<AutoEndAfterMinutes>(DEFAULT_AUTO_END_AFTER_MINUTES);
+  const autoEndAfterMinutesRef = useRef<AutoEndAfterMinutes>(
+    DEFAULT_AUTO_END_AFTER_MINUTES,
+  );
   const ongoingSessionRef = useRef<SessionWorkout | null>(null);
   const lastInteractionAtRef = useRef(Date.now());
   const lastInteractionPersistedAtRef = useRef(0);

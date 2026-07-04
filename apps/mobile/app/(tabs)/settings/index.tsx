@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useCallback, useEffect, useState } from "react";
 import { Keyboard, Pressable, Text, TextInput, View } from "react-native";
 import { Check } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
 
-type ThemeOption =  "light" | "dark";
+const THEME_KEY = "theme";
+
+type ThemeOption = "light" | "dark";
 
 export default function SettingsScreen() {
   const { colorScheme, setColorScheme } = useColorScheme();
@@ -21,6 +24,21 @@ export default function SettingsScreen() {
     return colorScheme === value;
   };
 
+  const setThemePreference = useCallback(
+    (value: ThemeOption) => {
+      void (async () => {
+        try {
+          await AsyncStorage.setItem(THEME_KEY, value);
+        } catch (e) {
+          console.warn("[theme] failed to persist theme", e);
+        } finally {
+          setColorScheme(value);
+        }
+      })();
+    },
+    [setColorScheme],
+  );
+
   const ThemeButton = ({
     label,
     value,
@@ -34,7 +52,7 @@ export default function SettingsScreen() {
 
     return (
       <Pressable
-        onPress={() => setColorScheme(value)}
+        onPress={() => setThemePreference(value)}
         className={[
           "flex-1 rounded-full px-3 py-2",
           active

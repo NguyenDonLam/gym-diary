@@ -1,10 +1,12 @@
 import React, { useMemo } from "react";
-import { Pressable, Text, useColorScheme } from "react-native";
+import { Pressable } from "react-native";
 import { Stack, router } from "expo-router";
+import { useColorScheme } from "nativewind";
 import { ArrowLeft } from "lucide-react-native";
 
 export function HeaderBack() {
-  const isDark = useColorScheme() === "dark";
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   return (
     <Pressable
@@ -25,10 +27,10 @@ export function HeaderBack() {
 
 
 export default function InsightsLayout() {
-  const scheme = useColorScheme();
+  const { colorScheme } = useColorScheme();
 
   const screenOptions = useMemo(() => {
-    const isDark = scheme === "dark";
+    const isDark = colorScheme === "dark";
 
     return {
       headerShown: true,
@@ -38,7 +40,7 @@ export default function InsightsLayout() {
       headerShadowVisible: false,
       contentStyle: { backgroundColor: isDark ? "#2B2D3A" : "#FAFAFA" },
     } as const;
-  }, [scheme]);
+  }, [colorScheme]);
 
   return (
     <Stack screenOptions={screenOptions}>
