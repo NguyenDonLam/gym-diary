@@ -11,13 +11,13 @@ import React, {
 import { AppState, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import type { StrengthScoreContext } from "@packages/strength-score/strategies";
+import type { StrengthScoreContext } from "@gym-diary/strength-score/strategies";
 import {
   ExerciseMeanScoreStrategy,
   ScoreAggregateV1,
   SetE1rmScoreStrategy,
   WorkoutNormalizedScoreStrategy,
-} from "@packages/strength-score/strategies";
+} from "@gym-diary/strength-score/strategies";
 
 import type { SessionExercise } from "@/src/features/session-exercise/domain/types";
 import type { SessionSet } from "@/src/features/session-set/domain/types";

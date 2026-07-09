@@ -2,5 +2,11 @@
   "name": "@gym-diary/strength-score",
   "version": "1.0.0",
   "main": "index.ts",
-  "types": "index.ts"
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./strategies": "./strategies/index.ts",
+    "./strategies/index": "./strategies/index.ts",
+    "./aggregators": "./aggregators/index.ts"
+  }
 }

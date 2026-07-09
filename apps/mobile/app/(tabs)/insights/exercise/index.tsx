@@ -2,7 +2,7 @@
 import React, { useCallback } from "react";
 import { router } from "expo-router";
 
-import type { Exercise } from "@packages/exercise/type";
+import type { Exercise } from "@gym-diary/exercise/type";
 import ExerciseLibraryPicker from "@/src/features/exercise/components/exercise-library-picker";
 
 export default function InsightsExerciseIndexScreen() {

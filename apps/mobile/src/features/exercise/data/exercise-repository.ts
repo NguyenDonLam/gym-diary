@@ -6,7 +6,7 @@ import { exercises } from "@/db/schema";
 import { db } from "@/db";
 import { toDomain, toRow } from "./types";
 import { generateId } from "@/src/lib/id";
-import { Exercise } from "@packages/exercise";
+import { Exercise } from "@gym-diary/exercise";
 
 type ExerciseRow = InferSelectModel<typeof exercises>;
 type NewExerciseRow = InferInsertModel<typeof exercises>;

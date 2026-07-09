@@ -16,7 +16,7 @@ import { useColorScheme } from "nativewind";
 import ValueWheelSheet from "@/src/components/value-wheel-sheet";
 import { WorkoutProgramFormData } from "../domain/type";
 import { generateId } from "@/src/lib/id";
-import type { Exercise } from "@packages/exercise/type";
+import type { Exercise } from "@gym-diary/exercise/type";
 import { ExerciseProgramFormData } from "../../program-exercise/domain/type";
 import ExerciseProgramForm from "../../program-exercise/ui/form";
 import { ProgramColor } from "@/db/enums";

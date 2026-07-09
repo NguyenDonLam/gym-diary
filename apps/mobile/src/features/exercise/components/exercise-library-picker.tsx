@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Check, Plus, Search, X } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
-import { Exercise } from "@packages/exercise/type";
+import { Exercise } from "@gym-diary/exercise/type";
 import { exerciseRepository } from "@/src/features/exercise/data/exercise-repository";
 import { exerciseFactory } from "@/src/features/exercise/domain/factory";
 import { exerciseStatRepository } from "@/src/features/exercise-stats/data/repository";

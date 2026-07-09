@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Exercise } from "@packages/exercise/type";
+import { Exercise } from "@gym-diary/exercise/type";
 import { exerciseRepository } from "../data/exercise-repository";
 
 export function useExercises() {

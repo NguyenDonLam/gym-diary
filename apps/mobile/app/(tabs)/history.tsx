@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import { useColorScheme } from "nativewind";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { SessionWorkout } from "@/src/features/session-workout/domain/types";
 import { sessionWorkoutRepository } from "@/src/features/session-workout/data/repository";
@@ -136,7 +136,8 @@ function WorkoutSessionStat({
 export default function History() {
   const { colorScheme } = useColorScheme();
   const schemeClass = colorScheme === "dark" ? "dark" : "";
-  const tabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = 56 + insets.bottom;
 
   const [monthDate, setMonthDate] = useState(() => firstDayOfMonth(new Date()));
   const [selectedDateKey, setSelectedDateKey] = useState<string>(() =>

@@ -1,4 +1,4 @@
-import type { Exercise } from "@packages/exercise";
+import type { Exercise } from "@gym-diary/exercise";
 
 export type ExerciseStat = {
   // FK to exercise (1:1 cache row)

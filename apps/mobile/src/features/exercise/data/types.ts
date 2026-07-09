@@ -2,7 +2,7 @@
 
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { exercises } from "@/db/schema";
-import { Exercise } from "@packages/exercise";
+import { Exercise } from "@gym-diary/exercise";
 import { ExerciseProgram } from "../../program-exercise/domain/type";
 import { SessionExerciseRow } from "../../session-exercise/data/types";
 import { ExerciseProgramRow } from "../../program-exercise/data/type";

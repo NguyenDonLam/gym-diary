@@ -22,7 +22,7 @@ import type {
 import type { SessionSet } from "@/src/features/session-set/domain/types";
 import { sessionSetRepository } from "@/src/features/session-set/data/repository";
 import ExerciseLibraryPicker from "@/src/features/exercise/components/exercise-library-picker";
-import type { Exercise } from "@packages/exercise/type";
+import type { Exercise } from "@gym-diary/exercise/type";
 import { SessionExerciseFactory } from "@/src/features/session-exercise/domain/factory";
 import { useKeyboardHeight } from "@/src/hooks/use-keyboard-height";
 import { RestTimerBanner } from "@/src/features/session-workout/components/rest-timer-banner";

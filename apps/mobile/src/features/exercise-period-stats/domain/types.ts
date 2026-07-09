@@ -1,5 +1,5 @@
 import { PeriodType } from "@/db/enums";
-import type { Exercise } from "@packages/exercise";
+import type { Exercise } from "@gym-diary/exercise";
 
 export type ExercisePeriodStat = {
   id: string;

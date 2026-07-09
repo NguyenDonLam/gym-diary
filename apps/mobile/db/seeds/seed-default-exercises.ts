@@ -1,6 +1,6 @@
 
 
-import { DEFAULT_EXERCISES } from "@packages/exercise";
+import { DEFAULT_EXERCISES } from "@gym-diary/exercise";
 import { exercises } from "../schema";
 import { eq } from "drizzle-orm";
 

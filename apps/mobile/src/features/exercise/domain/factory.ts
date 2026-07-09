@@ -1,6 +1,6 @@
 // src/features/exercise/domain/factory.ts
 
-import type { Exercise } from "@packages/exercise";
+import type { Exercise } from "@gym-diary/exercise";
 import { generateId } from "@/src/lib/id";
 
 // You already use this row type elsewhere:
