@@ -81,22 +81,32 @@ export default function Workout() {
 
   // folders
   useEffect(() => {
+    let cancelled = false;
+
     const load = async () => {
       setFoldersLoading(true);
       setFoldersError(null);
       try {
         const all = await templateFolderRepository.getAll();
+        if (cancelled) return;
         setFolders(all);
       } catch (e) {
+        if (cancelled) return;
         setFoldersError(
           e instanceof Error ? e : new Error("Failed to load folders"),
         );
         setFolders([]);
       } finally {
-        setFoldersLoading(false);
+        if (!cancelled) {
+          setFoldersLoading(false);
+        }
       }
     };
-    load();
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // new folders open by default

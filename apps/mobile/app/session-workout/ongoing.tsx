@@ -306,44 +306,60 @@ export default function OngoingSessionPage() {
 
   const handleAddExercises = useCallback(
     async (selectedExercises: Exercise[]) => {
-      if (readOnly || !view) return;
+      if (readOnly || !view || selectedExercises.length === 0) return;
+
+      const domains = selectedExercises.map((exercise, index) =>
+        SessionExerciseFactory.domainFromExercise(exercise, {
+          workoutSessionId: view.id,
+          orderIndex: view.exercises.length + index,
+        }),
+      );
+
+      const optimisticExercises: SessionExerciseView[] = domains.map(
+        (domain) => ({
+          ...domain,
+          isOpen: true,
+          isProgressOpen: false,
+          progressHistory: [],
+          lastSessionSets: [],
+        }),
+      );
+
+      setPickerOpen(false);
+      setView((prev) =>
+        !prev
+          ? prev
+          : {
+              ...prev,
+              exercises: [...prev.exercises, ...optimisticExercises],
+            },
+      );
 
       try {
-        const created: SessionExerciseView[] = [];
         const progressHistoryByExerciseId =
           await sessionExerciseRepository.getProgressHistoryByExerciseIds(
             selectedExercises.map((exercise) => exercise.id),
           );
 
-        for (const [index, exercise] of selectedExercises.entries()) {
-          const domain = SessionExerciseFactory.domainFromExercise(exercise, {
-            workoutSessionId: view.id,
-            orderIndex: view.exercises.length + index,
-          });
-
-          await sessionExerciseRepository.save(domain);
-
-          created.push({
-            ...domain,
-            isOpen: true,
-            isProgressOpen: false,
-            progressHistory: progressHistoryByExerciseId[exercise.id] ?? [],
-            lastSessionSets: [],
-          });
-        }
-
-        const nextExercises = [...view.exercises, ...created];
+        await Promise.all(
+          domains.map((domain) => sessionExerciseRepository.save(domain)),
+        );
 
         setView((prev) =>
           !prev
             ? prev
             : {
                 ...prev,
-                exercises: nextExercises,
+                exercises: prev.exercises.map((exercise) => ({
+                  ...exercise,
+                  progressHistory:
+                    exercise.exerciseId != null
+                      ? progressHistoryByExerciseId[exercise.exerciseId] ??
+                        exercise.progressHistory
+                      : exercise.progressHistory,
+                })),
               },
         );
-
-        setPickerOpen(false);
       } catch (err) {
         console.error("Failed to add exercises", err);
       }

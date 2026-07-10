@@ -195,34 +195,48 @@ export default function SessionWorkoutPage() {
 
   const handleAddExercises = useCallback(
     async (selectedExercises: Exercise[]) => {
-      if (readOnly || !sessionId) return;
+      if (readOnly || !sessionId || selectedExercises.length === 0) return;
+
+      const domains = selectedExercises.map((exercise, index) =>
+        SessionExerciseFactory.domainFromExercise(exercise, {
+          workoutSessionId: sessionId,
+          orderIndex: exercises.length + index,
+        }),
+      );
+
+      const optimisticExercises: SessionExerciseView[] = domains.map(
+        (domain) => ({
+          ...domain,
+          isOpen: true,
+          isProgressOpen: false,
+          progressHistory: [],
+          lastSessionSets: [],
+        }),
+      );
+
+      setPickerOpen(false);
+      setExercises((prev) => [...prev, ...optimisticExercises]);
 
       try {
-        const created: SessionExerciseView[] = [];
         const progressHistoryByExerciseId =
           await sessionExerciseRepository.getProgressHistoryByExerciseIds(
             selectedExercises.map((exercise) => exercise.id),
           );
 
-        for (const [index, exercise] of selectedExercises.entries()) {
-          const domain = SessionExerciseFactory.domainFromExercise(exercise, {
-            workoutSessionId: sessionId,
-            orderIndex: exercises.length + index,
-          });
+        await Promise.all(
+          domains.map((domain) => sessionExerciseRepository.save(domain)),
+        );
 
-          await sessionExerciseRepository.save(domain);
-
-          created.push({
-            ...domain,
-            isOpen: true,
-            isProgressOpen: false,
-            progressHistory: progressHistoryByExerciseId[exercise.id] ?? [],
-            lastSessionSets: [],
-          });
-        }
-
-        setExercises((prev) => [...prev, ...created]);
-        setPickerOpen(false);
+        setExercises((prev) =>
+          prev.map((exercise) => ({
+            ...exercise,
+            progressHistory:
+              exercise.exerciseId != null
+                ? progressHistoryByExerciseId[exercise.exerciseId] ??
+                  exercise.progressHistory
+                : exercise.progressHistory,
+          })),
+        );
       } catch (err) {
         console.error("Failed to add exercises", err);
       }

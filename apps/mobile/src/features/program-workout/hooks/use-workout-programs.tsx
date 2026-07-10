@@ -16,18 +16,22 @@ export function useWorkoutPrograms(): UseWorkoutTemplatesResult {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isActive: () => boolean = () => true) => {
     setIsLoading(true);
     setError(null);
 
     try {
       const data = await workoutProgramRepository.getAll();
+      if (!isActive()) return;
       setPrograms(data);
     } catch (e) {
+      if (!isActive()) return;
       setError(e instanceof Error ? e : new Error("Failed to load templates"));
       setPrograms([]);
     } finally {
-      setIsLoading(false);
+      if (isActive()) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -36,11 +40,10 @@ export function useWorkoutPrograms(): UseWorkoutTemplatesResult {
 
     (async () => {
       try {
-        await load();
+        await load(() => !cancelled);
       } catch {
         // handled above
       }
-      if (cancelled) return;
     })();
 
     return () => {
