@@ -26,6 +26,7 @@ import {
   useOngoingSession,
 } from "@/src/features/session-workout/hooks/use-ongoing-session";
 import { RestTimerProvider } from "@/src/features/session-workout/hooks/use-rest-timer";
+import { WorkoutLiveActivityCoordinator } from "@/src/features/session-workout/live-activity/coordinator";
 
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -128,6 +129,7 @@ export default function RootLayout() {
             >
               <OngoingSessionProvider>
                 <RestTimerProvider>
+                  <WorkoutLiveActivityCoordinator />
                   <ActiveSessionFrame>
                     <SafeAreaView
                       className="flex-1 bg-white dark:bg-[#21222C]"

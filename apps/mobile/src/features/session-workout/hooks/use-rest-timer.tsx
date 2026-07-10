@@ -35,6 +35,10 @@ export type ActiveRestTimer = {
   source: RestTimerSource;
 };
 
+export type CompletedRestTimer = ActiveRestTimer & {
+  completedAtMs: number;
+};
+
 type StartRestTimerInput = {
   sessionId?: string | null;
   setId?: string | null;
@@ -46,10 +50,12 @@ type StartRestTimerInput = {
 
 type RestTimerContextValue = {
   activeTimer: ActiveRestTimer | null;
+  completedTimer: CompletedRestTimer | null;
   remainingSeconds: number;
   label: string;
   startRestTimer: (input: StartRestTimerInput) => Promise<void>;
   cancelRestTimer: () => Promise<void>;
+  clearCompletedTimer: () => void;
 };
 
 const RestTimerContext = createContext<RestTimerContextValue | null>(null);
@@ -163,7 +169,10 @@ export function RestTimerProvider({
   children: React.ReactNode;
 }) {
   const [activeTimer, setActiveTimer] = useState<ActiveRestTimer | null>(null);
+  const [completedTimer, setCompletedTimer] =
+    useState<CompletedRestTimer | null>(null);
   const activeTimerRef = useRef<ActiveRestTimer | null>(null);
+  const completedTimerIdsRef = useRef<Set<string>>(new Set());
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const persistTimer = useCallback(async (timer: ActiveRestTimer | null) => {
@@ -181,6 +190,18 @@ export function RestTimerProvider({
     }
   }, []);
 
+  const completeTimer = useCallback(
+    async (timer: ActiveRestTimer, completedAtMs = Date.now()) => {
+      if (completedTimerIdsRef.current.has(timer.id)) return;
+
+      completedTimerIdsRef.current.add(timer.id);
+      setCompletedTimer({ ...timer, completedAtMs });
+      setNowMs(completedAtMs);
+      await persistTimer(null);
+    },
+    [persistTimer],
+  );
+
   const restoreTimer = useCallback(async () => {
     try {
       const stored = parseStoredTimer(await AsyncStorage.getItem(REST_TIMER_KEY));
@@ -189,18 +210,19 @@ export function RestTimerProvider({
         return;
       }
 
-      if (stored.endsAtMs <= Date.now()) {
-        await persistTimer(null);
+      const restoredAtMs = Date.now();
+      if (stored.endsAtMs <= restoredAtMs) {
+        await completeTimer(stored, restoredAtMs);
         return;
       }
 
       activeTimerRef.current = stored;
       setActiveTimer(stored);
-      setNowMs(Date.now());
+      setNowMs(restoredAtMs);
     } catch (e) {
       console.warn("[rest-timer] failed to restore timer", e);
     }
-  }, [persistTimer]);
+  }, [completeTimer, persistTimer]);
 
   useEffect(() => {
     void restoreTimer();
@@ -225,18 +247,30 @@ export function RestTimerProvider({
   useEffect(() => {
     if (!activeTimer) return;
 
-    const id = setInterval(() => {
+    const completeActiveTimer = () => {
       const nextNow = Date.now();
       setNowMs(nextNow);
 
       const current = activeTimerRef.current;
       if (current && current.endsAtMs <= nextNow) {
-        void persistTimer(null);
+        void completeTimer(current, nextNow);
       }
+    };
+
+    const timeoutId = setTimeout(
+      completeActiveTimer,
+      Math.max(0, activeTimer.endsAtMs - Date.now()) + 50,
+    );
+
+    const intervalId = setInterval(() => {
+      completeActiveTimer();
     }, 1000);
 
-    return () => clearInterval(id);
-  }, [activeTimer, persistTimer]);
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
+  }, [activeTimer, completeTimer]);
 
   const startRestTimer = useCallback(
     async (input: StartRestTimerInput) => {
@@ -247,6 +281,9 @@ export function RestTimerProvider({
       await cancelScheduledNotification(previous?.notificationId ?? null);
 
       const startedAtMs = Date.now();
+      completedTimerIdsRef.current.clear();
+      setCompletedTimer(null);
+
       const notificationId = await scheduleRestNotification({
         ...input,
         durationSeconds,
@@ -274,22 +311,31 @@ export function RestTimerProvider({
   const cancelRestTimer = useCallback(async () => {
     const timer = activeTimerRef.current;
     await cancelScheduledNotification(timer?.notificationId ?? null);
+    setCompletedTimer(null);
     await persistTimer(null);
   }, [persistTimer]);
+
+  const clearCompletedTimer = useCallback(() => {
+    setCompletedTimer(null);
+  }, []);
 
   const remainingSeconds = getRemainingSeconds(activeTimer, nowMs);
 
   const value = useMemo<RestTimerContextValue>(
     () => ({
       activeTimer,
+      completedTimer,
       remainingSeconds,
       label: formatRestDuration(remainingSeconds),
       startRestTimer,
       cancelRestTimer,
+      clearCompletedTimer,
     }),
     [
       activeTimer,
       cancelRestTimer,
+      clearCompletedTimer,
+      completedTimer,
       remainingSeconds,
       startRestTimer,
     ],
