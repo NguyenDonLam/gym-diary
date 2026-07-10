@@ -467,7 +467,7 @@ export default function Workout() {
                         </View>
 
                         <View className="flex-row items-center">
-                          <Text className="mr-2 font-mono text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                          <Text className="mr-2 font-mono text-2l font-bold text-emerald-700 dark:text-emerald-300">
                             {activeSessionTime}
                           </Text>
                           <ChevronRight

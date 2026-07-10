@@ -29,11 +29,11 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
   // DUMBBELL – BACK
   {
     id: "e2a9b5c7-1d3f-4c2b-9e8a-7b5c3d1f0005",
-    name: "Dumbbell Bent-Over Row",
+    name: "Dumbbell Bent Over Row",
   },
   {
     id: "f3b1c7d9-2e4a-4f3c-8b9d-6a5c2e1f0006",
-    name: "Dumbbell Single-Arm Row",
+    name: "Dumbbell Single Arm Row",
   },
 
   // DUMBBELL – SHOULDERS
@@ -77,7 +77,7 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
     id: "d6e7f809-1a2b-43c9-8f2a-3b4c5d6e0013",
     name: "Dumbbell Romanian Deadlift",
   },
-  { id: "e7f8091a-2b3c-44d9-8a3b-4c5d6e7f0014", name: "Dumbbell Step-Up" },
+  { id: "e7f8091a-2b3c-44d9-8a3b-4c5d6e7f0014", name: "Dumbbell Step Up" },
   { id: "f8091a2b-3c4d-45e9-8b4c-5d6e7f800015", name: "Dumbbell Calf Raise" },
 
   // DUMBBELL – CORE / CARRY
@@ -113,11 +113,11 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
   },
   {
     id: "02111111-2222-4333-8444-555566667009",
-    name: "Barbell Close-Grip Bench Press",
+    name: "Barbell Close Grip Bench Press",
   },
 
   // BARBELL – ROW / PULL
-  { id: "03111111-2222-4333-8444-55556666700a", name: "Barbell Bent-Over Row" },
+  { id: "03111111-2222-4333-8444-55556666700a", name: "Barbell Bent Over Row" },
   { id: "04111111-2222-4333-8444-55556666700b", name: "Barbell Pendlay Row" },
 
   // BARBELL – OLY / POWER VARIATIONS (BASIC)
@@ -159,7 +159,7 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
   { id: "4f8d73f2-6475-42b0-a481-0b77987137be", name: "Dumbbell Side Lunge" },
   {
     id: "5667f0ed-f0d4-4181-8f7c-bb9c583f8fe2",
-    name: "Dumbbell Single-Leg Deadlift",
+    name: "Dumbbell Single Leg Deadlift",
   },
   { id: "8d285be4-e987-4d71-b098-71075d0b9d2e", name: "Dumbbell Thruster" },
   { id: "08b72d08-df0d-4ad4-9439-38f8c8c414fd", name: "Dumbbell Glute Bridge" },
@@ -170,7 +170,111 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
   { id: "1f69d3b2-d8bb-440e-9a38-6559b78b6b13", name: "Dumbbell Snatch" },
   {
     id: "c55bfa53-a196-4721-b2f9-4a1ca1fda222",
-    name: "Dumbbell Clean & Press",
+    name: "Dumbbell Clean and Press",
+  },
+  {
+    id: "fcbce8e3-1018-4910-8537-94627648183d",
+    name: "Dumbbell Floor Press",
+  },
+  {
+    id: "47d066db-2b44-4cbd-9f77-5d366bddb168",
+    name: "Dumbbell Hex Press",
+  },
+  {
+    id: "d854fde0-43ea-4e95-80f5-039b31bb0603",
+    name: "Dumbbell Squeeze Press",
+  },
+  {
+    id: "be023fd3-18c3-4470-b41f-ed80581afe4f",
+    name: "Dumbbell Chest Supported Row",
+  },
+  {
+    id: "580579db-e60a-4604-8d59-452424c1024d",
+    name: "Dumbbell Seal Row",
+  },
+  {
+    id: "33771ce9-0ea8-4cce-b7f0-e23261b2b99c",
+    name: "Dumbbell Reverse Fly",
+  },
+  {
+    id: "a50b9f03-7913-483a-b163-f91b223e71b7",
+    name: "Dumbbell Single Arm Shoulder Press",
+  },
+  {
+    id: "817f6173-799e-4173-9463-073656e2e507",
+    name: "Dumbbell Push Press",
+  },
+  {
+    id: "a5f57805-82b5-4b9d-9287-8b7008506148",
+    name: "Dumbbell Cuban Press",
+  },
+  {
+    id: "b01f50e7-fe93-46fa-8575-7641056f2b54",
+    name: "Dumbbell Y Raise",
+  },
+  {
+    id: "ab89c14d-4b25-413d-a463-07da031fe86f",
+    name: "Dumbbell Tate Press",
+  },
+  {
+    id: "2eb29600-92d6-4da3-8f5f-60fe8dc63840",
+    name: "Dumbbell Spider Curl",
+  },
+  {
+    id: "85e555ce-333a-4794-831b-103d05d338db",
+    name: "Dumbbell Cross Body Hammer Curl",
+  },
+  {
+    id: "8240e3af-a3ca-4ec1-8f0b-3635fc550734",
+    name: "Dumbbell Drag Curl",
+  },
+  {
+    id: "86974224-16f0-422c-b385-5f140a73e57f",
+    name: "Dumbbell Reverse Lunge",
+  },
+  {
+    id: "5bd6ae01-379d-4222-8584-60729cb7469d",
+    name: "Dumbbell Walking Lunge",
+  },
+  {
+    id: "4fb365c2-d140-4409-96da-d74d9bcfdb43",
+    name: "Dumbbell Curtsy Lunge",
+  },
+  {
+    id: "0952c21b-155f-4c96-9fef-3553b9cee978",
+    name: "Dumbbell Cossack Squat",
+  },
+  {
+    id: "4573d3ba-9cfb-4a8e-8c2e-159ad53f50a7",
+    name: "Dumbbell Box Step Up",
+  },
+  {
+    id: "91faf6c4-5012-4643-821a-75fdd611490f",
+    name: "Dumbbell Plank Drag",
+  },
+  {
+    id: "6424e0a7-d7d8-40e2-8ca0-f8084330747a",
+    name: "Dumbbell Dead Bug",
+  },
+  {
+    id: "9848135d-9f7c-464e-94cb-a933a1f5a4b2",
+    name: "Dumbbell Suitcase Carry",
+    quantityUnit: "time",
+  },
+  {
+    id: "d11d7508-4ac9-4539-8128-83e0a91ceca2",
+    name: "Dumbbell Overhead Carry",
+    quantityUnit: "time",
+  },
+  {
+    id: "2fd7374b-b94c-4bb4-8b66-64d23729b399",
+    name: "Dumbbell Front Rack Carry",
+    quantityUnit: "time",
+  },
+  {
+    id: "51e79d6a-d6f6-4de2-a6e9-f5bb9190f8ff",
+    name: "Dumbbell Hollow Hold",
+    quantityUnit: "time",
   },
   // BARBELL – PRESS
   {
@@ -203,7 +307,7 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
   { id: "b75c2cbb-3010-4460-96de-9e97b9ee827e", name: "Barbell Rack Pull" },
   { id: "ea2c98ec-6a18-4eae-8be8-7a7cde469488", name: "Barbell Shrug" },
   { id: "d2f43312-45c8-4f58-9b50-23a97b9820f6", name: "Barbell Upright Row" },
-  { id: "930a3068-7d2e-4862-b8e7-0aaf3e6e5a2d", name: "T-Bar Row" },
+  { id: "930a3068-7d2e-4862-b8e7-0aaf3e6e5a2d", name: "T Bar Row" },
   // KETTLEBELL – SWING/OLY
   { id: "40fa9f27-27eb-47a3-8c32-862bd68e6477", name: "Kettlebell Deadlift" },
   { id: "6cb57af5-b5b0-454d-9078-367cb0e6b6f5", name: "Kettlebell Swing" },
@@ -227,7 +331,7 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
   // KETTLEBELL – CORE/CARRY
   {
     id: "4c210ff8-bbe5-41f2-ab9d-be99fae32546",
-    name: "Kettlebell Turkish Get-Up",
+    name: "Kettlebell Turkish Get Up",
   },
   { id: "0b7e2ae9-bd83-49ea-bc26-00cd0c7faeac", name: "Kettlebell Windmill" },
   {
@@ -259,7 +363,7 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
   { id: "f1479a42-b99f-4346-866e-38dc0fca27ef", name: "Cable Woodchop" },
   { id: "33839dfe-6b4e-4f69-8477-1f89c9b55d4d", name: "Cable Crunch" },
   { id: "ae52d615-09ef-4c1d-8a84-8cdb13a114e0", name: "Cable Glute Kickback" },
-  { id: "3483a3be-0de0-47e2-8c72-29851bfd8ebd", name: "Cable Pull-Through" },
+  { id: "3483a3be-0de0-47e2-8c72-29851bfd8ebd", name: "Cable Pull Through" },
   // MACHINE – LEGS
   { id: "7ccc0a37-be27-4925-bc5b-79324946085b", name: "Machine Leg Press" },
   { id: "64840ca5-04ed-4c50-b0d8-9fe4fa8f830f", name: "Machine Hack Squat" },
@@ -307,7 +411,7 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
   // MACHINE – ASSISTED
   {
     id: "be7cda5b-c2c0-47f1-9941-d4414f41af29",
-    name: "Machine Assisted Pull-Up",
+    name: "Machine Assisted Pull Up",
   },
   // SMITH MACHINE – UPPER
   {
@@ -328,7 +432,7 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
   },
   {
     id: "d2084f45-6b3e-4a8b-8f10-860fb1b660a3",
-    name: "Smith Machine Bent-Over Row",
+    name: "Smith Machine Bent Over Row",
   },
   { id: "554e2d12-4708-45ec-aa81-c02517f6fb0a", name: "Smith Machine Shrug" },
   // SMITH MACHINE – LOWER
@@ -343,19 +447,19 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
     name: "Smith Machine Hip Thrust",
   },
   // BODYWEIGHT – PULL
-  { id: "45f61193-3907-46ba-8254-576e6325b54e", name: "Pull-Up" },
-  { id: "b7242d5b-50a0-4c30-a321-c03d30f19d02", name: "Chin-Up" },
+  { id: "45f61193-3907-46ba-8254-576e6325b54e", name: "Pull Up" },
+  { id: "b7242d5b-50a0-4c30-a321-c03d30f19d02", name: "Chin Up" },
   {
     id: "8bc55b3f-7af2-423d-95a8-8b50873ce67c",
     name: "Inverted Row",
   },
-  { id: "d0d70bf9-48d1-410c-9a0e-a43a02f0ae55", name: "Muscle-Up" },
+  { id: "d0d70bf9-48d1-410c-9a0e-a43a02f0ae55", name: "Muscle Up" },
   // BODYWEIGHT – PUSH
   { id: "9d823524-e840-40a3-bb95-9805c22702f4", name: "Dip" },
-  { id: "0cec5801-558d-47ef-9da1-c4b2a2c4ae60", name: "Push-Up" },
+  { id: "0cec5801-558d-47ef-9da1-c4b2a2c4ae60", name: "Push Up" },
   {
     id: "1a1d36a8-1648-431c-80a5-4ea1d0bec7cb",
-    name: "Handstand Push-Up",
+    name: "Handstand Push Up",
   },
   // BODYWEIGHT – LEGS
   { id: "a0e37b78-9ce9-422c-84d4-da9e7a53029a", name: "Squat" },
@@ -365,7 +469,7 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
     name: "Glute Bridge",
   },
   // BODYWEIGHT – CORE
-  { id: "64a3a5c7-cdb0-40ee-8dc8-ca575653c441", name: "Sit-Up" },
+  { id: "64a3a5c7-cdb0-40ee-8dc8-ca575653c441", name: "Sit Up" },
   { id: "2ee40053-748a-44c2-a1f5-e0f031f7396b", name: "Crunch" },
   {
     id: "b8aa81df-60f0-4400-ac27-088833c049b2",
@@ -385,7 +489,175 @@ const EXERCISE_LIBRARY: DefaultExerciseInput[] = [
     id: "4d78cf2b-32ff-4d16-8116-27961cd3c261",
     name: "Back Extension",
   },
-  // OTHER – STRONGMAN
+  // BODYWEIGHT MORE
+  {
+    id: "1953a0a4-e767-4b5f-b9fa-8e7edd0a670d",
+    name: "Archer Push Up",
+  },
+  {
+    id: "1e5f68bc-88a8-4ee3-98f7-8cba16587dd7",
+    name: "Diamond Push Up",
+  },
+  {
+    id: "518d60cf-f504-43ea-9d4b-0455e2b1711c",
+    name: "Wide Push Up",
+  },
+  {
+    id: "8aec8544-0be8-440b-b8e4-c012f4386980",
+    name: "Pike Push Up",
+  },
+  {
+    id: "3477b01d-a2ac-4576-a3e6-f95c991e37cf",
+    name: "Decline Push Up",
+  },
+  {
+    id: "78b92aa1-e2cf-4555-8eb1-dbb5c1ef6106",
+    name: "Incline Push Up",
+  },
+  {
+    id: "bd6a09b7-04d2-4927-862d-960d7ba5369f",
+    name: "Bodyweight Row",
+  },
+  {
+    id: "af92237e-9a8a-46f4-ac90-fdbcf661cf88",
+    name: "Australian Pull Up",
+  },
+  {
+    id: "ae481645-1f90-4a7c-a06f-b97bf94c320d",
+    name: "Negative Pull Up",
+  },
+  {
+    id: "805f6196-1f25-43d6-8433-42f4ce94a1b0",
+    name: "Scapular Pull Up",
+  },
+  {
+    id: "9ea8cef1-c447-41e5-af7c-5a9c1c97ad71",
+    name: "Chest To Bar Pull Up",
+  },
+  {
+    id: "880f7150-1e10-49da-acb0-fceac1c11517",
+    name: "Toes To Bar",
+  },
+  {
+    id: "786d620c-3e27-4898-8ff4-fdbb850bec58",
+    name: "Hanging Knee Raise",
+  },
+  {
+    id: "43806b80-a59b-4de3-8c31-477285861e24",
+    name: "Burpee",
+  },
+  {
+    id: "55c21742-ce61-4bfd-b479-527c2c5e6c82",
+    name: "Squat Jump",
+  },
+  {
+    id: "3210f4ae-efc0-4b4e-a77f-8282318ef8f6",
+    name: "Pistol Squat",
+  },
+  {
+    id: "5cfeb01d-71e5-4ae2-957f-d4ceadd475a8",
+    name: "Shrimp Squat",
+  },
+  {
+    id: "9c58524b-340a-471a-90f2-917199716e15",
+    name: "Nordic Curl",
+  },
+  {
+    id: "b0111db0-7d73-48c0-8ce1-6cfaa8fbf091",
+    name: "Reverse Nordic Curl",
+  },
+  {
+    id: "5e1d205c-093d-457b-9831-aca5faf0e2b7",
+    name: "Sissy Squat",
+  },
+  {
+    id: "795b20f4-6080-4a8a-8ea4-bd2a03761043",
+    name: "Bodyweight Calf Raise",
+  },
+  {
+    id: "e74f01da-ada3-4dc1-93da-980793f45eb2",
+    name: "Bodyweight Cossack Squat",
+  },
+  {
+    id: "ada41be1-3d16-4596-b3cb-feca25c90719",
+    name: "Bodyweight Step Up",
+  },
+  {
+    id: "231652c8-3d16-48c3-bc2b-11d02619fe05",
+    name: "L Sit",
+    quantityUnit: "time",
+  },
+  {
+    id: "4a66b36f-f192-4a75-a864-bab43174bd6d",
+    name: "Hollow Body Hold",
+    quantityUnit: "time",
+  },
+  {
+    id: "7cbcddb8-e674-4c3a-8a1e-dc66b09f73bb",
+    name: "Dead Hang",
+    quantityUnit: "time",
+  },
+  {
+    id: "8235d19a-b6ae-4e4c-b42a-5115243fd714",
+    name: "Side Plank",
+    quantityUnit: "time",
+  },
+  {
+    id: "8498e855-4d68-4a13-a561-3f66f97155c7",
+    name: "Copenhagen Plank",
+    quantityUnit: "time",
+  },
+  {
+    id: "09eb3508-97b2-4050-8b25-9aac93978fd1",
+    name: "Wall Sit",
+    quantityUnit: "time",
+  },
+  {
+    id: "7a00f63f-2a01-4d25-b7ba-66e0d8510e3b",
+    name: "Superman Hold",
+    quantityUnit: "time",
+  },
+  {
+    id: "cc61eaf8-9c59-4fcd-a1fe-e775ce634bf0",
+    name: "Wall Handstand Hold",
+    quantityUnit: "time",
+  },
+  {
+    id: "9eef841d-3bff-423e-be8d-85415fe4aece",
+    name: "Planche Lean",
+    quantityUnit: "time",
+  },
+  {
+    id: "0fa2dd18-39d9-46df-8566-0e530c1245c1",
+    name: "Tuck Front Lever Hold",
+    quantityUnit: "time",
+  },
+  {
+    id: "5407300d-dde9-42bb-a63b-d7608b5a19f2",
+    name: "Tuck Back Lever Hold",
+    quantityUnit: "time",
+  },
+  {
+    id: "9ef6de68-3189-47e0-bff7-65eb831a264f",
+    name: "Bear Crawl",
+    quantityUnit: "time",
+  },
+  {
+    id: "460e5b76-0113-4ad3-82d8-3e742fefa359",
+    name: "Mountain Climber",
+    quantityUnit: "time",
+  },
+  {
+    id: "3e9c4b3c-6003-4022-a62d-aed34ce90c83",
+    name: "High Knees",
+    quantityUnit: "time",
+  },
+  {
+    id: "7fc0f74e-baa8-4a76-a46c-b4ff9462e59f",
+    name: "Jumping Jack",
+    quantityUnit: "time",
+  },
+  // OTHER STRONGMAN
   {
     id: "cb1cf8a4-231d-4115-8adb-4c8c698b7d0a",
     name: "Sled Push",

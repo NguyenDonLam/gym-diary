@@ -75,6 +75,19 @@ function getQuantityUnitLabel(unit: QuantityUnit) {
   return unit === "time" ? "Time" : "Reps";
 }
 
+function formatExerciseNameInput(value: string) {
+  return value
+    .replace(/[-\u2010\u2011\u2012\u2013\u2014\u2015]/g, " ")
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .map((word) => {
+      if (!word) return word;
+      return word[0]!.toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
+
 function compareByName(a: Exercise, b: Exercise) {
   return getExerciseName(a).localeCompare(getExerciseName(b));
 }
@@ -465,7 +478,7 @@ export default function ExerciseLibraryPicker({
   }, [onConfirmSelection, options, selectedIds]);
 
   async function handleSubmitCreateExercise() {
-    const baseName = newExerciseName.trim();
+    const baseName = formatExerciseNameInput(newExerciseName);
     if (!baseName) return;
 
     try {
@@ -642,7 +655,7 @@ export default function ExerciseLibraryPicker({
         {allowCreate ? (
           <Pressable
             onPress={() => {
-              setNewExerciseName(q.trim());
+              setNewExerciseName(formatExerciseNameInput(q));
               setNewExerciseQuantityUnit("reps");
               setCreateOpen(true);
             }}
@@ -839,6 +852,7 @@ export default function ExerciseLibraryPicker({
               placeholderTextColor="#9CA3AF"
               value={newExerciseName}
               onChangeText={setNewExerciseName}
+              autoCapitalize="words"
             />
 
             <View className="mb-3 flex-row rounded-xl bg-neutral-100 p-1 dark:bg-[#21222C]">
