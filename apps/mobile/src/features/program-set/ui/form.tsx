@@ -1,11 +1,18 @@
 import React from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
-import { ChevronsUpDown, Flame, Gauge, Wind } from "lucide-react-native";
+import {
+  ChevronsUpDown,
+  Clock3,
+  Flame,
+  Gauge,
+  Wind,
+} from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
 import ValueWheelSheet from "@/src/components/value-wheel-sheet";
 import { LOAD_UNITS, LoadUnit, QuantityUnit } from "@/db/enums";
 import { SetProgramFormData } from "../domain/type";
+import { DEFAULT_REST_SECONDS } from "../domain/rest";
 
 type SetProgramFormProps = {
   formData: SetProgramFormData;
@@ -47,14 +54,6 @@ const INTENSITY_LEVELS = [
   { id: "medium", label: "Medium", rpe: "7" },
   { id: "intense", label: "Intense", rpe: "10" },
 ] as const;
-
-const CUSTOM_LOAD_OPTIONS = [
-  { value: "0", label: "0" },
-  { value: "bodyweight", label: "Bodyweight" },
-  { value: "assisted", label: "Assisted" },
-  { value: "machine", label: "Machine" },
-  { value: "other", label: "Other" },
-];
 
 const KG_TO_LB = 2.2046226218;
 const LB_TO_KG = 0.45359237;
@@ -118,18 +117,6 @@ function getSelectedBand(loadValue: string) {
   return BAND_OPTIONS.find((band) => band.id === loadValue) ?? BAND_OPTIONS[0];
 }
 
-function getCustomLoadOptions(current: string) {
-  const trimmed = current.trim();
-  if (
-    trimmed === "" ||
-    CUSTOM_LOAD_OPTIONS.some((option) => option.value === trimmed)
-  ) {
-    return CUSTOM_LOAD_OPTIONS;
-  }
-
-  return [{ value: trimmed, label: trimmed }, ...CUSTOM_LOAD_OPTIONS];
-}
-
 function renderIntensityIcon(id: string, color: string) {
   const size = 13;
   if (id === "light") return <Wind size={size} color={color} />;
@@ -191,7 +178,20 @@ export default function SetProgramForm({
     });
   };
 
+  const handleChangeRestSeconds = (raw: string) => {
+    const cleaned = raw.replace(/[^\d]/g, "");
+    update({
+      restSeconds:
+        cleaned === "" ? 0 : Math.max(0, Number.parseInt(cleaned, 10)),
+    });
+  };
+
   const handleChangeLoadValue = (raw: string) => {
+    if (formData.loadUnit === "custom") {
+      update({ loadValue: raw });
+      return;
+    }
+
     if (!isNumericLoadUnit(formData.loadUnit)) return;
     update({ loadValue: cleanDecimalInput(raw) });
   };
@@ -199,6 +199,10 @@ export default function SetProgramForm({
   const selectedIntensity = getSelectedIntensity(formData.rpe);
   const selectedBand = getSelectedBand(formData.loadValue);
   const quantityLabel = getQuantityUnitLabel(quantityUnit);
+  const restValue =
+    Number.isFinite(formData.restSeconds) && formData.restSeconds >= 0
+      ? String(formData.restSeconds)
+      : String(DEFAULT_REST_SECONDS);
 
   const isBandUnit = formData.loadUnit === "band";
   const isCustomUnit = formData.loadUnit === "custom";
@@ -217,92 +221,122 @@ export default function SetProgramForm({
     "h-9 justify-center rounded-xl bg-white px-2 dark:bg-[#343746]";
 
   return (
-    <View className="mt-1.5 flex-row items-center gap-2 rounded-2xl bg-neutral-100 px-2 py-1.5 dark:bg-[#21222C]">
-      <View className="h-7 w-7 items-center justify-center rounded-full bg-white dark:bg-[#343746]">
-        <Text className="text-[10px] font-semibold text-neutral-600 dark:text-[#F8F8F2]">
-          {index + 1}
-        </Text>
-      </View>
+    <View className="mt-1.5 rounded-2xl bg-neutral-100 px-2 py-1.5 dark:bg-[#21222C]">
+      <View className="flex-row items-center gap-2">
+        <View className="h-7 w-7 items-center justify-center rounded-full bg-white dark:bg-[#343746]">
+          <Text className="text-[10px] font-semibold text-neutral-600 dark:text-[#F8F8F2]">
+            {index + 1}
+          </Text>
+        </View>
 
-      <View className={fieldClass} style={{ flex: 0.82 }}>
-        <TextInput
-          value={
-            formData.targetQuantity == null
-              ? ""
-              : String(formData.targetQuantity)
-          }
-          onChangeText={handleChangeTargetQuantity}
-          keyboardType="number-pad"
-          placeholder="-"
-          placeholderTextColor={placeholderColor}
-          selectTextOnFocus
-          className="p-0 text-center text-[14px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
-        />
-      </View>
-
-      <View
-        className="h-9 flex-row items-center rounded-xl bg-white dark:bg-[#343746]"
-        style={{ flex: 1.55 }}
-      >
-        {isNumericUnit ? (
+        <View className={fieldClass} style={{ flex: 0.82 }}>
           <TextInput
-            value={formData.loadValue}
-            onChangeText={handleChangeLoadValue}
-            keyboardType="decimal-pad"
-            placeholder="0"
+            value={
+              formData.targetQuantity == null
+                ? ""
+                : String(formData.targetQuantity)
+            }
+            onChangeText={handleChangeTargetQuantity}
+            keyboardType="number-pad"
+            placeholder="-"
             placeholderTextColor={placeholderColor}
             selectTextOnFocus
-            className="min-w-0 flex-1 px-2 py-0 text-center text-[14px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
+            className="p-0 text-center text-[14px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
           />
-        ) : (
+        </View>
+
+        <View
+          className="h-9 flex-row items-center rounded-xl bg-white dark:bg-[#343746]"
+          style={{ flex: 1.55 }}
+        >
+          {isNumericUnit || isCustomUnit ? (
+            <TextInput
+              value={formData.loadValue}
+              onChangeText={handleChangeLoadValue}
+              keyboardType={isCustomUnit ? "default" : "decimal-pad"}
+              placeholder={isCustomUnit ? "Load" : "0"}
+              placeholderTextColor={placeholderColor}
+              selectTextOnFocus
+              className="min-w-0 flex-1 px-2 py-0 text-center text-[14px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
+              returnKeyType="done"
+            />
+          ) : (
+            <Pressable
+              onPress={() => setPicker("loadType")}
+              className="min-w-0 flex-1 flex-row items-center justify-center px-2"
+              hitSlop={6}
+            >
+              {isBandUnit ? (
+                <View
+                  className={`mr-1.5 h-3 w-7 rounded-full ${selectedBand.dotClass}`}
+                />
+              ) : null}
+              <Text
+                className="text-center text-[13px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.72}
+              >
+                {loadDisplay}
+              </Text>
+            </Pressable>
+          )}
+
           <Pressable
             onPress={() => setPicker("loadType")}
-            className="min-w-0 flex-1 flex-row items-center justify-center px-2"
-            hitSlop={6}
+            className="mr-1 h-7 flex-row items-center rounded-lg border border-neutral-300 bg-neutral-100 px-2 dark:border-[#6272A4] dark:bg-[#282A36]"
+            hitSlop={8}
           >
-            {isBandUnit ? (
-              <View
-                className={`mr-1.5 h-3 w-7 rounded-full ${selectedBand.dotClass}`}
-              />
-            ) : null}
-            <Text
-              className="text-center text-[13px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.72}
-            >
-              {loadDisplay}
+            <Text className="text-[10px] font-bold text-neutral-800 dark:text-[#F8F8F2]">
+              {getLoadUnitLabel(formData.loadUnit)}
             </Text>
+            <ChevronsUpDown size={11} color={mutedIconColor} />
           </Pressable>
-        )}
+        </View>
 
         <Pressable
-          onPress={() => setPicker("loadType")}
-          className="mr-1 h-7 flex-row items-center rounded-lg border border-neutral-300 bg-neutral-100 px-2 dark:border-[#6272A4] dark:bg-[#282A36]"
-          hitSlop={8}
+          onPress={() => setPicker("effort")}
+          className="h-9 w-[70px] flex-row items-center justify-center rounded-xl bg-white px-1 dark:bg-[#343746]"
+          hitSlop={6}
         >
-          <Text className="text-[10px] font-bold text-neutral-800 dark:text-[#F8F8F2]">
-            {getLoadUnitLabel(formData.loadUnit)}
+          {renderIntensityIcon(selectedIntensity.id, iconColor)}
+          <Text
+            className="ml-1 text-[10px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.72}
+          >
+            {selectedIntensity.label}
           </Text>
-          <ChevronsUpDown size={11} color={mutedIconColor} />
         </Pressable>
       </View>
 
-      <Pressable
-        onPress={() => setPicker("effort")}
-        className="h-9 w-[70px] flex-row items-center justify-center rounded-xl bg-white px-1 dark:bg-[#343746]"
-        hitSlop={6}
-      >
-        {renderIntensityIcon(selectedIntensity.id, iconColor)}
-        <Text
-          className="ml-1 text-[10px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.72}
-        >
-          {selectedIntensity.label}
-        </Text>
-      </Pressable>
+      <View className="mt-1.5 flex-row items-center justify-between gap-2">
+        <View className="min-w-0 flex-1 flex-row items-center">
+          <Clock3 size={13} color={mutedIconColor} />
+          <Text
+            className="ml-1.5 text-[11px] font-semibold text-neutral-500 dark:text-[#6272A4]"
+            numberOfLines={1}
+          >
+            Rest after set {index + 1}
+          </Text>
+        </View>
+
+        <View className="h-8 flex-row items-center rounded-xl bg-white px-2 dark:bg-[#343746]">
+          <TextInput
+            value={restValue}
+            onChangeText={handleChangeRestSeconds}
+            keyboardType="number-pad"
+            placeholder={String(DEFAULT_REST_SECONDS)}
+            placeholderTextColor={placeholderColor}
+            selectTextOnFocus
+            className="w-11 p-0 text-center text-[13px] font-semibold text-neutral-950 dark:text-[#F8F8F2]"
+          />
+          <Text className="ml-0.5 text-[10px] font-semibold text-neutral-400 dark:text-[#6272A4]">
+            s
+          </Text>
+        </View>
+      </View>
 
       {picker === "loadType" ? (
         <ValueWheelSheet
@@ -337,23 +371,6 @@ export default function SetProgramForm({
                     },
                   ]
                 : []),
-              ...(activeUnit === "custom"
-                ? [
-                    {
-                      id: "custom",
-                      label: "Value",
-                      selectedValue:
-                        formData.loadUnit === "custom"
-                          ? formData.loadValue.trim() || "0"
-                          : "0",
-                      options: getCustomLoadOptions(
-                        formData.loadUnit === "custom"
-                          ? formData.loadValue
-                          : "0",
-                      ),
-                    },
-                  ]
-                : []),
             ];
           }}
           onCancel={() => setPicker(null)}
@@ -371,8 +388,7 @@ export default function SetProgramForm({
               update({
                 loadUnit: nextUnit,
                 loadValue:
-                  values.custom ??
-                  (formData.loadUnit === "custom" ? formData.loadValue : "0"),
+                  formData.loadUnit === "custom" ? formData.loadValue : "",
               });
             } else {
               update({

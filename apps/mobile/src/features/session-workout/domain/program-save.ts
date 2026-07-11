@@ -8,6 +8,7 @@ import type { SessionExercise } from "@/src/features/session-exercise/domain/typ
 import type { SessionSet } from "@/src/features/session-set/domain/types";
 import type { SessionWorkout } from "./types";
 import { generateId } from "@/src/lib/id";
+import { normalizeRestSeconds } from "../../program-set/domain/rest";
 
 type ProgramChangeResult = {
   program: WorkoutProgram;
@@ -40,6 +41,7 @@ function getProgramSetFields(set: SessionSet, fallback?: SetProgram) {
   return {
     targetQuantity:
       set.quantity ?? set.targetQuantity ?? fallback?.targetQuantity ?? null,
+    restSeconds: normalizeRestSeconds(set.restSeconds ?? fallback?.restSeconds),
     loadUnit:
       sessionLoadValue != null ? set.loadUnit : fallback?.loadUnit ?? set.loadUnit,
     loadValue: sessionLoadValue ?? fallback?.loadValue ?? null,
@@ -50,6 +52,7 @@ function getProgramSetFields(set: SessionSet, fallback?: SetProgram) {
 function setFieldsChanged(next: ReturnType<typeof getProgramSetFields>, prev: SetProgram) {
   return (
     next.targetQuantity !== prev.targetQuantity ||
+    next.restSeconds !== prev.restSeconds ||
     next.loadUnit !== prev.loadUnit ||
     next.loadValue !== prev.loadValue ||
     next.targetRpe !== prev.targetRpe
@@ -70,6 +73,7 @@ function sessionSetToProgramSet(input: {
     exerciseProgramId: input.exerciseProgramId,
     orderIndex: input.orderIndex,
     targetQuantity: fields.targetQuantity,
+    restSeconds: fields.restSeconds,
     loadUnit: fields.loadUnit,
     loadValue: fields.loadValue,
     targetRpe: fields.targetRpe,

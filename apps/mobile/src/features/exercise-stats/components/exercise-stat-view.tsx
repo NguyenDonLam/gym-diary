@@ -3,7 +3,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import { Trophy, TrendingUp, BarChart3, Sigma } from "lucide-react-native";
 import type { ExerciseStat } from "@/src/features/exercise-stats/domain/types";
-import { Exercise } from "@packages/exercise";
+import { Exercise } from "@gym-diary/exercise";
 
 type Props = {
   stat: ExerciseStat | null | undefined;

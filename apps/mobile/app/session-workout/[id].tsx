@@ -22,13 +22,22 @@ import type {
 import type { SessionSet } from "@/src/features/session-set/domain/types";
 import { sessionSetRepository } from "@/src/features/session-set/data/repository";
 import ExerciseLibraryPicker from "@/src/features/exercise/components/exercise-library-picker";
-import type { Exercise } from "@packages/exercise/type";
+import type { Exercise } from "@gym-diary/exercise/type";
 import { SessionExerciseFactory } from "@/src/features/session-exercise/domain/factory";
+import { useKeyboardHeight } from "@/src/hooks/use-keyboard-height";
+import { RestTimerBanner } from "@/src/features/session-workout/components/rest-timer-banner";
+import { findRestTimerTargetForSet } from "@/src/features/session-workout/domain/rest-timer-target";
+import { useRestTimer } from "@/src/features/session-workout/hooks/use-rest-timer";
+import { normalizeRestSeconds } from "@/src/features/program-set/domain/rest";
 
 type ProgressHistoryLookup = Record<
   string,
   SessionExerciseProgressHistoryPoint[]
 >;
+
+type SetCommitEvent = {
+  becameCompleted: boolean;
+};
 
 async function getProgressHistoryLookup(
   exercises: { exerciseId: string | null }[],
@@ -87,6 +96,7 @@ export default function SessionWorkoutPage() {
   const { colorScheme } = useColorScheme();
   const iconColor = colorScheme === "dark" ? "#F9FAFB" : "#111827";
   const isDark = colorScheme === "dark";
+  const { startRestTimer } = useRestTimer();
 
   const rawId = params.id;
   const sessionId = Array.isArray(rawId) ? rawId[0] : rawId;
@@ -98,6 +108,7 @@ export default function SessionWorkoutPage() {
   const [exercises, setExercises] = useState<SessionExerciseView[]>([]);
   const [loading, setLoading] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const keyboardHeight = useKeyboardHeight();
 
   useEffect(() => {
     if (!sessionId) {
@@ -126,17 +137,46 @@ export default function SessionWorkoutPage() {
   }, [sessionId]);
 
   const readOnly = sessionStatus !== "in_progress";
+  const scrollBottomPadding = readOnly
+    ? 24
+    : keyboardHeight > 0
+      ? keyboardHeight + 120
+      : 96;
+
+  const startRestAfterCompletedSet = useCallback(
+    (set: SessionSet, event?: SetCommitEvent) => {
+      if (readOnly || set.isCompleted !== true) return;
+      if (event && !event.becameCompleted) return;
+
+      const currentTarget = findRestTimerTargetForSet(exercises, set.id);
+      if (!currentTarget) return;
+
+      const durationSeconds = normalizeRestSeconds(set.restSeconds);
+      if (durationSeconds <= 0) return;
+
+      void startRestTimer({
+        sessionId: currentTarget.sessionId,
+        setId: set.id,
+        exerciseName: currentTarget.exerciseName,
+        setIndex: currentTarget.setIndex,
+        durationSeconds,
+        source: "auto",
+      });
+    },
+    [exercises, readOnly, startRestTimer],
+  );
 
   const onSetCommit = useCallback(
-    async (set: SessionSet) => {
+    async (set: SessionSet, event?: SetCommitEvent) => {
       if (readOnly) return;
       try {
+        startRestAfterCompletedSet(set, event);
         await sessionSetRepository.save(set);
       } catch (err) {
         console.error("Failed to save session set", err);
       }
     },
-    [readOnly],
+    [readOnly, startRestAfterCompletedSet],
   );
 
   const onSetAdd = useCallback(
@@ -155,34 +195,48 @@ export default function SessionWorkoutPage() {
 
   const handleAddExercises = useCallback(
     async (selectedExercises: Exercise[]) => {
-      if (readOnly || !sessionId) return;
+      if (readOnly || !sessionId || selectedExercises.length === 0) return;
+
+      const domains = selectedExercises.map((exercise, index) =>
+        SessionExerciseFactory.domainFromExercise(exercise, {
+          workoutSessionId: sessionId,
+          orderIndex: exercises.length + index,
+        }),
+      );
+
+      const optimisticExercises: SessionExerciseView[] = domains.map(
+        (domain) => ({
+          ...domain,
+          isOpen: true,
+          isProgressOpen: false,
+          progressHistory: [],
+          lastSessionSets: [],
+        }),
+      );
+
+      setPickerOpen(false);
+      setExercises((prev) => [...prev, ...optimisticExercises]);
 
       try {
-        const created: SessionExerciseView[] = [];
         const progressHistoryByExerciseId =
           await sessionExerciseRepository.getProgressHistoryByExerciseIds(
             selectedExercises.map((exercise) => exercise.id),
           );
 
-        for (const [index, exercise] of selectedExercises.entries()) {
-          const domain = SessionExerciseFactory.domainFromExercise(exercise, {
-            workoutSessionId: sessionId,
-            orderIndex: exercises.length + index,
-          });
+        await Promise.all(
+          domains.map((domain) => sessionExerciseRepository.save(domain)),
+        );
 
-          await sessionExerciseRepository.save(domain);
-
-          created.push({
-            ...domain,
-            isOpen: true,
-            isProgressOpen: false,
-            progressHistory: progressHistoryByExerciseId[exercise.id] ?? [],
-            lastSessionSets: [],
-          });
-        }
-
-        setExercises((prev) => [...prev, ...created]);
-        setPickerOpen(false);
+        setExercises((prev) =>
+          prev.map((exercise) => ({
+            ...exercise,
+            progressHistory:
+              exercise.exerciseId != null
+                ? progressHistoryByExerciseId[exercise.exerciseId] ??
+                  exercise.progressHistory
+                : exercise.progressHistory,
+          })),
+        );
       } catch (err) {
         console.error("Failed to add exercises", err);
       }
@@ -223,12 +277,17 @@ export default function SessionWorkoutPage() {
         <View style={{ width: 20, marginLeft: 8 }} />
       </View>
 
+      <RestTimerBanner sessionId={sessionId} />
+
       <ScrollView
         className="flex-1 bg-white dark:bg-[#2B2D3A]"
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 12,
-          paddingBottom: readOnly ? 24 : 96,
+          paddingBottom: scrollBottomPadding,
         }}
       >
         {loading && exercises.length === 0 && (

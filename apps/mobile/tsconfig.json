@@ -2,10 +2,10 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".", // add this
     "paths": {
-      "@/*": ["./*"],
-      "@packages/*": ["../../packages/*"] // new alias
+      "@/*": ["./*"]
     }
   },
   "include": [

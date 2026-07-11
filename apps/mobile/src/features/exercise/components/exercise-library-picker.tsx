@@ -1,12 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { Check, Plus, Search, X } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
-import { Exercise } from "@packages/exercise/type";
+import { Exercise } from "@gym-diary/exercise/type";
 import { exerciseRepository } from "@/src/features/exercise/data/exercise-repository";
 import { exerciseFactory } from "@/src/features/exercise/domain/factory";
 import { exerciseStatRepository } from "@/src/features/exercise-stats/data/repository";
+import type { QuantityUnit } from "@/db/enums";
 
 type ExerciseUsageSummary = {
   exerciseId: string;
@@ -32,6 +33,34 @@ type ExerciseLibraryPickerProps = {
   onCancel?: () => void;
 };
 
+type ExerciseLibraryListItem =
+  | {
+      type: "section";
+      id: string;
+      title: string;
+      subtitle?: string;
+    }
+  | {
+      type: "exercise";
+      id: string;
+      exercise: Exercise;
+    }
+  | {
+      type: "message";
+      id: string;
+      title: string;
+      subtitle?: string;
+      tone?: "default" | "error";
+    }
+  | {
+      type: "loading";
+      id: string;
+    }
+  | {
+      type: "browse-toggle";
+      id: string;
+    };
+
 const EMPTY_SELECTED_IDS: string[] = [];
 
 function getExerciseId(e: Exercise) {
@@ -40,6 +69,23 @@ function getExerciseId(e: Exercise) {
 
 function getExerciseName(e: Exercise) {
   return e.name ?? "";
+}
+
+function getQuantityUnitLabel(unit: QuantityUnit) {
+  return unit === "time" ? "Time" : "Reps";
+}
+
+function formatExerciseNameInput(value: string) {
+  return value
+    .replace(/[-\u2010\u2011\u2012\u2013\u2014\u2015]/g, " ")
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .map((word) => {
+      if (!word) return word;
+      return word[0]!.toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
 }
 
 function compareByName(a: Exercise, b: Exercise) {
@@ -103,7 +149,7 @@ function sameIds(a: Set<string>, b: string[]) {
   return true;
 }
 
-function ExerciseRow(props: {
+const ExerciseRow = React.memo(function ExerciseRow(props: {
   exercise: Exercise;
   subtitle?: string;
   selected?: boolean;
@@ -177,8 +223,26 @@ function ExerciseRow(props: {
         </View>
 
         <View className="items-end">
+          <View
+            className={`rounded-full px-2 py-0.5 ${
+              props.selected
+                ? "bg-white/15 dark:bg-[#282A36]/10"
+                : "bg-neutral-100 dark:bg-[#21222C]"
+            }`}
+          >
+            <Text
+              className={`text-[10px] font-semibold ${
+                props.selected
+                  ? "text-white dark:text-[#282A36]"
+                  : "text-neutral-500 dark:text-[#6272A4]"
+              }`}
+            >
+              {getQuantityUnitLabel(props.exercise.quantityUnit ?? "reps")}
+            </Text>
+          </View>
+
           <Text
-            className={`text-base ${
+            className={`mt-1 text-base ${
               props.selected
                 ? "text-white dark:text-[#282A36]"
                 : "text-neutral-400 dark:text-[#6272A4]"
@@ -190,7 +254,14 @@ function ExerciseRow(props: {
       </View>
     </Pressable>
   );
-}
+}, (prev, next) => {
+  return (
+    getExerciseId(prev.exercise) === getExerciseId(next.exercise) &&
+    prev.subtitle === next.subtitle &&
+    prev.selected === next.selected &&
+    prev.selectable === next.selectable
+  );
+});
 
 export default function ExerciseLibraryPicker({
   title = "Exercise library",
@@ -227,6 +298,10 @@ export default function ExerciseLibraryPicker({
 
   const [createOpen, setCreateOpen] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState("");
+  const [newExerciseQuantityUnit, setNewExerciseQuantityUnit] =
+    useState<QuantityUnit>("reps");
+  const mountedRef = useRef(false);
+  const loadRequestIdRef = useRef(0);
 
   const selectable = mode === "single-select" || mode === "multi-select";
 
@@ -242,8 +317,19 @@ export default function ExerciseLibraryPicker({
     });
   }, [initialSelectedIdsKey, stableInitialSelectedIds]);
 
-  const load = useMemo(
-    () => async () => {
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      loadRequestIdRef.current += 1;
+    };
+  }, []);
+
+  const load = useCallback(
+    async () => {
+      const requestId = loadRequestIdRef.current + 1;
+      loadRequestIdRef.current = requestId;
       setLoading(true);
       setError(null);
 
@@ -255,14 +341,24 @@ export default function ExerciseLibraryPicker({
             : Promise.resolve([]),
         ]);
 
+        if (!mountedRef.current || requestId !== loadRequestIdRef.current) {
+          return;
+        }
+
         setOptions(exercises ?? []);
         setUsageSummaries((usageRows ?? []) as ExerciseUsageSummary[]);
       } catch (e) {
+        if (!mountedRef.current || requestId !== loadRequestIdRef.current) {
+          return;
+        }
+
         setOptions([]);
         setUsageSummaries([]);
         setError(String(e));
       } finally {
-        setLoading(false);
+        if (mountedRef.current && requestId === loadRequestIdRef.current) {
+          setLoading(false);
+        }
       }
     },
     [showUsageSummary],
@@ -270,6 +366,10 @@ export default function ExerciseLibraryPicker({
 
   useEffect(() => {
     void load();
+
+    return () => {
+      loadRequestIdRef.current += 1;
+    };
   }, [load]);
 
   const byExerciseId = useMemo<
@@ -342,7 +442,7 @@ export default function ExerciseLibraryPicker({
       .map((item) => item.exercise);
   }, [options, query, showUsageSummary, byExerciseId]);
 
-  function toggleSelect(exercise: Exercise) {
+  const toggleSelect = useCallback((exercise: Exercise) => {
     const id = getExerciseId(exercise);
 
     if (mode === "browse") {
@@ -365,9 +465,9 @@ export default function ExerciseLibraryPicker({
       else next.add(id);
       return next;
     });
-  }
+  }, [mode, onPressExercise]);
 
-  function handleConfirm() {
+  const handleConfirm = useCallback(() => {
     if (!onConfirmSelection) return;
 
     const selected = options.filter((exercise) =>
@@ -375,17 +475,21 @@ export default function ExerciseLibraryPicker({
     );
 
     onConfirmSelection(selected);
-  }
+  }, [onConfirmSelection, options, selectedIds]);
 
   async function handleSubmitCreateExercise() {
-    const baseName = newExerciseName.trim();
+    const baseName = formatExerciseNameInput(newExerciseName);
     if (!baseName) return;
 
     try {
-      const exercise = exerciseFactory.create({ name: baseName });
+      const exercise = exerciseFactory.create({
+        name: baseName,
+        quantityUnit: newExerciseQuantityUnit,
+      });
       const saved = await exerciseRepository.save(exercise);
 
       await load();
+      if (!mountedRef.current) return;
 
       if (mode === "multi-select") {
         setSelectedIds((prev) => {
@@ -399,6 +503,7 @@ export default function ExerciseLibraryPicker({
 
       setCreateOpen(false);
       setNewExerciseName("");
+      setNewExerciseQuantityUnit("reps");
       setQ("");
 
       if (mode !== "multi-select") {
@@ -409,27 +514,266 @@ export default function ExerciseLibraryPicker({
     }
   }
 
-  function renderRows(rows: Exercise[]) {
-    return (
-      <View className="gap-3">
-        {rows.map((exercise) => {
-          const id = getExerciseId(exercise);
-          const usage = getUsage(byExerciseId, exercise);
+  const listItems = useMemo<ExerciseLibraryListItem[]>(() => {
+    const items: ExerciseLibraryListItem[] = [];
 
-          return (
-            <ExerciseRow
-              key={id}
-              exercise={exercise}
-              subtitle={getExerciseSubtitle(usage, showUsageSummary)}
-              selected={selectedIds.has(id)}
-              selectable={selectable}
-              onPress={() => toggleSelect(exercise)}
+    if (error) {
+      items.push({
+        type: "message",
+        id: "error",
+        title: "Failed to load exercises",
+        subtitle: error,
+        tone: "error",
+      });
+    }
+
+    if (loading) {
+      items.push({ type: "loading", id: "loading" });
+      return items;
+    }
+
+    if (query) {
+      if (searchResults.length === 0) {
+        items.push({
+          type: "message",
+          id: "no-search-results",
+          title: "No matching exercises",
+          subtitle: "Try another keyword.",
+        });
+        return items;
+      }
+
+      items.push({
+        type: "section",
+        id: "search-results-heading",
+        title: "Search results",
+        subtitle: showUsageSummary
+          ? "Prefix matches rank first, then recent and frequent matches"
+          : "Matching exercises from the library",
+      });
+
+      for (const exercise of searchResults) {
+        items.push({
+          type: "exercise",
+          id: `search-${getExerciseId(exercise)}`,
+          exercise,
+        });
+      }
+
+      return items;
+    }
+
+    items.push({
+      type: "section",
+      id: "featured-heading",
+      title:
+        showUsageSummary && relevant.length > 0 ? "Relevant to you" : "Exercises",
+      subtitle:
+        showUsageSummary && relevant.length > 0
+          ? "Based on exercises you perform most recently and most often"
+          : "Start from a smaller list instead of the full registry",
+    });
+
+    if (featured.length === 0) {
+      items.push({
+        type: "message",
+        id: "empty-featured",
+        title: emptyTitle,
+        subtitle: emptySubtitle,
+      });
+    } else {
+      for (const exercise of featured) {
+        items.push({
+          type: "exercise",
+          id: `featured-${getExerciseId(exercise)}`,
+          exercise,
+        });
+      }
+    }
+
+    if (showBrowseAll && browseAllRows.length > 0) {
+      items.push({ type: "browse-toggle", id: "browse-toggle" });
+    }
+
+    if (showAll && browseAllRows.length > 0) {
+      items.push({
+        type: "section",
+        id: "all-heading",
+        title: "All exercises",
+        subtitle: "Full list in alphabetical order",
+      });
+
+      for (const exercise of browseAllRows) {
+        items.push({
+          type: "exercise",
+          id: `all-${getExerciseId(exercise)}`,
+          exercise,
+        });
+      }
+    }
+
+    return items;
+  }, [
+    browseAllRows,
+    emptySubtitle,
+    emptyTitle,
+    error,
+    featured,
+    loading,
+    query,
+    relevant.length,
+    searchResults,
+    showAll,
+    showBrowseAll,
+    showUsageSummary,
+  ]);
+
+  const keyExtractor = useCallback((item: ExerciseLibraryListItem) => item.id, []);
+
+  const renderListHeader = useCallback(
+    () => (
+      <View className="flex-row items-center gap-2">
+        <View className="flex-1 rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]">
+          <View className="flex-row items-center">
+            <Search
+              size={16}
+              color={isDark ? "#6272A4" : "#9CA3AF"}
+              style={{ marginRight: 8 }}
             />
-          );
-        })}
+            <TextInput
+              value={q}
+              onChangeText={setQ}
+              placeholder="Search exercises"
+              placeholderTextColor="#9CA3AF"
+              autoCapitalize="none"
+              autoCorrect={false}
+              className="flex-1 text-sm text-neutral-900 dark:text-[#F8F8F2]"
+            />
+          </View>
+        </View>
+
+        {allowCreate ? (
+          <Pressable
+            onPress={() => {
+              setNewExerciseName(formatExerciseNameInput(q));
+              setNewExerciseQuantityUnit("reps");
+              setCreateOpen(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Create new exercise"
+            className="h-[50px] flex-row items-center justify-center gap-1.5 rounded-2xl bg-neutral-900 px-4 dark:bg-[#BD93F9]"
+          >
+            <Plus size={17} color={isDark ? "#282A36" : "#FFFFFF"} />
+            <Text className="text-[13px] font-semibold text-white dark:text-[#282A36]">
+              New exercise
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
-    );
-  }
+    ),
+    [allowCreate, isDark, q],
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: ExerciseLibraryListItem }) => {
+      if (item.type === "loading") {
+        return (
+          <Text className="text-xs text-neutral-500 dark:text-[#6272A4]">
+            Loading...
+          </Text>
+        );
+      }
+
+      if (item.type === "message") {
+        const isError = item.tone === "error";
+
+        return (
+          <View
+            className={`rounded-2xl border p-4 ${
+              isError
+                ? "border-rose-200 bg-rose-50 dark:border-[#FF5555] dark:bg-[#3A3D4F]"
+                : "border-neutral-200 bg-white dark:border-[#44475A] dark:bg-[#343746]"
+            }`}
+          >
+            <Text
+              className={`text-sm font-medium ${
+                isError
+                  ? "text-rose-700 dark:text-[#FF5555]"
+                  : "text-neutral-900 dark:text-[#F8F8F2]"
+              }`}
+            >
+              {item.title}
+            </Text>
+            {item.subtitle ? (
+              <Text
+                className={`mt-1 text-xs ${
+                  isError
+                    ? "text-rose-600 dark:text-[#F8F8F2]"
+                    : "text-neutral-500 dark:text-[#6272A4]"
+                }`}
+              >
+                {item.subtitle}
+              </Text>
+            ) : null}
+          </View>
+        );
+      }
+
+      if (item.type === "section") {
+        return (
+          <View>
+            <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
+              {item.title}
+            </Text>
+            {item.subtitle ? (
+              <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
+                {item.subtitle}
+              </Text>
+            ) : null}
+          </View>
+        );
+      }
+
+      if (item.type === "browse-toggle") {
+        return (
+          <Pressable
+            onPress={() => setShowAll((v) => !v)}
+            className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]"
+          >
+            <Text className="text-sm font-medium text-neutral-900 dark:text-[#F8F8F2]">
+              {showAll ? "Hide all exercises" : "Browse all exercises"}
+            </Text>
+            <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
+              {showAll
+                ? "Collapse the full list"
+                : "Show the complete registry in A-Z order"}
+            </Text>
+          </Pressable>
+        );
+      }
+
+      const usage = getUsage(byExerciseId, item.exercise);
+      const id = getExerciseId(item.exercise);
+
+      return (
+        <ExerciseRow
+          exercise={item.exercise}
+          subtitle={getExerciseSubtitle(usage, showUsageSummary)}
+          selected={selectedIds.has(id)}
+          selectable={selectable}
+          onPress={() => toggleSelect(item.exercise)}
+        />
+      );
+    },
+    [
+      byExerciseId,
+      selectable,
+      selectedIds,
+      showAll,
+      showUsageSummary,
+      toggleSelect,
+    ],
+  );
 
   return (
     <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
@@ -471,151 +815,26 @@ export default function ExerciseLibraryPicker({
         </View>
       </View>
 
-      <ScrollView
+      <FlatList
         className="flex-1"
-        contentContainerClassName="gap-4 px-4 pb-6 pt-4"
+        data={listItems}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        ListHeaderComponent={renderListHeader}
+        ItemSeparatorComponent={() => <View className="h-3" />}
         keyboardShouldPersistTaps="handled"
-      >
-        <View className="flex-row items-center gap-2">
-          <View className="flex-1 rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]">
-            <View className="flex-row items-center">
-              <Search
-                size={16}
-                color={isDark ? "#6272A4" : "#9CA3AF"}
-                style={{ marginRight: 8 }}
-              />
-              <TextInput
-                value={q}
-                onChangeText={setQ}
-                placeholder="Search exercises"
-                placeholderTextColor="#9CA3AF"
-                autoCapitalize="none"
-                autoCorrect={false}
-                className="flex-1 text-sm text-neutral-900 dark:text-[#F8F8F2]"
-              />
-            </View>
-          </View>
-
-          {allowCreate ? (
-            <Pressable
-              onPress={() => {
-                setNewExerciseName(q.trim());
-                setCreateOpen(true);
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Create new exercise"
-              className="h-[50px] flex-row items-center justify-center gap-1.5 rounded-2xl bg-neutral-900 px-4 dark:bg-[#BD93F9]"
-            >
-              <Plus size={17} color={isDark ? "#282A36" : "#FFFFFF"} />
-              <Text className="text-[13px] font-semibold text-white dark:text-[#282A36]">
-                New exercise
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
-
-        {error ? (
-          <View className="rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-[#FF5555] dark:bg-[#3A3D4F]">
-            <Text className="text-sm font-medium text-rose-700 dark:text-[#FF5555]">
-              Failed to load exercises
-            </Text>
-            <Text className="mt-1 text-xs text-rose-600 dark:text-[#F8F8F2]">
-              {error}
-            </Text>
-          </View>
-        ) : null}
-
-        {loading ? (
-          <Text className="text-xs text-neutral-500 dark:text-[#6272A4]">
-            Loading…
-          </Text>
-        ) : query ? (
-          searchResults.length === 0 ? (
-            <View className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-[#44475A] dark:bg-[#343746]">
-              <Text className="text-sm font-medium text-neutral-900 dark:text-[#F8F8F2]">
-                No matching exercises
-              </Text>
-              <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
-                Try another keyword.
-              </Text>
-            </View>
-          ) : (
-            <>
-              <View>
-                <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
-                  Search results
-                </Text>
-                <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
-                  {showUsageSummary
-                    ? "Prefix matches rank first, then recent and frequent matches"
-                    : "Matching exercises from the library"}
-                </Text>
-              </View>
-
-              {renderRows(searchResults)}
-            </>
-          )
-        ) : (
-          <>
-            <View>
-              <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
-                {showUsageSummary && relevant.length > 0
-                  ? "Relevant to you"
-                  : "Exercises"}
-              </Text>
-              <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
-                {showUsageSummary && relevant.length > 0
-                  ? "Based on exercises you perform most recently and most often"
-                  : "Start from a smaller list instead of the full registry"}
-              </Text>
-            </View>
-
-            {featured.length === 0 ? (
-              <View className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-[#44475A] dark:bg-[#343746]">
-                <Text className="text-sm font-medium text-neutral-900 dark:text-[#F8F8F2]">
-                  {emptyTitle}
-                </Text>
-                <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
-                  {emptySubtitle}
-                </Text>
-              </View>
-            ) : (
-              renderRows(featured)
-            )}
-
-            {showBrowseAll && browseAllRows.length > 0 ? (
-              <Pressable
-                onPress={() => setShowAll((v) => !v)}
-                className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]"
-              >
-                <Text className="text-sm font-medium text-neutral-900 dark:text-[#F8F8F2]">
-                  {showAll ? "Hide all exercises" : "Browse all exercises"}
-                </Text>
-                <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
-                  {showAll
-                    ? "Collapse the full list"
-                    : "Show the complete registry in A–Z order"}
-                </Text>
-              </Pressable>
-            ) : null}
-
-            {showAll && browseAllRows.length > 0 ? (
-              <>
-                <View>
-                  <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
-                    All exercises
-                  </Text>
-                  <Text className="mt-1 text-xs text-neutral-500 dark:text-[#6272A4]">
-                    Full list in alphabetical order
-                  </Text>
-                </View>
-
-                {renderRows(browseAllRows)}
-              </>
-            ) : null}
-          </>
-        )}
-      </ScrollView>
+        keyboardDismissMode="on-drag"
+        initialNumToRender={14}
+        maxToRenderPerBatch={12}
+        updateCellsBatchingPeriod={32}
+        windowSize={7}
+        removeClippedSubviews
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: 24,
+          paddingTop: 16,
+        }}
+      />
 
       {createOpen && (
         <View
@@ -633,13 +852,43 @@ export default function ExerciseLibraryPicker({
               placeholderTextColor="#9CA3AF"
               value={newExerciseName}
               onChangeText={setNewExerciseName}
+              autoCapitalize="words"
             />
+
+            <View className="mb-3 flex-row rounded-xl bg-neutral-100 p-1 dark:bg-[#21222C]">
+              {(["reps", "time"] as const).map((unit) => {
+                const selected = newExerciseQuantityUnit === unit;
+
+                return (
+                  <Pressable
+                    key={unit}
+                    onPress={() => setNewExerciseQuantityUnit(unit)}
+                    className={`h-9 flex-1 items-center justify-center rounded-lg ${
+                      selected
+                        ? "bg-white dark:bg-[#BD93F9]"
+                        : "bg-transparent"
+                    }`}
+                  >
+                    <Text
+                      className={`text-[12px] font-semibold ${
+                        selected
+                          ? "text-neutral-900 dark:text-[#282A36]"
+                          : "text-neutral-500 dark:text-[#6272A4]"
+                      }`}
+                    >
+                      {getQuantityUnitLabel(unit)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
             <View className="flex-row items-center justify-end gap-2">
               <Pressable
                 onPress={() => {
                   setCreateOpen(false);
                   setNewExerciseName("");
+                  setNewExerciseQuantityUnit("reps");
                 }}
                 className="h-7 items-center justify-center rounded-full bg-neutral-100 px-3 dark:bg-[#44475A]"
               >

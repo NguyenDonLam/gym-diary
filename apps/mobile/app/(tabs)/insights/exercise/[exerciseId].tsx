@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, View, Text, Pressable } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 
-import type { Exercise } from "@packages/exercise";
+import type { Exercise } from "@gym-diary/exercise";
 import type { ExerciseStat } from "@/src/features/exercise-stats/domain/types";
 import type { ExercisePeriodStat } from "@/src/features/exercise-period-stats/domain/types";
 

@@ -81,6 +81,7 @@ export const setPrograms = sqliteTable("program_sets", {
     }),
   orderIndex: integer("order_index").notNull(),
   targetQuantity: integer("target_quantity"),
+  restSeconds: integer("rest_seconds").notNull().default(120),
   loadUnit: text("load_unit", { enum: LOAD_UNITS })
     .notNull()
     .notNull()
@@ -172,6 +173,7 @@ export const sessionSets = sqliteTable("session_sets", {
   orderIndex: integer("order_index").notNull(),
 
   targetQuantity: integer("target_quantity"),
+  restSeconds: integer("rest_seconds").notNull().default(120),
   quantity: integer("quantity"),
   loadUnit: text("load_unit", { enum: LOAD_UNITS })
     .notNull()

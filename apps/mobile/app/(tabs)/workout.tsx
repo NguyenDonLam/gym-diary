@@ -6,9 +6,9 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
-  useColorScheme,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useColorScheme } from "nativewind";
 import DraggableFlatList, {
   RenderItemParams,
   DragEndParams,
@@ -42,7 +42,8 @@ import {
 
 export default function Workout() {
   const router = useRouter();
-  const isDark = useColorScheme() === "dark";
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { programs, deleteProgram, isLoading } = useWorkoutPrograms();
 
   const [folders, setFolders] = useState<TemplateFolder[]>([]);
@@ -80,22 +81,32 @@ export default function Workout() {
 
   // folders
   useEffect(() => {
+    let cancelled = false;
+
     const load = async () => {
       setFoldersLoading(true);
       setFoldersError(null);
       try {
         const all = await templateFolderRepository.getAll();
+        if (cancelled) return;
         setFolders(all);
       } catch (e) {
+        if (cancelled) return;
         setFoldersError(
           e instanceof Error ? e : new Error("Failed to load folders"),
         );
         setFolders([]);
       } finally {
-        setFoldersLoading(false);
+        if (!cancelled) {
+          setFoldersLoading(false);
+        }
       }
     };
-    load();
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // new folders open by default
@@ -456,7 +467,7 @@ export default function Workout() {
                         </View>
 
                         <View className="flex-row items-center">
-                          <Text className="mr-2 font-mono text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                          <Text className="mr-2 font-mono text-2l font-bold text-emerald-700 dark:text-emerald-300">
                             {activeSessionTime}
                           </Text>
                           <ChevronRight

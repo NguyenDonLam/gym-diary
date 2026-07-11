@@ -7,6 +7,10 @@ import type {
 import type { SessionSetRow } from "@/src/features/session-set/data/types";
 import type { SetProgramRow } from "@/src/features/program-set/data/type";
 import { generateId } from "@/src/lib/id";
+import {
+  DEFAULT_REST_SECONDS,
+  normalizeRestSeconds,
+} from "@/src/features/program-set/domain/rest";
 
 export class SessionSetFactory {
   static domainFromDb(row: SessionSetRow): SessionSet {
@@ -22,6 +26,9 @@ export class SessionSetFactory {
       orderIndex: row.orderIndex,
 
       targetQuantity: row.targetQuantity ?? null,
+      restSeconds: normalizeRestSeconds(
+        row.restSeconds ?? DEFAULT_REST_SECONDS
+      ),
       quantity: row.quantity,
       loadUnit: row.loadUnit,
       loadValue: row.loadValue ?? null,
@@ -50,6 +57,7 @@ export class SessionSetFactory {
       orderIndex: domain.orderIndex,
 
       targetQuantity: domain.targetQuantity ?? null,
+      restSeconds: normalizeRestSeconds(domain.restSeconds),
       quantity: domain.quantity,
       loadUnit: domain.loadUnit,
       loadValue: domain.loadValue ?? null,
@@ -75,6 +83,9 @@ export class SessionSetFactory {
       orderIndex: row.orderIndex,
 
       targetQuantity: row.targetQuantity ?? null,
+      restSeconds: normalizeRestSeconds(
+        row.restSeconds ?? DEFAULT_REST_SECONDS
+      ),
       loadUnit: row.loadUnit,
       loadValue: row.loadValue ?? null,
       targetRpe: row.targetRpe ?? null,
@@ -99,6 +110,7 @@ export class SessionSetFactory {
       setProgramId: null,
 
       targetQuantity: null,
+      restSeconds: DEFAULT_REST_SECONDS,
       quantity: null,
 
       loadUnit: "kg",

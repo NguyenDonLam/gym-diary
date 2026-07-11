@@ -11,13 +11,13 @@ import React, {
 import { AppState, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import type { StrengthScoreContext } from "@packages/strength-score/strategies";
+import type { StrengthScoreContext } from "@gym-diary/strength-score/strategies";
 import {
   ExerciseMeanScoreStrategy,
   ScoreAggregateV1,
   SetE1rmScoreStrategy,
   WorkoutNormalizedScoreStrategy,
-} from "@packages/strength-score/strategies";
+} from "@gym-diary/strength-score/strategies";
 
 import type { SessionExercise } from "@/src/features/session-exercise/domain/types";
 import type { SessionSet } from "@/src/features/session-set/domain/types";
@@ -42,6 +42,7 @@ import { notifyWorkoutAutoEnded } from "../notifications/auto-end-notification";
 
 const KEY = "ongoing";
 const AUTO_END_AFTER_KEY = "settings:auto-end-workout-after-minutes";
+const DEFAULT_AUTO_END_AFTER_MINUTES = 20;
 const LAST_INTERACTION_KEY = "ongoing:last-interaction-at";
 const LAST_INTERACTION_PERSIST_INTERVAL_MS = 15_000;
 const LB_TO_KG = 0.45359237;
@@ -95,7 +96,8 @@ const OngoingSessionContext = createContext<OngoingSessionContextValue | null>(
 function parseAutoEndAfterMinutes(
   raw: string | null,
 ): AutoEndAfterMinutes {
-  if (raw == null || raw === "false") return false;
+  if (raw == null) return DEFAULT_AUTO_END_AFTER_MINUTES;
+  if (raw === "false") return false;
 
   const parsed = Number.parseFloat(raw);
   if (!Number.isFinite(parsed) || parsed <= 0) return false;
@@ -119,8 +121,16 @@ function createAggregate(
   session: SessionWorkout,
   lookupExerciseStat: Record<string, ExerciseStat>,
 ): Aggregate {
+  const quantityUnitByExerciseSessionId = new Map(
+    (session.exercises ?? []).map((ex) => [ex.id, ex.quantityUnit]),
+  );
+
   const setStrategy = new SetE1rmScoreStrategy<SessionSet>(
     (s) => {
+      if (quantityUnitByExerciseSessionId.get(s.sessionExerciseId) === "time") {
+        return null;
+      }
+
       if (s.loadUnit === "band" || s.loadUnit === "custom") return null;
 
       if (s.loadValue == null) return null;
@@ -133,7 +143,10 @@ function createAggregate(
       if (s.loadUnit === "lb") return raw * LB_TO_KG;
       return raw;
     },
-    (s) => s.quantity,
+    (s) =>
+      quantityUnitByExerciseSessionId.get(s.sessionExerciseId) === "time"
+        ? null
+        : s.quantity,
     (s) => 10 - (s.rpe ?? 10),
   );
 
@@ -211,8 +224,10 @@ export function OngoingSessionProvider({
   const { lookupExerciseStat } = useExerciseStats();
   const [mutationVersion, setMutationVersion] = useState(0);
   const [autoEndAfterMinutes, setAutoEndAfterMinutesState] =
-    useState<AutoEndAfterMinutes>(false);
-  const autoEndAfterMinutesRef = useRef<AutoEndAfterMinutes>(false);
+    useState<AutoEndAfterMinutes>(DEFAULT_AUTO_END_AFTER_MINUTES);
+  const autoEndAfterMinutesRef = useRef<AutoEndAfterMinutes>(
+    DEFAULT_AUTO_END_AFTER_MINUTES,
+  );
   const ongoingSessionRef = useRef<SessionWorkout | null>(null);
   const lastInteractionAtRef = useRef(Date.now());
   const lastInteractionPersistedAtRef = useRef(0);

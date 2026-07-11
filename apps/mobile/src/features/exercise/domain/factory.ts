@@ -1,6 +1,6 @@
 // src/features/exercise/domain/factory.ts
 
-import type { Exercise } from "@packages/exercise";
+import type { Exercise } from "@gym-diary/exercise";
 import { generateId } from "@/src/lib/id";
 
 // You already use this row type elsewhere:
@@ -13,6 +13,7 @@ const fromIso = (s: string) => new Date(s);
 export type ExerciseFactoryCreateInput = {
   id?: string;
   name: string;
+  quantityUnit?: Exercise["quantityUnit"];
 };
 
 export class ExerciseFactory {
@@ -26,7 +27,7 @@ export class ExerciseFactory {
     return {
       id: input.id ?? generateId(),
       name,
-      quantityUnit: "reps",
+      quantityUnit: input.quantityUnit ?? "reps",
       createdAt: now,
       updatedAt: now,
     };
@@ -49,7 +50,7 @@ export class ExerciseFactory {
     return {
       id: row.id,
       name: row.name,
-      quantityUnit: row.quantityUnit,
+      quantityUnit: row.quantityUnit ?? "reps",
       createdAt: fromIso(row.createdAt),
       updatedAt: fromIso(row.updatedAt),
     };
@@ -59,7 +60,7 @@ export class ExerciseFactory {
     return {
       id: domain.id,
       name: domain.name,
-      quantityUnit: domain.quantityUnit,
+      quantityUnit: domain.quantityUnit ?? "reps",
       createdAt: toIso(domain.createdAt),
       updatedAt: toIso(domain.updatedAt),
     };

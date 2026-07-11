@@ -21,12 +21,17 @@ import type { SessionSet } from "@/src/features/session-set/domain/types";
 import { sessionSetRepository } from "@/src/features/session-set/data/repository";
 
 import ExerciseLibraryPicker from "@/src/features/exercise/components/exercise-library-picker";
-import type { Exercise } from "@packages/exercise/type";
+import type { Exercise } from "@gym-diary/exercise/type";
 import { SessionExerciseFactory } from "@/src/features/session-exercise/domain/factory";
+import { RestTimerBanner } from "@/src/features/session-workout/components/rest-timer-banner";
+import { findRestTimerTargetForSet } from "@/src/features/session-workout/domain/rest-timer-target";
+import { useRestTimer } from "@/src/features/session-workout/hooks/use-rest-timer";
+import { normalizeRestSeconds } from "@/src/features/program-set/domain/rest";
 import {
   sessionExerciseRepository,
   type SessionExerciseProgressHistoryPoint,
 } from "@/src/features/session-exercise/data/repository";
+import { useKeyboardHeight } from "@/src/hooks/use-keyboard-height";
 
 type ViewModel = {
   id: string;
@@ -40,6 +45,10 @@ type ProgressHistoryLookup = Record<
   string,
   SessionExerciseProgressHistoryPoint[]
 >;
+
+type SetCommitEvent = {
+  becameCompleted: boolean;
+};
 
 async function getProgressHistoryLookup(
   exercises: SessionExerciseView[],
@@ -66,9 +75,34 @@ function toView(
     status: session.status ?? null,
     exercises: (session.exercises ?? []).map((ex) => {
       const previousExercise = previousById.get(ex.id);
+      const previousSetsById = new Map(
+        (previousExercise?.sets ?? []).map((set) => [set.id, set]),
+      );
+      const sets = (ex.sets ?? []).map((set) => {
+        const previousSet = previousSetsById.get(set.id);
+        if (!previousSet) return set;
+
+        const previousLoad =
+          previousSet.loadValue != null && previousSet.loadValue.trim() !== ""
+            ? previousSet.loadValue
+            : null;
+
+        return {
+          ...set,
+          quantity: previousSet.quantity ?? set.quantity,
+          loadUnit: previousLoad != null ? previousSet.loadUnit : set.loadUnit,
+          loadValue: previousLoad ?? set.loadValue,
+          rpe: previousSet.rpe ?? set.rpe,
+          isCompleted: previousSet.isCompleted || set.isCompleted,
+          e1rm: previousSet.e1rm ?? set.e1rm,
+          e1rmVersion:
+            previousSet.e1rm != null ? previousSet.e1rmVersion : set.e1rmVersion,
+        };
+      });
 
       return {
         ...ex,
+        sets,
         isOpen: previousExercise?.isOpen ?? true,
         isProgressOpen: previousExercise?.isProgressOpen ?? false,
         progressHistory: ex.exerciseId
@@ -82,6 +116,28 @@ function toView(
   };
 }
 
+function applyProgressHistoryToView(
+  previous: ViewModel | null,
+  session: SessionWorkout,
+  mode: ViewModel["mode"],
+  progressHistoryByExerciseId: ProgressHistoryLookup,
+) {
+  if (!previous || previous.id !== session.id) {
+    return toView(session, mode, progressHistoryByExerciseId, previous);
+  }
+
+  return {
+    ...previous,
+    mode,
+    exercises: previous.exercises.map((ex) => ({
+      ...ex,
+      progressHistory: ex.exerciseId
+        ? progressHistoryByExerciseId[ex.exerciseId] ?? ex.progressHistory ?? []
+        : [],
+    })),
+  };
+}
+
 export default function OngoingSessionPage() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
@@ -90,10 +146,12 @@ export default function OngoingSessionPage() {
 
   const { ongoingSession, refresh, mutationVersion, bumpMutationVersion } =
     useOngoingSession();
+  const { startRestTimer } = useRestTimer();
 
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<ViewModel | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const keyboardHeight = useKeyboardHeight();
 
   const lastSessionIdRef = useRef<string | null>(null);
 
@@ -131,7 +189,12 @@ export default function OngoingSessionPage() {
 
         if (cancelled) return;
         setView((prev) =>
-          toView(ongoingSession, "ongoing", progressHistoryByExerciseId, prev),
+          applyProgressHistoryToView(
+            prev,
+            ongoingSession,
+            "ongoing",
+            progressHistoryByExerciseId,
+          ),
         );
       } catch (err) {
         console.error("Failed to load exercise progress history", err);
@@ -141,7 +204,7 @@ export default function OngoingSessionPage() {
     return () => {
       cancelled = true;
     };
-  }, [ongoingSession, mutationVersion]);
+  }, [ongoingSession]);
 
   useEffect(() => {
     if (ongoingSession) return;
@@ -183,20 +246,48 @@ export default function OngoingSessionPage() {
   }, [ongoingSession, mutationVersion]);
 
   const readOnly = view?.mode === "completed";
+  const scrollBottomPadding = readOnly
+    ? 24
+    : keyboardHeight > 0
+      ? keyboardHeight + 120
+      : 96;
+
+  const startRestAfterCompletedSet = useCallback(
+    (set: SessionSet, event?: SetCommitEvent) => {
+      if (readOnly || !view || set.isCompleted !== true) return;
+      if (event && !event.becameCompleted) return;
+
+      const currentTarget = findRestTimerTargetForSet(view.exercises, set.id);
+      if (!currentTarget) return;
+
+      const durationSeconds = normalizeRestSeconds(set.restSeconds);
+      if (durationSeconds <= 0) return;
+
+      void startRestTimer({
+        sessionId: currentTarget.sessionId,
+        setId: set.id,
+        exerciseName: currentTarget.exerciseName,
+        setIndex: currentTarget.setIndex,
+        durationSeconds,
+        source: "auto",
+      });
+    },
+    [readOnly, startRestTimer, view],
+  );
 
   const onSetCommit = useCallback(
-    async (set: SessionSet) => {
+    async (set: SessionSet, event?: SetCommitEvent) => {
       if (readOnly) return;
 
       try {
+        startRestAfterCompletedSet(set, event);
         await sessionSetRepository.save(set);
-        await refresh();
         bumpMutationVersion();
       } catch (err) {
         console.error("Failed to save session set", err);
       }
     },
-    [readOnly, refresh, bumpMutationVersion],
+    [readOnly, bumpMutationVersion, startRestAfterCompletedSet],
   );
 
   const onSetAdd = useCallback(
@@ -215,44 +306,60 @@ export default function OngoingSessionPage() {
 
   const handleAddExercises = useCallback(
     async (selectedExercises: Exercise[]) => {
-      if (readOnly || !view) return;
+      if (readOnly || !view || selectedExercises.length === 0) return;
+
+      const domains = selectedExercises.map((exercise, index) =>
+        SessionExerciseFactory.domainFromExercise(exercise, {
+          workoutSessionId: view.id,
+          orderIndex: view.exercises.length + index,
+        }),
+      );
+
+      const optimisticExercises: SessionExerciseView[] = domains.map(
+        (domain) => ({
+          ...domain,
+          isOpen: true,
+          isProgressOpen: false,
+          progressHistory: [],
+          lastSessionSets: [],
+        }),
+      );
+
+      setPickerOpen(false);
+      setView((prev) =>
+        !prev
+          ? prev
+          : {
+              ...prev,
+              exercises: [...prev.exercises, ...optimisticExercises],
+            },
+      );
 
       try {
-        const created: SessionExerciseView[] = [];
         const progressHistoryByExerciseId =
           await sessionExerciseRepository.getProgressHistoryByExerciseIds(
             selectedExercises.map((exercise) => exercise.id),
           );
 
-        for (const [index, exercise] of selectedExercises.entries()) {
-          const domain = SessionExerciseFactory.domainFromExercise(exercise, {
-            workoutSessionId: view.id,
-            orderIndex: view.exercises.length + index,
-          });
-
-          await sessionExerciseRepository.save(domain);
-
-          created.push({
-            ...domain,
-            isOpen: true,
-            isProgressOpen: false,
-            progressHistory: progressHistoryByExerciseId[exercise.id] ?? [],
-            lastSessionSets: [],
-          });
-        }
-
-        const nextExercises = [...view.exercises, ...created];
+        await Promise.all(
+          domains.map((domain) => sessionExerciseRepository.save(domain)),
+        );
 
         setView((prev) =>
           !prev
             ? prev
             : {
                 ...prev,
-                exercises: nextExercises,
+                exercises: prev.exercises.map((exercise) => ({
+                  ...exercise,
+                  progressHistory:
+                    exercise.exerciseId != null
+                      ? progressHistoryByExerciseId[exercise.exerciseId] ??
+                        exercise.progressHistory
+                      : exercise.progressHistory,
+                })),
               },
         );
-
-        setPickerOpen(false);
       } catch (err) {
         console.error("Failed to add exercises", err);
       }
@@ -302,12 +409,17 @@ export default function OngoingSessionPage() {
         <View style={{ width: 20, marginLeft: 8 }} />
       </View>
 
+      <RestTimerBanner sessionId={view?.id} />
+
       <ScrollView
         className="flex-1 bg-white dark:bg-[#2B2D3A]"
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 12,
-          paddingBottom: readOnly ? 24 : 96,
+          paddingBottom: scrollBottomPadding,
         }}
       >
         {loading && !view && (

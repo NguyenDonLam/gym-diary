@@ -2,6 +2,7 @@
 
 import type { SetProgram, SetProgramFormData } from "../domain/type";
 import type { SetProgramRow } from "../data/type";
+import { DEFAULT_REST_SECONDS, normalizeRestSeconds } from "./rest";
 
 const toIso = (d: Date) => d.toISOString();
 const fromIso = (s: string) => new Date(s);
@@ -13,6 +14,9 @@ export class SetProgramFactory {
       exerciseProgramId: row.exerciseProgramId,
       orderIndex: row.orderIndex,
       targetQuantity: row.targetQuantity ?? null,
+      restSeconds: normalizeRestSeconds(
+        row.restSeconds ?? DEFAULT_REST_SECONDS
+      ),
       loadUnit: row.loadUnit,
       loadValue: row.loadValue ?? null,
       targetRpe: row.targetRpe ?? null,
@@ -28,6 +32,7 @@ export class SetProgramFactory {
       exerciseProgramId: domain.exerciseProgramId,
       orderIndex: domain.orderIndex,
       targetQuantity: domain.targetQuantity ?? null,
+      restSeconds: normalizeRestSeconds(domain.restSeconds),
       loadUnit: domain.loadUnit,
       loadValue: domain.loadValue ?? null,
       targetRpe: domain.targetRpe ?? null,
@@ -53,6 +58,9 @@ export class SetProgramFactory {
       exerciseProgramId: input.exerciseProgramId,
       orderIndex: input.orderIndex,
       targetQuantity: input.form.targetQuantity ?? null,
+      restSeconds: normalizeRestSeconds(
+        input.form.restSeconds ?? DEFAULT_REST_SECONDS
+      ),
       loadUnit: input.form.loadUnit,
       loadValue:
         input.form.loadValue.trim() === "" ? null : input.form.loadValue,
@@ -67,6 +75,7 @@ export class SetProgramFactory {
     return {
       id: domain.id,
       targetQuantity: domain.targetQuantity ?? null,
+      restSeconds: normalizeRestSeconds(domain.restSeconds),
       loadUnit: domain.loadUnit,
       loadValue: domain.loadValue ?? "",
       rpe: domain.targetRpe === null ? "" : String(domain.targetRpe),

@@ -1,6 +1,6 @@
 // src/features/program-exercise/domain/exercise-program-factory.ts
 
-import type { Exercise } from "@packages/exercise";
+import type { Exercise } from "@gym-diary/exercise";
 
 import type { ExerciseProgramRow } from "../data/type";
 

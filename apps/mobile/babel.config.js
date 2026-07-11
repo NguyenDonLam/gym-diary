@@ -1,5 +1,3 @@
-const path = require("path");
-
 module.exports = function (api) {
   api.cache(true);
 
@@ -16,7 +14,6 @@ module.exports = function (api) {
           extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
           alias: {
             "@": "./",
-            "@packages": path.resolve(__dirname, "../../packages"),
           },
         },
       ],

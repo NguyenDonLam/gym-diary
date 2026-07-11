@@ -1,4 +1,4 @@
-import { Exercise } from "@packages/exercise";
+import { Exercise } from "@gym-diary/exercise";
 import { SetProgram, SetProgramFormData } from "../../program-set/domain/type";
 import { WorkoutProgram } from "../../program-workout/domain/type";
 import { QuantityUnit } from "@/db/enums";

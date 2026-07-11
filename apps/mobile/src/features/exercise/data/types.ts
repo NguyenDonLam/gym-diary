@@ -2,7 +2,7 @@
 
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { exercises } from "@/db/schema";
-import { Exercise } from "@packages/exercise";
+import { Exercise } from "@gym-diary/exercise";
 import { ExerciseProgram } from "../../program-exercise/domain/type";
 import { SessionExerciseRow } from "../../session-exercise/data/types";
 import { ExerciseProgramRow } from "../../program-exercise/data/type";
@@ -30,9 +30,10 @@ export const toDomain = (row: ExerciseRow): Exercise => {
   return {
     id: row.id,
     name: row.name,
+    quantityUnit: row.quantityUnit ?? "reps",
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
-  } as Exercise;
+  };
 };
 
 
@@ -45,6 +46,7 @@ export const toRow = (exercise: Exercise): ExerciseRow => {
   return {
     id: exercise.id,
     name: exercise.name,
+    quantityUnit: exercise.quantityUnit ?? "reps",
     createdAt: exercise.createdAt.toISOString(),
     updatedAt: exercise.updatedAt.toISOString(),
   } as ExerciseRow;

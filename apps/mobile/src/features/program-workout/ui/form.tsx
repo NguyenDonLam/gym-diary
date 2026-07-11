@@ -16,11 +16,12 @@ import { useColorScheme } from "nativewind";
 import ValueWheelSheet from "@/src/components/value-wheel-sheet";
 import { WorkoutProgramFormData } from "../domain/type";
 import { generateId } from "@/src/lib/id";
-import type { Exercise } from "@packages/exercise/type";
+import type { Exercise } from "@gym-diary/exercise/type";
 import { ExerciseProgramFormData } from "../../program-exercise/domain/type";
 import ExerciseProgramForm from "../../program-exercise/ui/form";
 import { ProgramColor } from "@/db/enums";
 import ExerciseLibraryPicker from "../../exercise/components/exercise-library-picker";
+import { useKeyboardHeight } from "@/src/hooks/use-keyboard-height";
 
 type WorkoutProgramFormProps = {
   formData: WorkoutProgramFormData;
@@ -94,6 +95,8 @@ export default function WorkoutProgramForm({
 
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const keyboardHeight = useKeyboardHeight();
+  const listBottomPadding = keyboardHeight > 0 ? keyboardHeight + 180 : 120;
 
   const selectedExerciseIds = useMemo(
     () =>
@@ -148,7 +151,7 @@ export default function WorkoutProgramForm({
           exerciseId: ex.id,
           isCustom: false,
           sets: [],
-          quantityUnit: "reps",
+          quantityUnit: ex.quantityUnit ?? "reps",
         });
 
         existingIds.add(ex.id);
@@ -341,12 +344,14 @@ export default function WorkoutProgramForm({
           keyExtractor={(item) => item.id}
           onDragEnd={handleDragEnd}
           activationDistance={8}
+          automaticallyAdjustKeyboardInsets
+          keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
-            paddingBottom: 84,
+            paddingBottom: listBottomPadding,
           }}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={renderEmpty}
+          ListHeaderComponent={renderHeader()}
+          ListEmptyComponent={renderEmpty()}
           renderItem={({ item, drag, isActive }) => (
             <View className={isActive ? "opacity-80" : ""}>
               <ExerciseProgramForm
