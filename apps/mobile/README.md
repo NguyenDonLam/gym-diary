@@ -31,6 +31,7 @@ React Native + Expo mobile client for Gym Diary. Focus: fast, offline-first work
 ## Tech stack
 
 - **Runtime**: React Native, Expo
+- **Tooling Node version**: Node.js 22.13.0 from the repo `.nvmrc`
 - **Navigation**: `expo-router`
 - **Language**: TypeScript
 - **Styling**: Tailwind-style utility classes via `className` (NativeWind-style)
@@ -191,20 +192,30 @@ Output goes to `db/migrations/` as configured in `drizzle.config.ts`.
 
 ---
 
+## Prerequisites
+
+- Node.js 22.13.0. From the repo root, run `nvm use` if you use nvm.
+- npm. Use npm for this repo so the checked-in lockfiles stay consistent.
+- Expo tooling through `npx expo`.
+- Expo Go, a development build, an Android emulator, or an iOS simulator.
+
+---
+
 ## Development
 
-Install dependencies at repo root using the chosen package manager, then from `apps/mobile` start Expo:
+Install dependencies from the repo root, then start Expo:
 
 ```bash
-cd apps/mobile
-npx expo start
+nvm use
+npm --prefix apps/mobile install
+npm run dev:mobile
 ```
 
 Use the Expo CLI output to run on iOS simulator, Android emulator, or a physical device.
 
-### Windows 11 Expo Go LAN URL
+### Expo Go LAN URL on some machines
 
-Sometimes on Windows 11, Expo may print a QR/link that points to
+On some machines, Expo may print a QR/link that points to
 `exp://127.0.0.1:8081`. That address only works on the computer itself, so a
 physical phone cannot connect to it.
 
