@@ -1,153 +1,140 @@
-# Gym Diary (Monorepo)
-(WORK IN PROGRESS) A mobile app to track, graph and visualize gym progress
+# Gym Diary
 
-Workout tracking platform with:
-- Mobile app (React Native)
-- Web app (optional)
-- API server
-- Shared types/schemas
+Work in progress mobile app for tracking workouts, reviewing history, and visualising progress over time.
+
+<p align="center">
+  <img src="./docs/0.26.1/app-icon.jpg" alt="Gym Diary app icon" width="140" />
+</p>
 
 ## Screenshots
 
-### Mobile — Home
+These are the current 0.26.1 preview screenshots from `docs/0.26.1`.
+
+### Workout Flow
 
 <p align="center">
-  <img src="./docs/images/home-screen.png" alt="Home screen" width="260" />
-  <img src="./docs/images/home-screen-dark.png" alt="Home screen (stats)" width="260" />
+  <img src="./docs/0.26.1/history-dark.png" alt="History screen showing completed sessions" width="220" />
+  <img src="./docs/0.26.1/programs-dark.png" alt="Programs screen" width="220" />
+  <img src="./docs/0.26.1/program-editor-dark.png" alt="Program editor screen" width="220" />
+  <img src="./docs/0.26.1/exercise-picker-dark.png" alt="Exercise picker screen" width="220" />
 </p>
 
-### Mobile — Program management
+### Session Tracking
 
 <p align="center">
-  <img src="./docs/images/program-edit-light.png" alt="Template list" width="260" />
-  <img src="./docs/images/program-edit-dark.png" alt="Template drag-and-drop" width="260" />
+  <img src="./docs/0.26.1/session-anterior-dark.png" alt="Anterior session in progress" width="220" />
+  <img src="./docs/0.26.1/session-posterior-dark-expanded.png" alt="Posterior session in dark mode" width="220" />
+  <img src="./docs/0.26.1/session-posterior-light-expanded.png" alt="Posterior session in light mode" width="220" />
+  <img src="./docs/0.26.1/session-posterior-dark-completed.png" alt="Completed posterior session" width="220" />
 </p>
 
-### Mobile — Exercise library
+### Live Activity
 
 <p align="center">
-  <img src="./docs/images/exercise-library-select.png" alt="Template list" width="260" />
-  <img src="./docs/images/create-new-exercise.png" alt="Template drag-and-drop" width="260" />
+  <img src="./docs/0.26.1/live-activity-lock-screen.png" alt="iOS lock screen Live Activity" width="220" />
+  <img src="./docs/0.26.1/live-activity-dynamic-island.png" alt="Dynamic Island workout timer" width="220" />
 </p>
 
-### Mobile — Ongoing session
+### Exercise Insights
 
 <p align="center">
-<img src="./docs/images/session-screen-light.png" alt="Template drag-and-drop" width="260" />
-  <img src="./docs/images/session-screen-dark.png" alt="Template list" width="260" />
-  
+  <img src="./docs/0.26.1/exercise-stats-dark-summary.png" alt="Exercise stats summary in dark mode" width="220" />
+  <img src="./docs/0.26.1/exercise-stats-dark-week.png" alt="Exercise weekly stats in dark mode" width="220" />
+  <img src="./docs/0.26.1/exercise-stats-dark-month.png" alt="Exercise monthly stats in dark mode" width="220" />
+  <img src="./docs/0.26.1/exercise-stats-light-summary.png" alt="Exercise stats summary in light mode" width="220" />
+  <img src="./docs/0.26.1/exercise-stats-light-week.png" alt="Exercise weekly stats in light mode" width="220" />
+  <img src="./docs/0.26.1/exercise-stats-light-month.png" alt="Exercise monthly stats in light mode" width="220" />
 </p>
 
-### Mobile — History
+### Program Insights
 
 <p align="center">
-  <img src="./docs/images/history-screen.png" alt="Template    drag-and-drop" width="260" />
-  <img src="./docs/images/history-screen-dark.png" alt="Template list" width="260" />
+  <img src="./docs/0.26.1/program-stats-dark-summary.png" alt="Program stats summary in dark mode" width="220" />
+  <img src="./docs/0.26.1/program-stats-dark-week.png" alt="Program weekly stats in dark mode" width="220" />
+  <img src="./docs/0.26.1/program-stats-dark-month.png" alt="Program monthly stats in dark mode" width="220" />
+  <img src="./docs/0.26.1/program-stats-light-summary.png" alt="Program stats summary in light mode" width="220" />
+  <img src="./docs/0.26.1/program-stats-light-week.png" alt="Program weekly stats in light mode" width="220" />
+  <img src="./docs/0.26.1/program-stats-light-month.png" alt="Program monthly stats in light mode" width="220" />
 </p>
 
-### Mobile — Insights
+### Settings
 
 <p align="center">
-  <img src="./docs/images/insights-index.png" alt="Template    drag-and-drop" width="260" />
-  <img src="./docs/images/insights-exercise-list.png" alt="Template list" width="260" />
-  <img src="./docs/images/insights-program-list.png" alt="Template list" width="260" />
+  <img src="./docs/0.26.1/settings-light.png" alt="Settings screen in light mode" width="220" />
+  <img src="./docs/0.26.1/settings-dark.png" alt="Settings screen in dark mode" width="220" />
 </p>
 
-### Mobile — Stats
+## Repo Layout
 
-<p align="center">
-  <img src="./docs/images/exercise-stat.png" alt="Template list" width="260" />
-  <img src="./docs/images/program-stat.png" alt="Template list" width="260" />
-</p>
-
-## Repo layout
-```
+```text
 repo/
   apps/
     api/          # NestJS backend
-    mobile/       # React Native (Expo)
-    web/          # React web (optional)
+    mobile/       # React Native / Expo mobile app
   packages/
-    shared/       # API contract: schemas + inferred types + utils
-    config/       # lint/ts/prettier configs
-  infra/          # docker/terraform (optional)
-  scripts/
+    exercise/       # Shared exercise library and types
+    strength-score/ # Shared score strategies and aggregators
   docs/
+    0.26.1/       # Current release screenshots
 ```
 
 ## Prerequisites
 
-- Node.js (LTS)
-- One package manager (npm)
-- For mobile:
-  - Expo Go installed on your phone
+- Node.js 22.13.0. The repo includes `.nvmrc`; run `nvm use` from the repo root if you use nvm.
+- npm. Use npm for this repo so the checked-in lockfiles stay consistent.
+- For mobile development: Expo tooling through `npx expo`, plus Expo Go, a development build, an Android emulator, or an iOS simulator.
+- For iOS native builds: macOS with Xcode.
 
 ## Install
 
-From repo root:
+From the repo root:
 
-pnpm:
-```
-pnpm install
-```
-
-npm:
-```
+```bash
+nvm use
 npm install
+npm --prefix apps/mobile install
+npm --prefix apps/api install
 ```
 
-## Run: API (NestJS)
-```
-cd apps/api
-npm run start:dev
+## Run
 
-# Build:
-npm run build
-npm run start:prod
+API:
+
+```bash
+npm run dev:api
 ```
 
-## Run: Mobile (React Native)
-```
-cd apps/mobile
-npx expo start
+Mobile:
 
-# Android:
-npx react-native run-android
-
-# iOS (macOS only):
-npx react-native run-ios
+```bash
+npm run dev:mobile
 ```
 
-## Local API access from mobile devices
+Use the Expo CLI output to open the app on iOS simulator, Android emulator, Expo Go, or a development build.
 
-A phone cannot reach http://localhost:<port> on your computer.
+## Local API Access From Mobile Devices
+
+A phone cannot reach `http://localhost:<port>` on your computer.
 
 Use one of these:
-- Android emulator: http://10.0.2.2:<port>
-- iOS simulator: http://localhost:<port>
-- Physical phone on Wi-Fi: http://<your-computer-LAN-IP>:<port> (backend must bind 0.0.0.0)
-- Android physical device over USB: adb reverse tcp:<port> tcp:<port>
 
-Keep base URLs in app config (example: apps/mobile/src/shared/config/env.ts).
+- Android emulator: `http://10.0.2.2:<port>`
+- iOS simulator: `http://localhost:<port>`
+- Physical phone on Wi-Fi: `http://<your-computer-LAN-IP>:<port>` with the backend bound to `0.0.0.0`
+- Android physical device over USB: `adb reverse tcp:<port> tcp:<port>`
 
-## Shared contract (packages/shared)
+Keep base URLs in app config, for example `apps/mobile/src/shared/config/env.ts`.
 
-- schemas/ — Zod schemas (runtime validation)
-- types/ — types inferred from schemas (compile-time)
-- utils/ — pure helpers
-- constants/ — shared constants/enums
+## Shared Packages
 
-Rule: share API contract types/schemas only. Do not share ORM entities.
+- `@gym-diary/exercise` provides shared exercise definitions and types.
+- `@gym-diary/strength-score` provides score strategies and aggregators used by insights.
 
-## Environment variables
+## Environment Variables
 
-Create .env files per app as needed:
-- apps/api/.env
-- apps/mobile/.env (if your setup supports it)
-- apps/web/.env
+Create `.env` files per app as needed:
 
-Always commit .env.example, never commit real secrets.
+- `apps/api/.env`
+- `apps/mobile/.env`
 
-## Git
-
-See .gitignore at repo root.
+Always commit `.env.example` files, never real secrets.

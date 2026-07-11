@@ -1,36 +1,49 @@
 # /packages
 
-This directory contains shared code used by multiple apps in this monorepo (`apps/api`, `apps/mobile`, `apps/web`).
+Shared TypeScript packages used by Gym Diary apps.
+
+## Runtime
+
+- Node.js 22.13.0 from the repo `.nvmrc`.
+- npm for installs and lockfile consistency.
 
 ## Packages
 
-### `packages/shared`
-Single source of truth for the API contract and shared utilities.
-- `schemas/` — Zod schemas for request/response validation
-- `types/` — TypeScript types inferred from schemas + shared enums
-- `utils/` — pure helpers (no platform-specific code)
-- `constants/` — shared constants (limits, feature flags, etc.)
+### `@gym-diary/exercise`
 
-Rules:
-- No ORM entities, no database models.
-- No React components that depend on DOM or React Native APIs.
-- Prefer Zod schemas + inferred types over hand-written DTO types.
+Shared exercise definitions and types.
 
-### `packages/config`
-Shared tooling configuration.
-- ESLint config
-- Prettier config
-- TS configs/base configs
-- Optional shared scripts
+Key files:
+
+- `exercise-library.ts` - exercise library data
+- `type.ts` - exercise-related types
+- `index.ts` - public exports
+
+### `@gym-diary/strength-score`
+
+Shared strength scoring logic used by insights and session analytics.
+
+Key areas:
+
+- `strategies/` - set, exercise, workout, and normalized scoring strategies
+- `aggregators/` - aggregation helpers for score summaries
+- `index.ts` - public exports
 
 ## Usage
 
-Import shared code from apps via workspace aliases, e.g.
-- `@shared/schemas`
-- `@shared/types`
-- `@shared/utils`
+Apps import packages through their package names:
+
+```ts
+import { DEFAULT_EXERCISES } from "@gym-diary/exercise";
+import { ScoreAggregateV1 } from "@gym-diary/strength-score";
+```
+
+Keep shared packages platform-neutral:
+
+- No React Native or DOM dependencies.
+- No app-specific storage, routing, or UI.
+- Prefer typed pure functions and data that can be reused by both mobile and server code.
 
 ## Testing
 
-Each package should have its own tests for pure logic and schema validation.
-Keep tests fast and deterministic.
+Package tests should stay fast, deterministic, and focused on pure logic.
