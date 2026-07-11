@@ -42,9 +42,9 @@ function patchFile(relativePath, replacements) {
   let source = fs.readFileSync(filePath, "utf8");
   let next = source;
 
-  for (const [before, after] of replacements) {
+  for (const [before, after, options = {}] of replacements) {
     if (!next.includes(before)) {
-      if (next.includes(after)) continue;
+      if (next.includes(after) || options.optional) continue;
 
       throw new Error(
         `[patch-expo-widgets] could not find expected source in ${relativePath}`,
@@ -129,6 +129,7 @@ patchFile("node_modules/expo-widgets/ios/Widgets/WidgetLiveActivity.swift", [
     liveActivityEnvironment["isStale"] = isStale
     return liveActivityEnvironment
   }`,
+    { optional: true },
   ],
   [
     `  var environment: [String: Any] {
