@@ -272,6 +272,96 @@ export function applySessionChangesToProgram(
   };
 }
 
+export function hasAddedSessionSetsForProgram(
+  source: WorkoutProgram,
+  session: SessionWorkout,
+) {
+  const sourceSetIdsByExerciseProgramId = new Map(
+    source.exercises.map((exercise) => [
+      exercise.id,
+      new Set(exercise.sets.map((set) => set.id)),
+    ]),
+  );
+
+  for (const sessionExercise of session.exercises ?? []) {
+    const sourceSetIds = sessionExercise.exerciseProgramId
+      ? sourceSetIdsByExerciseProgramId.get(sessionExercise.exerciseProgramId)
+      : undefined;
+
+    for (const set of sessionExercise.sets ?? []) {
+      if (!hasSessionSetWork(set)) continue;
+      if (!set.setProgramId || !sourceSetIds?.has(set.setProgramId)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+export function applySessionPerformanceChangesToProgram(
+  source: WorkoutProgram,
+  session: SessionWorkout,
+  now: Date,
+): ProgramChangeResult {
+  let changed = false;
+
+  const sessionExercisesByProgramId = new Map(
+    (session.exercises ?? [])
+      .filter((ex) => ex.exerciseProgramId)
+      .map((ex) => [ex.exerciseProgramId!, ex]),
+  );
+
+  const nextExercises = sortByOrder(source.exercises).map((programExercise) => {
+    const sessionExercise = sessionExercisesByProgramId.get(programExercise.id);
+    if (!sessionExercise) return programExercise;
+
+    let exerciseChanged = false;
+    const sessionSets = sortByOrder(sessionExercise.sets ?? []);
+    const applicableSetsByProgramId = new Map(
+      sessionSets
+        .filter((set) => set.setProgramId && shouldApplySetToProgram(set))
+        .map((set) => [set.setProgramId!, set]),
+    );
+
+    const nextSets = sortByOrder(programExercise.sets).map((programSet) => {
+      const sessionSet = applicableSetsByProgramId.get(programSet.id);
+      if (!sessionSet) return programSet;
+
+      const fields = getProgramSetFields(sessionSet, programSet);
+      if (!setFieldsChanged(fields, programSet)) return programSet;
+
+      changed = true;
+      exerciseChanged = true;
+
+      return {
+        ...programSet,
+        ...fields,
+        updatedAt: now,
+      };
+    });
+
+    if (!exerciseChanged) return programExercise;
+
+    return {
+      ...programExercise,
+      updatedAt: now,
+      sets: nextSets,
+    };
+  });
+
+  if (!changed) return { program: source, changed: false };
+
+  return {
+    program: {
+      ...source,
+      updatedAt: now,
+      exercises: nextExercises,
+    },
+    changed: true,
+  };
+}
+
 export function cloneProgramAsNew(
   source: WorkoutProgram,
   now: Date,

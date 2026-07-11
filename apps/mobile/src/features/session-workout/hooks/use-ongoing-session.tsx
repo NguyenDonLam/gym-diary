@@ -35,8 +35,10 @@ import { ExerciseStatFactory } from "../../exercise-stats/domain/factory";
 import { statService } from "../../history/services/stat-service";
 import {
   applySessionChangesToProgram,
+  applySessionPerformanceChangesToProgram,
   buildProgramFromSession,
   cloneProgramAsNew,
+  hasAddedSessionSetsForProgram,
 } from "../domain/program-save";
 import { notifyWorkoutAutoEnded } from "../notifications/auto-end-notification";
 
@@ -494,13 +496,9 @@ export function OngoingSessionProvider({
     const program = await workoutProgramRepository.get(session.sourceProgramId);
     if (!program) return { kind: "none" } as const;
 
-    const { changed } = applySessionChangesToProgram(
-      program,
-      session,
-      new Date(),
-    );
-
-    if (!changed) return { kind: "none" } as const;
+    if (!hasAddedSessionSetsForProgram(program, session)) {
+      return { kind: "none" } as const;
+    }
 
     return {
       kind: "program-changed",
@@ -566,6 +564,25 @@ export function OngoingSessionProvider({
     [getLatestOngoingSession],
   );
 
+  const savePerformanceChangesToSourceProgram = useCallback(
+    async (session: SessionWorkout, now: Date) => {
+      if (!session.sourceProgramId) return;
+
+      const sourceProgram = await workoutProgramRepository.get(
+        session.sourceProgramId,
+      );
+      if (!sourceProgram) return;
+
+      const { program: updatedProgram, changed } =
+        applySessionPerformanceChangesToProgram(sourceProgram, session, now);
+
+      if (changed) {
+        await workoutProgramRepository.save(updatedProgram);
+      }
+    },
+    [],
+  );
+
   const endSession = useCallback(async (options?: EndSessionOptions) => {
     if (!ongoingSession) return;
 
@@ -578,6 +595,8 @@ export function OngoingSessionProvider({
     const endedAt = new Date(
       Math.max(startedAt.getTime(), requestedEndedAt.getTime()),
     );
+
+    await savePerformanceChangesToSourceProgram(sessionForFinish, now);
 
     if (!aggregate) {
       const endedNoScores = SessionWorkoutFactory.create({
@@ -653,6 +672,7 @@ export function OngoingSessionProvider({
     bumpMutationVersion,
     getLatestOngoingSession,
     clearStoredLastInteraction,
+    savePerformanceChangesToSourceProgram,
   ]);
 
   useEffect(() => {

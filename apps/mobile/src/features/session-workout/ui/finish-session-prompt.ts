@@ -43,16 +43,19 @@ export async function confirmFinishSession(input: ConfirmFinishSessionInput) {
 
   if (prompt.kind === "one-off") {
     Alert.alert(
-      "Save as a program?",
-      "Turn this one-off session into a recurring program you can run again.",
+      "Save this session as a program?",
+      "Create a reusable program from this session, or finish without saving it as a program.",
       [
-        { text: "Cancel", style: "cancel" },
         {
-          text: "Finish only",
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Finish without saving",
           onPress: () => void runFinish(input, "none"),
         },
         {
-          text: "Review program",
+          text: "Create program",
           onPress: () => void runFinish(input, "save-as-new-program"),
         },
       ],
@@ -63,19 +66,19 @@ export async function confirmFinishSession(input: ConfirmFinishSessionInput) {
 
   if (prompt.kind === "program-changed") {
     Alert.alert(
-      "Save program changes?",
-      `"${prompt.programName}" changed during this session. Open the program form with those changes prefilled.`,
+      "Keep added sets?",
+      `You added new sets to "${prompt.programName}" during this session. Choose how to save them.`,
       [
         {
-          text: "Finish only",
+          text: "Finish without saving",
           onPress: () => void runFinish(input, "none"),
         },
         {
-          text: "Review new",
+          text: "Save as new program",
           onPress: () => void runFinish(input, "save-as-new-program"),
         },
         {
-          text: "Review update",
+          text: "Update current program",
           onPress: () => void runFinish(input, "update-source-program"),
         },
       ],
