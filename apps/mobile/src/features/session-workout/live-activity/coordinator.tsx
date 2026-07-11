@@ -6,9 +6,9 @@ import type { SessionSet } from "@/src/features/session-set/domain/types";
 import { useOngoingSession } from "../hooks/use-ongoing-session";
 import { useRestTimer } from "../hooks/use-rest-timer";
 import {
-  endWorkoutLiveActivity,
-  syncWorkoutLiveActivity,
-  type WorkoutLiveActivityProps,
+  endWorkoutOngoingActivity,
+  syncWorkoutOngoingActivity,
+  type WorkoutOngoingActivityProps,
 } from "./workout-live-activity";
 
 type NextSetSnapshot = {
@@ -26,6 +26,16 @@ type SessionSetProgress = {
   totalSetCount: number;
 };
 
+type LastSetSnapshot = {
+  exerciseName: string | null;
+  quantity: number | string | null;
+  loadValue: number | string | null;
+  loadUnit: string | null;
+  setIndex: number | null;
+  totalSetCount: number | null;
+  deltaText: string | null;
+};
+
 function sortByOrder<T extends { orderIndex: number }>(rows: T[] | undefined) {
   return (rows ?? []).slice().sort((a, b) => a.orderIndex - b.orderIndex);
 }
@@ -36,6 +46,14 @@ function getExpectedQuantity(set: SessionSet) {
 
 function getExpectedLoadValue(set: SessionSet) {
   return set.loadValue ?? set.setProgram?.loadValue ?? null;
+}
+
+function getCompletedQuantity(set: SessionSet) {
+  return set.quantity ?? getExpectedQuantity(set);
+}
+
+function getCompletedLoadValue(set: SessionSet) {
+  return set.loadValue ?? getExpectedLoadValue(set);
 }
 
 function findNextSetSnapshot(
@@ -79,6 +97,36 @@ function findNextSetSnapshot(
   };
 }
 
+function findLastCompletedSetSnapshot(
+  exercises: SessionExercise[] | undefined,
+): LastSetSnapshot | null {
+  const orderedSets = sortByOrder(exercises).flatMap((exercise) => {
+    const sets = sortByOrder(exercise.sets);
+    return sets.map((set, index) => ({
+      exercise,
+      set,
+      setIndex: index + 1,
+      totalSetCount: sets.length,
+    }));
+  });
+
+  const lastCompleted = orderedSets
+    .filter(({ set }) => set.isCompleted === true)
+    .at(-1);
+
+  if (!lastCompleted) return null;
+
+  return {
+    exerciseName: lastCompleted.exercise.exerciseName ?? null,
+    quantity: getCompletedQuantity(lastCompleted.set),
+    loadValue: getCompletedLoadValue(lastCompleted.set),
+    loadUnit: lastCompleted.set.loadUnit ?? null,
+    setIndex: lastCompleted.setIndex,
+    totalSetCount: lastCompleted.totalSetCount,
+    deltaText: null,
+  };
+}
+
 function getSessionSetProgress(
   exercises: SessionExercise[] | undefined,
 ): SessionSetProgress {
@@ -101,7 +149,7 @@ export function WorkoutLiveActivityCoordinator() {
     setLiveActivityNowMs(Date.now());
   }, [activeTimer?.id, activeTimer?.endsAtMs, completedTimer?.completedAtMs]);
 
-  const props = useMemo<WorkoutLiveActivityProps | null>(() => {
+  const props = useMemo<WorkoutOngoingActivityProps | null>(() => {
     if (!ongoingSession || ongoingSession.status !== "in_progress") {
       return null;
     }
@@ -123,6 +171,7 @@ export function WorkoutLiveActivityCoordinator() {
       ongoingSession.exercises,
       restTimer?.setId ?? activeTimer?.setId ?? completedRestTimer?.setId ?? null,
     );
+    const lastSet = findLastCompletedSetSnapshot(ongoingSession.exercises);
     const sessionSetProgress = getSessionSetProgress(ongoingSession.exercises);
 
     return {
@@ -144,6 +193,13 @@ export function WorkoutLiveActivityCoordinator() {
       nextSetTotalCount: nextSet?.totalSetCount ?? null,
       completedSetCount: sessionSetProgress.completedSetCount,
       sessionTotalSetCount: sessionSetProgress.totalSetCount,
+      lastExerciseName: lastSet?.exerciseName ?? null,
+      lastSetQuantity: lastSet?.quantity ?? null,
+      lastSetLoadValue: lastSet?.loadValue ?? null,
+      lastSetLoadUnit: lastSet?.loadUnit ?? null,
+      lastSetIndex: lastSet?.setIndex ?? null,
+      totalSetCount: lastSet?.totalSetCount ?? null,
+      lastSetDeltaText: lastSet?.deltaText ?? null,
     };
   }, [activeTimer, completedTimer, liveActivityNowMs, ongoingSession]);
 
@@ -155,7 +211,7 @@ export function WorkoutLiveActivityCoordinator() {
 
       if (lastSyncedSessionIdRef.current) {
         lastSyncedSessionIdRef.current = null;
-        void endWorkoutLiveActivity();
+        void endWorkoutOngoingActivity();
       }
       return;
     }
@@ -178,7 +234,7 @@ export function WorkoutLiveActivityCoordinator() {
       });
     }
 
-    void syncWorkoutLiveActivity(props);
+    void syncWorkoutOngoingActivity(props);
 
     if (completedTimer) {
       clearCompletedTimer();

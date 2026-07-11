@@ -1,38 +1,16 @@
-export const WORKOUT_LIVE_ACTIVITY_NAME = "WorkoutLiveActivity";
+import type { WorkoutOngoingActivityProps } from "./workout-ongoing-activity.types";
 
-export type WorkoutLiveActivityProps = {
-  sessionId: string;
-  sessionName: string;
-  sessionStartedAtMs: number;
-  restStartedAtMs?: number | null;
-  restEndsAtMs?: number | null;
-  restTimerFinished?: boolean | null;
-  restTimerFinishedAtMs?: number | null;
-  restExerciseName?: string | null;
-  restSetIndex?: number | null;
-  nextExerciseName?: string | null;
-  nextSetQuantity?: number | string | null;
-  nextSetQuantityUnit?: string | null;
-  nextSetLoadValue?: number | string | null;
-  nextSetLoadUnit?: string | null;
-  nextSetIndex?: number | null;
-  nextSetTotalCount?: number | null;
-  completedSetCount?: number | null;
-  sessionTotalSetCount?: number | null;
-  lastExerciseName?: string | null;
-  lastSetQuantity?: number | string | null;
-  lastSetLoadValue?: number | string | null;
-  lastSetLoadUnit?: string | null;
-  lastSetIndex?: number | null;
-  totalSetCount?: number | null;
-  lastSetDeltaText?: string | null;
-};
+export {
+  WORKOUT_LIVE_ACTIVITY_NAME,
+  type WorkoutLiveActivityProps,
+  type WorkoutOngoingActivityProps,
+} from "./workout-ongoing-activity.types";
 
 if (__DEV__) {
   console.log("[LiveActivity] fallback module loaded");
 }
 
-export function syncWorkoutLiveActivity(_props: WorkoutLiveActivityProps) {
+export function syncWorkoutLiveActivity(_props: WorkoutOngoingActivityProps) {
   if (__DEV__) {
     console.log("[LiveActivity] syncWorkoutLiveActivity()");
   }
@@ -40,6 +18,11 @@ export function syncWorkoutLiveActivity(_props: WorkoutLiveActivityProps) {
   return Promise.resolve();
 }
 
-export function endWorkoutLiveActivity(_finalProps?: WorkoutLiveActivityProps) {
+export function endWorkoutLiveActivity(_finalProps?: WorkoutOngoingActivityProps) {
   return Promise.resolve();
 }
+
+export const syncWorkoutLiveUpdate = syncWorkoutLiveActivity;
+export const endWorkoutLiveUpdate = endWorkoutLiveActivity;
+export const syncWorkoutOngoingActivity = syncWorkoutLiveActivity;
+export const endWorkoutOngoingActivity = endWorkoutLiveActivity;

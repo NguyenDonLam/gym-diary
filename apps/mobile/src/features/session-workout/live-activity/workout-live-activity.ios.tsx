@@ -31,35 +31,14 @@ import {
   tint,
 } from "@expo/ui/swift-ui/modifiers";
 
-export const WORKOUT_LIVE_ACTIVITY_NAME = "WorkoutLiveActivity";
+import {
+  WORKOUT_LIVE_ACTIVITY_NAME,
+  type WorkoutLiveActivityProps,
+  type WorkoutOngoingActivityProps,
+} from "./workout-ongoing-activity.types";
 
-export type WorkoutLiveActivityProps = {
-  sessionId: string;
-  sessionName: string;
-  sessionStartedAtMs: number;
-  restStartedAtMs?: number | null;
-  restEndsAtMs?: number | null;
-  restTimerFinished?: boolean | null;
-  restTimerFinishedAtMs?: number | null;
-  restExerciseName?: string | null;
-  restSetIndex?: number | null;
-  nextExerciseName?: string | null;
-  nextSetQuantity?: number | string | null;
-  nextSetQuantityUnit?: string | null;
-  nextSetLoadValue?: number | string | null;
-  nextSetLoadUnit?: string | null;
-  nextSetIndex?: number | null;
-  nextSetTotalCount?: number | null;
-  completedSetCount?: number | null;
-  sessionTotalSetCount?: number | null;
-  lastExerciseName?: string | null;
-  lastSetQuantity?: number | string | null;
-  lastSetLoadValue?: number | string | null;
-  lastSetLoadUnit?: string | null;
-  lastSetIndex?: number | null;
-  totalSetCount?: number | null;
-  lastSetDeltaText?: string | null;
-};
+export { WORKOUT_LIVE_ACTIVITY_NAME };
+export type { WorkoutLiveActivityProps, WorkoutOngoingActivityProps };
 
 type WorkoutLiveActivityEnvironment = LiveActivityEnvironment & {
   isStale?: boolean;
@@ -708,3 +687,8 @@ export function endWorkoutLiveActivity(finalProps?: WorkoutLiveActivityProps) {
     currentActivity = null;
   });
 }
+
+export const syncWorkoutLiveUpdate = syncWorkoutLiveActivity;
+export const endWorkoutLiveUpdate = endWorkoutLiveActivity;
+export const syncWorkoutOngoingActivity = syncWorkoutLiveActivity;
+export const endWorkoutOngoingActivity = endWorkoutLiveActivity;
