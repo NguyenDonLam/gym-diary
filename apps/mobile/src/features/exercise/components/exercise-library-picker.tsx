@@ -630,50 +630,6 @@ export default function ExerciseLibraryPicker({
 
   const keyExtractor = useCallback((item: ExerciseLibraryListItem) => item.id, []);
 
-  const renderListHeader = useCallback(
-    () => (
-      <View className="flex-row items-center gap-2">
-        <View className="flex-1 rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]">
-          <View className="flex-row items-center">
-            <Search
-              size={16}
-              color={isDark ? "#6272A4" : "#9CA3AF"}
-              style={{ marginRight: 8 }}
-            />
-            <TextInput
-              value={q}
-              onChangeText={setQ}
-              placeholder="Search exercises"
-              placeholderTextColor="#9CA3AF"
-              autoCapitalize="none"
-              autoCorrect={false}
-              className="flex-1 text-sm text-neutral-900 dark:text-[#F8F8F2]"
-            />
-          </View>
-        </View>
-
-        {allowCreate ? (
-          <Pressable
-            onPress={() => {
-              setNewExerciseName(formatExerciseNameInput(q));
-              setNewExerciseQuantityUnit("reps");
-              setCreateOpen(true);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Create new exercise"
-            className="h-[50px] flex-row items-center justify-center gap-1.5 rounded-2xl bg-neutral-900 px-4 dark:bg-[#BD93F9]"
-          >
-            <Plus size={17} color={isDark ? "#282A36" : "#FFFFFF"} />
-            <Text className="text-[13px] font-semibold text-white dark:text-[#282A36]">
-              New exercise
-            </Text>
-          </Pressable>
-        ) : null}
-      </View>
-    ),
-    [allowCreate, isDark, q],
-  );
-
   const renderItem = useCallback(
     ({ item }: { item: ExerciseLibraryListItem }) => {
       if (item.type === "loading") {
@@ -815,12 +771,52 @@ export default function ExerciseLibraryPicker({
         </View>
       </View>
 
+      <View className="px-4 pt-4">
+        <View className="flex-row items-center gap-2">
+          <View className="flex-1 rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]">
+            <View className="flex-row items-center">
+              <Search
+                size={16}
+                color={isDark ? "#6272A4" : "#9CA3AF"}
+                style={{ marginRight: 8 }}
+              />
+              <TextInput
+                value={q}
+                onChangeText={setQ}
+                placeholder="Search exercises"
+                placeholderTextColor="#9CA3AF"
+                autoCapitalize="none"
+                autoCorrect={false}
+                className="flex-1 text-sm text-neutral-900 dark:text-[#F8F8F2]"
+              />
+            </View>
+          </View>
+
+          {allowCreate ? (
+            <Pressable
+              onPress={() => {
+                setNewExerciseName(formatExerciseNameInput(q));
+                setNewExerciseQuantityUnit("reps");
+                setCreateOpen(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Create new exercise"
+              className="h-[50px] flex-row items-center justify-center gap-1.5 rounded-2xl bg-neutral-900 px-4 dark:bg-[#BD93F9]"
+            >
+              <Plus size={17} color={isDark ? "#282A36" : "#FFFFFF"} />
+              <Text className="text-[13px] font-semibold text-white dark:text-[#282A36]">
+                New exercise
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
+
       <FlatList
         className="flex-1"
         data={listItems}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        ListHeaderComponent={renderListHeader}
         ItemSeparatorComponent={() => <View className="h-3" />}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -832,7 +828,7 @@ export default function ExerciseLibraryPicker({
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingBottom: 24,
-          paddingTop: 16,
+          paddingTop: 12,
         }}
       />
 
