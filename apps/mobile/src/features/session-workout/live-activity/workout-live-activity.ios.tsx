@@ -66,6 +66,7 @@ const workoutLiveActivity = createLiveActivity<WorkoutLiveActivityProps>(
       cyan: "#8BE9FD",
       green: "#50FA7B",
       orange: "#FFB86C",
+      red: "#FF5555",
     };
 
     const dayMs = 24 * 60 * 60 * 1000;
@@ -151,7 +152,8 @@ const workoutLiveActivity = createLiveActivity<WorkoutLiveActivityProps>(
     const nextSetMetaLabel = setProgressLabel
       ? `${nextSetLabel} - ${setProgressLabel}`
       : nextSetLabel;
-    const restAccent = showRestComplete ? colors.green : colors.orange;
+    const restAccent = showRestComplete ? colors.red : colors.orange;
+    const restTimerColor = showRestComplete ? colors.red : colors.orange;
 
     const workoutElapsedTimer = (
       <Text
@@ -174,7 +176,7 @@ const workoutLiveActivity = createLiveActivity<WorkoutLiveActivityProps>(
         modifiers={[
           font({ size: 28, weight: "bold", design: "monospaced" }),
           monospacedDigit(),
-          foregroundStyle(colors.orange),
+          foregroundStyle(restTimerColor),
           lineLimit(1),
           minimumScaleFactor(0.55),
         ]}
@@ -188,7 +190,7 @@ const workoutLiveActivity = createLiveActivity<WorkoutLiveActivityProps>(
         modifiers={[
           font({ size: 13, weight: "semibold", design: "monospaced" }),
           monospacedDigit(),
-          foregroundStyle(colors.orange),
+          foregroundStyle(restTimerColor),
           lineLimit(1),
           minimumScaleFactor(0.65),
           frame({ width: 34, alignment: "leading" }),
@@ -198,24 +200,34 @@ const workoutLiveActivity = createLiveActivity<WorkoutLiveActivityProps>(
     );
 
     const expandedRestCenter = showRestComplete ? (
-      <HStack spacing={6} modifiers={[padding({ vertical: 4 })]}>
-        <Image
-          systemName="checkmark.circle.fill"
-          modifiers={[
-            foregroundStyle(colors.green),
-            font({ size: 16, weight: "bold" }),
-          ]}
-        />
+      <VStack
+        alignment="center"
+        spacing={0}
+        modifiers={[padding({ vertical: 2 })]}
+      >
         <Text
           modifiers={[
-            font({ size: 16, weight: "bold" }),
-            foregroundStyle(colors.green),
+            font({ size: 10, weight: "bold" }),
+            foregroundStyle(colors.mutedText),
             lineLimit(1),
           ]}
         >
-          READY
+          REST
         </Text>
-      </HStack>
+        <Text
+          date={restEndsAt}
+          dateStyle="timer"
+          modifiers={[
+            font({ size: 20, weight: "bold", design: "monospaced" }),
+            monospacedDigit(),
+            foregroundStyle(colors.red),
+            lineLimit(1),
+            minimumScaleFactor(0.65),
+            frame({ width: 58, alignment: "leading" }),
+            clipped(),
+          ]}
+        />
+      </VStack>
     ) : hasActiveRest ? (
       <VStack
         alignment="center"
@@ -237,7 +249,7 @@ const workoutLiveActivity = createLiveActivity<WorkoutLiveActivityProps>(
           modifiers={[
             font({ size: 20, weight: "bold", design: "monospaced" }),
             monospacedDigit(),
-            foregroundStyle(colors.orange),
+            foregroundStyle(restTimerColor),
             lineLimit(1),
             minimumScaleFactor(0.65),
             frame({ width: 58, alignment: "leading" }),
@@ -281,7 +293,7 @@ const workoutLiveActivity = createLiveActivity<WorkoutLiveActivityProps>(
       />
     );
 
-    const compactTrailing = hasActiveRest ? (
+    const compactTrailing = showRestComplete || hasActiveRest ? (
       compactRestTimer
     ) : (
       <Text
@@ -297,13 +309,13 @@ const workoutLiveActivity = createLiveActivity<WorkoutLiveActivityProps>(
       </Text>
     );
 
-    const minimal = hasActiveRest ? (
+    const minimal = showRestComplete || hasActiveRest ? (
       <ZStack
         alignment="center"
         modifiers={[
           frame({ width: 20, height: 20 }),
           strokeBorder({
-            color: colors.orange,
+            color: restTimerColor,
             style: { lineWidth: 2, lineCap: "round" },
             shape: "circle",
           }),
@@ -312,7 +324,7 @@ const workoutLiveActivity = createLiveActivity<WorkoutLiveActivityProps>(
         <Image
           systemName="dumbbell.fill"
           modifiers={[
-            foregroundStyle(colors.purple),
+            foregroundStyle(showRestComplete ? colors.red : colors.purple),
             font({ size: 8, weight: "bold" }),
             opacity(0.9),
           ]}
@@ -386,13 +398,6 @@ const workoutLiveActivity = createLiveActivity<WorkoutLiveActivityProps>(
             <HStack spacing={8} alignment="center">
               {showRestComplete ? (
                 <>
-                  <Image
-                    systemName="checkmark.circle.fill"
-                    modifiers={[
-                      foregroundStyle(colors.green),
-                      font({ size: 18, weight: "bold" }),
-                    ]}
-                  />
                   <VStack alignment="leading" spacing={0}>
                     <Text
                       modifiers={[
@@ -404,14 +409,16 @@ const workoutLiveActivity = createLiveActivity<WorkoutLiveActivityProps>(
                       REST COMPLETE
                     </Text>
                     <Text
+                      date={restEndsAt}
+                      dateStyle="timer"
                       modifiers={[
-                        font({ size: 16, weight: "bold" }),
-                        foregroundStyle(colors.green),
+                        font({ size: 28, weight: "bold", design: "monospaced" }),
+                        monospacedDigit(),
+                        foregroundStyle(colors.red),
                         lineLimit(1),
+                        minimumScaleFactor(0.55),
                       ]}
-                    >
-                      NEXT SET READY
-                    </Text>
+                    />
                   </VStack>
                 </>
               ) : hasActiveRest ? (

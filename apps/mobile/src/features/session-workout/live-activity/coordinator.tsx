@@ -178,12 +178,15 @@ export function WorkoutLiveActivityCoordinator() {
       sessionId: ongoingSession.id,
       sessionName: ongoingSession.name?.trim() || "Workout",
       sessionStartedAtMs: ongoingSession.startedAt.getTime(),
-      restStartedAtMs: restTimer?.startedAtMs ?? null,
-      restEndsAtMs: restTimer?.endsAtMs ?? null,
+      restStartedAtMs:
+        restTimer?.startedAtMs ?? completedRestTimer?.startedAtMs ?? null,
+      restEndsAtMs:
+        restTimer?.endsAtMs ?? completedRestTimer?.endsAtMs ?? null,
       restTimerFinished: completedRestTimer !== null,
       restTimerFinishedAtMs: completedRestTimer?.completedAtMs ?? null,
-      restExerciseName: restTimer?.exerciseName ?? null,
-      restSetIndex: restTimer?.setIndex ?? null,
+      restExerciseName:
+        restTimer?.exerciseName ?? completedRestTimer?.exerciseName ?? null,
+      restSetIndex: restTimer?.setIndex ?? completedRestTimer?.setIndex ?? null,
       nextExerciseName: nextSet?.exerciseName ?? null,
       nextSetQuantity: nextSet?.quantity ?? null,
       nextSetQuantityUnit: nextSet?.quantityUnit ?? null,
@@ -235,10 +238,6 @@ export function WorkoutLiveActivityCoordinator() {
     }
 
     void syncWorkoutOngoingActivity(props);
-
-    if (completedTimer) {
-      clearCompletedTimer();
-    }
   }, [clearCompletedTimer, completedTimer, props]);
 
   return null;

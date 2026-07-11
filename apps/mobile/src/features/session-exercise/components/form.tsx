@@ -218,18 +218,24 @@ export function SessionExerciseCard({
     <View
       className={`mb-3 rounded-2xl border ${colors.containerBorder} ${colors.containerBg}`}
     >
-      <Pressable
-        onPress={toggleOpen}
-        className="flex-row items-center justify-between px-3 py-2"
-      >
+      <View className="flex-row items-center justify-between px-3 py-2">
         <View className="flex-row items-center flex-1">
-          {value.isOpen ? (
-            <ChevronDown width={16} height={16} color={chevronColor} />
-          ) : (
-            <ChevronRight width={16} height={16} color={chevronColor} />
-          )}
+          <Pressable
+            onPress={toggleOpen}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={value.isOpen ? "Collapse exercise" : "Open exercise"}
+            accessibilityState={{ expanded: value.isOpen === true }}
+            className={`mr-2 h-8 w-8 items-center justify-center rounded-full ${colors.statusPillBg}`}
+          >
+            {value.isOpen ? (
+              <ChevronDown width={17} height={17} color={chevronColor} />
+            ) : (
+              <ChevronRight width={17} height={17} color={chevronColor} />
+            )}
+          </Pressable>
 
-          <View className="ml-2 flex-1">
+          <View className="flex-1">
             <Text
               className="text-sm font-semibold text-neutral-900 dark:text-neutral-50"
               numberOfLines={1}
@@ -286,7 +292,7 @@ export function SessionExerciseCard({
             )}
           </View>
         </View>
-      </Pressable>
+      </View>
 
       {value.isOpen && (
         <View className="border-t border-neutral-200 dark:border-neutral-800 px-3 pt-2 pb-2">

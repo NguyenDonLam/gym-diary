@@ -282,12 +282,13 @@ export default function OngoingSessionPage() {
       try {
         startRestAfterCompletedSet(set, event);
         await sessionSetRepository.save(set);
+        await refresh();
         bumpMutationVersion();
       } catch (err) {
         console.error("Failed to save session set", err);
       }
     },
-    [readOnly, bumpMutationVersion, startRestAfterCompletedSet],
+    [readOnly, refresh, bumpMutationVersion, startRestAfterCompletedSet],
   );
 
   const onSetAdd = useCallback(
@@ -296,12 +297,14 @@ export default function OngoingSessionPage() {
 
       try {
         await sessionSetRepository.save(set);
+        await refresh();
+        bumpMutationVersion();
       } catch (err) {
         console.error("Failed to add session set", err);
         throw err;
       }
     },
-    [readOnly],
+    [readOnly, refresh, bumpMutationVersion],
   );
 
   const handleAddExercises = useCallback(
@@ -344,6 +347,8 @@ export default function OngoingSessionPage() {
         await Promise.all(
           domains.map((domain) => sessionExerciseRepository.save(domain)),
         );
+        await refresh();
+        bumpMutationVersion();
 
         setView((prev) =>
           !prev
@@ -364,7 +369,7 @@ export default function OngoingSessionPage() {
         console.error("Failed to add exercises", err);
       }
     },
-    [readOnly, view],
+    [readOnly, view, refresh, bumpMutationVersion],
   );
 
   return (

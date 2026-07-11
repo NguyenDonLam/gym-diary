@@ -52,7 +52,7 @@ const BAND_OPTIONS = [
   {
     id: "black",
     label: "Black",
-    dotClass: "bg-neutral-900 dark:bg-neutral-50",
+    dotClass: "bg-black dark:bg-black",
   },
   {
     id: "red",
