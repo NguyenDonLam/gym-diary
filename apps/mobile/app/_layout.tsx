@@ -34,7 +34,26 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const THEME_KEY = "theme";
+const DEMO_SEED_KEY = "gym-diary:demo-seed:v1";
+let demoSeedPromise: Promise<void> | null = null;
 const queryClient = new QueryClient();
+
+async function prepareDemoData() {
+  if (!demoSeedPromise) {
+    demoSeedPromise = (async () => {
+      const hasSeededDemo = await AsyncStorage.getItem(DEMO_SEED_KEY);
+      if (hasSeededDemo === "complete") return;
+
+      await runAllSeeds(db);
+      await AsyncStorage.setItem(DEMO_SEED_KEY, "complete");
+    })().catch((error) => {
+      demoSeedPromise = null;
+      throw error;
+    });
+  }
+
+  await demoSeedPromise;
+}
 
 function getActiveSessionFrameRadius(width: number, height: number) {
   const shortestSide = Math.min(width, height);
@@ -71,7 +90,15 @@ function ActiveSessionFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-function BootScreen({ title, detail }: { title: string; detail?: string }) {
+function BootScreen({
+  title,
+  detail,
+  onRetry,
+}: {
+  title: string;
+  detail?: string;
+  onRetry?: () => void;
+}) {
   return (
     <View className="flex-1 items-center justify-center bg-[#21222C] px-4">
       <ActivityIndicator size="large" color="#BD93F9" />
@@ -80,6 +107,15 @@ function BootScreen({ title, detail }: { title: string; detail?: string }) {
         <Text selectable className="mt-2 text-center text-[#6272A4]">
           {detail}
         </Text>
+      ) : null}
+      {onRetry ? (
+        <Pressable
+          accessibilityRole="button"
+          className="mt-5 rounded-xl bg-[#BD93F9] px-5 py-3"
+          onPress={onRetry}
+        >
+          <Text className="font-semibold text-[#21222C]">Try again</Text>
+        </Pressable>
       ) : null}
     </View>
   );
@@ -95,7 +131,11 @@ export default function RootLayout() {
     : null;
 
   const { setColorScheme } = useColorScheme();
+  const [seedStatus, setSeedStatus] = useState<
+    "pending" | "running" | "ready" | "failed"
+  >("pending");
   const [seedErr, setSeedErr] = useState<string | null>(null);
+  const [seedAttempt, setSeedAttempt] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -113,19 +153,44 @@ export default function RootLayout() {
   useEffect(() => {
     if (!success) return;
 
+    let cancelled = false;
+
     (async () => {
       try {
-        await runAllSeeds(db);
+        setSeedStatus("running");
+        setSeedErr(null);
+
+        await prepareDemoData();
+        if (!cancelled) setSeedStatus("ready");
       } catch (e: any) {
         console.warn("seeding failed", e);
-        setSeedErr(String(e?.message ?? e));
+        if (!cancelled) {
+          setSeedErr(String(e?.message ?? e));
+          setSeedStatus("failed");
+        }
       }
     })();
-  }, [success]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [success, seedAttempt]);
 
   if (migErrorMsg)
     return <BootScreen title="Migration failed" detail={migErrorMsg} />;
   if (!success) return <BootScreen title="Migrating database…" />;
+  if (seedStatus === "failed") {
+    return (
+      <BootScreen
+        title="Demo setup failed"
+        detail={seedErr ?? undefined}
+        onRetry={() => setSeedAttempt((attempt) => attempt + 1)}
+      />
+    );
+  }
+  if (seedStatus !== "ready") {
+    return <BootScreen title="Preparing your training diary…" />;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -153,20 +218,6 @@ export default function RootLayout() {
                           <Stack.Screen name="program-workout/[id]" />
                           <Stack.Screen name="session-workout/[id]" />
                         </Stack>
-
-                        {seedErr ? (
-                          <View className="absolute bottom-3 left-3 right-3 rounded-xl bg-[#111827] p-3 dark:bg-[#3A3D4F]">
-                            <Text className="font-semibold text-[#E5E7EB] dark:text-[#FF5555]">
-                              Seeding failed
-                            </Text>
-                            <Text
-                              selectable
-                              className="mt-1 text-[#9CA3AF] dark:text-[#F8F8F2]"
-                            >
-                              {seedErr}
-                            </Text>
-                          </View>
-                        ) : null}
                       </View>
                     </SafeAreaView>
                   </ActiveSessionFrame>
