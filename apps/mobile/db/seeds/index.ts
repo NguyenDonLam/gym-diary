@@ -6,10 +6,7 @@ import { seedPullUpInsightsDemo } from "./seed-pull-up-insights-demo";
 
 export async function runAllSeeds(db: any) {
   await seedDefaultExercises(db);
-
-  if (__DEV__) {
-    await seedAnteriorProgramDemo(db);
-    await seedPullUpInsightsDemo(db);
-    await seedProgramSessionDemo(db);
-  }
+  await seedAnteriorProgramDemo(db);
+  await seedPullUpInsightsDemo(db);
+  await seedProgramSessionDemo(db);
 }
