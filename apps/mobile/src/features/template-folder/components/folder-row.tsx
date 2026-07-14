@@ -11,6 +11,7 @@ type FolderRowProps = {
   isOpen: boolean;
   onToggleOpen: () => void;
   onRenameFolder: (newName: string) => Promise<void> | void;
+  onRenameStart?: () => void;
   onDeleteFolder: () => void;
   onCreateProgramInFolder: () => void;
 };
@@ -21,6 +22,7 @@ export default function FolderRow({
   isOpen,
   onToggleOpen,
   onRenameFolder,
+  onRenameStart,
   onDeleteFolder,
   onCreateProgramInFolder,
 }: FolderRowProps) {
@@ -53,7 +55,13 @@ export default function FolderRow({
   const openActions = () => {
     Alert.alert(folder.name || "Folder", undefined, [
       { text: "New program here", onPress: onCreateProgramInFolder },
-      { text: "Rename", onPress: () => setRenaming(true) },
+      {
+        text: "Rename",
+        onPress: () => {
+          onRenameStart?.();
+          setRenaming(true);
+        },
+      },
       { text: "Delete", style: "destructive", onPress: onDeleteFolder },
       { text: "Cancel", style: "cancel" },
     ]);
@@ -106,6 +114,7 @@ export default function FolderRow({
             placeholderTextColor={isDark ? "#6B7280" : "#9CA3AF"}
             value={renameValue}
             onChangeText={setRenameValue}
+            onFocus={onRenameStart}
             autoFocus
           />
 

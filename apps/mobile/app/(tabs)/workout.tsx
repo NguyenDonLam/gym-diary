@@ -6,7 +6,10 @@ import {
   Pressable,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
+import type { FlatList } from "react-native-gesture-handler";
 import { useRouter } from "expo-router";
 import { useColorScheme } from "nativewind";
 import DraggableFlatList, {
@@ -26,6 +29,7 @@ import { confirmFinishSession } from "@/src/features/session-workout/ui/finish-s
 import { ProgramRow } from "@/src/features/program-workout/ui/template-row";
 import { UnassignedHeaderRow } from "@/src/components/unassigned-header-row";
 import { useSessionTimer } from "@/src/features/program-workout/hooks/use-session-timer";
+import { useKeyboardHeight } from "@/src/hooks/use-keyboard-height";
 import {
   applyDragResult,
   buildRows,
@@ -45,6 +49,10 @@ export default function Workout() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const { programs, deleteProgram, isLoading } = useWorkoutPrograms();
+  const listRef = React.useRef<FlatList<Row>>(null);
+  const renameScrollTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const [folders, setFolders] = useState<TemplateFolder[]>([]);
   const [foldersLoading, setFoldersLoading] = useState(true);
@@ -54,6 +62,9 @@ export default function Workout() {
 
   const [unassignedOpen, setUnassignedOpen] = useState(true);
   const [openFolderIds, setOpenFolderIds] = useState<string[]>([]);
+  const [renamingFolderId, setRenamingFolderId] = useState<string | null>(null);
+  const keyboardHeight = useKeyboardHeight();
+  const listBottomPadding = keyboardHeight > 0 ? keyboardHeight + 140 : 16;
 
   const {
     ongoingSession,
@@ -122,6 +133,62 @@ export default function Workout() {
     () => buildRows(templateProgram, folders, unassignedOpen, openFolderIds),
     [templateProgram, folders, unassignedOpen, openFolderIds],
   );
+
+  const scrollFolderIntoKeyboardView = React.useCallback(
+    (folderId: string) => {
+      const index = rows.findIndex(
+        (row) => row.type === "folder-header" && row.folder.id === folderId,
+      );
+
+      if (index < 0) return;
+
+      listRef.current?.scrollToIndex({
+        index,
+        animated: true,
+        viewPosition: 0.28,
+      });
+    },
+    [rows],
+  );
+
+  const handleRenameFolderStart = React.useCallback(
+    (folderId: string) => {
+      setRenamingFolderId(folderId);
+
+      if (renameScrollTimeoutRef.current) {
+        clearTimeout(renameScrollTimeoutRef.current);
+      }
+
+      renameScrollTimeoutRef.current = setTimeout(() => {
+        scrollFolderIntoKeyboardView(folderId);
+      }, 80);
+    },
+    [scrollFolderIntoKeyboardView],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (renameScrollTimeoutRef.current) {
+        clearTimeout(renameScrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!renamingFolderId || keyboardHeight <= 0) return;
+
+    const frame = requestAnimationFrame(() => {
+      scrollFolderIntoKeyboardView(renamingFolderId);
+    });
+    const timeout = setTimeout(() => {
+      scrollFolderIntoKeyboardView(renamingFolderId);
+    }, 260);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timeout);
+    };
+  }, [keyboardHeight, renamingFolderId, scrollFolderIntoKeyboardView]);
 
   const handleCreateTemplate = () => {
     router.push("/program-workout/new");
@@ -366,6 +433,7 @@ export default function Workout() {
           programCount={item.templateCount}
           isOpen={isOpen}
           onToggleOpen={() => toggleFolderOpen(item.folder.id)}
+          onRenameStart={() => handleRenameFolderStart(item.folder.id)}
           onRenameFolder={(name) => handleUpdateFolder(item.folder, name)}
           onDeleteFolder={() => handleDeleteFolder(item.folder.id)}
           onCreateProgramInFolder={() =>
@@ -400,18 +468,32 @@ export default function Workout() {
   }
 
   return (
-    <View className="flex-1 bg-white dark:bg-[#282A36]">
+    <KeyboardAvoidingView
+      className="flex-1 bg-white dark:bg-[#282A36]"
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
+    >
       <DraggableFlatList
+        ref={listRef}
         data={rows}
         keyExtractor={(item) => item.key}
         renderItem={renderRow}
         onDragEnd={handleDragEnd}
         activationDistance={8}
+        automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        onScrollToIndexFailed={({ index, averageItemLength }) => {
+          listRef.current?.scrollToOffset({
+            offset: Math.max(0, averageItemLength * index - 96),
+            animated: true,
+          });
+        }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 12,
-          paddingBottom: 16,
+          paddingBottom: listBottomPadding,
         }}
         ListHeaderComponent={
           <View className="mb-3 px-0">
@@ -586,6 +668,6 @@ export default function Workout() {
           ) : null
         }
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }

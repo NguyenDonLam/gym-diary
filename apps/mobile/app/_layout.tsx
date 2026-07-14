@@ -2,6 +2,8 @@ import "../global.css";
 import React, { Suspense, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
+  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -36,6 +38,14 @@ const queryClient = new QueryClient();
 
 function getActiveSessionFrameRadius(width: number, height: number) {
   const shortestSide = Math.min(width, height);
+
+  // iPad windows keep square content corners, including in split view where the
+  // window itself can be phone-sized. The size check covers Android tablets and
+  // desktop/web layouts without assigning a model-specific radius.
+  const usesSquareDisplay =
+    (Platform.OS === "ios" && Platform.isPad) || shortestSide >= 600;
+
+  if (usesSquareDisplay) return 0;
 
   return Math.round(Math.min(Math.max(shortestSide * 0.14, 44), 72));
 }
