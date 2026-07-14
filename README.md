@@ -8,60 +8,55 @@ Work in progress mobile app for tracking workouts, reviewing history, and visual
 
 ## Screenshots
 
-These are the current 0.26.1 preview screenshots from `docs/0.26.1`.
+These screenshots show the 0.26.1 demo on iPhone and iPad.
 
-### Workout Flow
+### iPhone
+
+#### History and Programs
 
 <p align="center">
-  <img src="./docs/0.26.1/history-dark.png" alt="History screen showing completed sessions" width="220" />
-  <img src="./docs/0.26.1/programs-dark.png" alt="Programs screen" width="220" />
-  <img src="./docs/0.26.1/program-editor-dark.png" alt="Program editor screen" width="220" />
-  <img src="./docs/0.26.1/exercise-picker-dark.png" alt="Exercise picker screen" width="220" />
+  <img src="./docs/0.26.1/IMG_0170.png" alt="Gym Diary history calendar on iPhone" width="220" />
+  <img src="./docs/0.26.1/IMG_0171.png" alt="Gym Diary programs list on iPhone" width="220" />
+  <img src="./docs/0.26.1/IMG_0172.png" alt="Gym Diary program editor on iPhone" width="220" />
 </p>
 
-### Session Tracking
+#### Session Tracking
 
 <p align="center">
-  <img src="./docs/0.26.1/session-anterior-dark.png" alt="Anterior session in progress" width="220" />
-  <img src="./docs/0.26.1/session-posterior-dark-expanded.png" alt="Posterior session in dark mode" width="220" />
-  <img src="./docs/0.26.1/session-posterior-light-expanded.png" alt="Posterior session in light mode" width="220" />
-  <img src="./docs/0.26.1/session-posterior-dark-completed.png" alt="Completed posterior session" width="220" />
+  <img src="./docs/0.26.1/IMG_0177.png" alt="Gym Diary workout session on iPhone" width="220" />
+  <img src="./docs/0.26.1/IMG_0178.png" alt="Gym Diary workout session with progress history and rest timer on iPhone" width="220" />
 </p>
 
-### Live Activity
+#### Insights
 
 <p align="center">
-  <img src="./docs/0.26.1/live-activity-lock-screen.png" alt="iOS lock screen Live Activity" width="220" />
-  <img src="./docs/0.26.1/live-activity-dynamic-island.png" alt="Dynamic Island workout timer" width="220" />
+  <img src="./docs/0.26.1/IMG_0173.png" alt="Gym Diary monthly exercise strength trend on iPhone" width="220" />
+  <img src="./docs/0.26.1/IMG_0174.png" alt="Gym Diary exercise statistics summary on iPhone" width="220" />
+  <img src="./docs/0.26.1/IMG_0175.png" alt="Gym Diary weekly program statistics on iPhone" width="220" />
+  <img src="./docs/0.26.1/IMG_0176.png" alt="Gym Diary weekly program progression trend on iPhone" width="220" />
 </p>
 
-### Exercise Insights
+### iPad
+
+#### History and Program Editing
 
 <p align="center">
-  <img src="./docs/0.26.1/exercise-stats-dark-summary.png" alt="Exercise stats summary in dark mode" width="220" />
-  <img src="./docs/0.26.1/exercise-stats-dark-week.png" alt="Exercise weekly stats in dark mode" width="220" />
-  <img src="./docs/0.26.1/exercise-stats-dark-month.png" alt="Exercise monthly stats in dark mode" width="220" />
-  <img src="./docs/0.26.1/exercise-stats-light-summary.png" alt="Exercise stats summary in light mode" width="220" />
-  <img src="./docs/0.26.1/exercise-stats-light-week.png" alt="Exercise weekly stats in light mode" width="220" />
-  <img src="./docs/0.26.1/exercise-stats-light-month.png" alt="Exercise monthly stats in light mode" width="220" />
+  <img src="./docs/0.26.1/IMG_1975.png" alt="Gym Diary history calendar on iPad" width="420" />
+  <img src="./docs/0.26.1/IMG_1979.png" alt="Gym Diary program editor on iPad" width="420" />
 </p>
 
-### Program Insights
+#### Session Tracking
 
 <p align="center">
-  <img src="./docs/0.26.1/program-stats-dark-summary.png" alt="Program stats summary in dark mode" width="220" />
-  <img src="./docs/0.26.1/program-stats-dark-week.png" alt="Program weekly stats in dark mode" width="220" />
-  <img src="./docs/0.26.1/program-stats-dark-month.png" alt="Program monthly stats in dark mode" width="220" />
-  <img src="./docs/0.26.1/program-stats-light-summary.png" alt="Program stats summary in light mode" width="220" />
-  <img src="./docs/0.26.1/program-stats-light-week.png" alt="Program weekly stats in light mode" width="220" />
-  <img src="./docs/0.26.1/program-stats-light-month.png" alt="Program monthly stats in light mode" width="220" />
+  <img src="./docs/0.26.1/IMG_1981.png" alt="Gym Diary workout session with progress history and rest timer on iPad" width="420" />
+  <img src="./docs/0.26.1/IMG_1984.png" alt="Gym Diary completed workout sets on iPad" width="420" />
 </p>
 
-### Settings
+#### Insights
 
 <p align="center">
-  <img src="./docs/0.26.1/settings-light.png" alt="Settings screen in light mode" width="220" />
-  <img src="./docs/0.26.1/settings-dark.png" alt="Settings screen in dark mode" width="220" />
+  <img src="./docs/0.26.1/IMG_1976.png" alt="Gym Diary program progression insights on iPad" width="420" />
+  <img src="./docs/0.26.1/IMG_1978.png" alt="Gym Diary exercise strength insights on iPad" width="420" />
 </p>
 
 ## Repo Layout
@@ -75,7 +70,7 @@ repo/
     exercise/       # Shared exercise library and types
     strength-score/ # Shared score strategies and aggregators
   docs/
-    0.26.1/       # Current release screenshots
+    0.26.1/       # Current iPhone and iPad demo screenshots
 ```
 
 ## Prerequisites
