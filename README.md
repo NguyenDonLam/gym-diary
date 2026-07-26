@@ -42,6 +42,7 @@ These screenshots show the 0.26.1 demo on iPhone and iPad.
 
 <p align="center">
   <img src="./docs/0.26.1/IMG_1975.png" alt="Gym Diary history calendar on iPad" width="420" />
+  <img src="./docs/0.26.1/IMG_1985.png" alt="Gym Diary programs list on iPad" width="420" />
   <img src="./docs/0.26.1/IMG_1979.png" alt="Gym Diary program editor on iPad" width="420" />
 </p>
 
