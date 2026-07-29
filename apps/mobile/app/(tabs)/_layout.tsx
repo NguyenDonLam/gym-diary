@@ -6,6 +6,7 @@ import {
   History,
   Dumbbell,
   LineChart,
+  Camera,
   Settings as SettingsIcon,
 } from "lucide-react-native";
 
@@ -70,6 +71,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <LineChart size={size} color={color} />
           ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="progress"
+        options={{
+          title: "Progress",
+          tabBarIcon: ({ color, size }) => <Camera size={size} color={color} />,
         }}
       />
 

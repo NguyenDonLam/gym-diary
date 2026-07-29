@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Gym Diary",
+    "name": "Diary Dev",
     "slug": "gymDiary",
     "version": "0.26.1",
     "orientation": "portrait",
@@ -48,6 +48,14 @@
       "expo-web-browser",
       "expo-font",
       "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow Gym Diary to take private progress photos.",
+          "photosPermission": "Allow Gym Diary to access photos you choose.",
+          "microphonePermission": false
+        }
+      ],
       "expo-status-bar",
       "./plugins/withWorkoutLiveUpdate",
       [
