@@ -4,6 +4,7 @@
     "slug": "gymDiary",
     "version": "0.26.1",
     "orientation": "portrait",
+    "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",

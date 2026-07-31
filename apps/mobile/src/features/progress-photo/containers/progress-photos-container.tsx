@@ -1,4 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, {
+  type ComponentType,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Alert, Linking } from "react-native";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
@@ -6,16 +12,52 @@ import * as ImagePicker from "expo-image-picker";
 import { generateId } from "@/src/lib/id";
 
 import { ProgressPhotoScreen } from "../components/progress-photo-screen";
+import type {
+  CapturedProgressPhoto,
+  ProgressPhotoCameraContainerProps,
+} from "./progress-photo-camera.types";
 import {
   useCreateProgressPhotoMutation,
   useProgressPhotosQuery,
 } from "../hooks/use-progress-photos";
+import { createPoseDataForCapture } from "../pose/progress-pose-capture";
+import {
+  getProgressPoseCapability,
+  type ProgressPoseCapability,
+} from "../pose/progress-pose-runtime";
 import { progressPhotoViewMapper } from "../ui/progress-photo-view.mapper";
 
 export function ProgressPhotosContainer() {
   const photosQuery = useProgressPhotosQuery();
   const createPhotoMutation = useCreateProgressPhotoMutation();
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [poseCapability, setPoseCapability] =
+    useState<ProgressPoseCapability | null>(null);
+  const [PoseCameraContainer, setPoseCameraContainer] =
+    useState<ComponentType<ProgressPhotoCameraContainerProps> | null>(null);
+  const [captureStatusMessage, setCaptureStatusMessage] = useState<
+    string | null
+  >(null);
+  const [poseCapabilityMessage, setPoseCapabilityMessage] = useState<
+    string | null
+  >(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void getProgressPoseCapability().then((capability) => {
+      if (isMounted) {
+        setPoseCapability(capability);
+        setPoseCapabilityMessage(
+          capability.available ? null : (capability.reason ?? null),
+        );
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const photos = useMemo(
     () => progressPhotoViewMapper.fromPhotos(photosQuery.data ?? []),
@@ -28,11 +70,64 @@ export function ProgressPhotosContainer() {
       ? "Your photo was taken, but could not be saved."
       : null;
 
+  const saveCapturedPhoto = useCallback(
+    async (capture: CapturedProgressPhoto) => {
+      const poseData = createPoseDataForCapture({
+        pose: capture.pose,
+        shutterTimestampMs: capture.shutterTimestampMs,
+        imageWidth: capture.imageWidth,
+        imageHeight: capture.imageHeight,
+      });
+
+      await createPhotoMutation.mutateAsync({
+        id: generateId(),
+        sourceUri: capture.sourceUri,
+        capturedAt: capture.capturedAt,
+        poseGroupId: poseData ? generateId() : null,
+        referencePhotoId: null,
+        poseData,
+      });
+
+      setCaptureStatusMessage(
+        poseData
+          ? "Pose reference saved"
+          : "Photo saved without pose reference",
+      );
+      setIsCameraOpen(false);
+      setPoseCameraContainer(null);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    },
+    [createPhotoMutation],
+  );
+
+  const launchFallbackCamera = useCallback(async () => {
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ["images"],
+      cameraType: ImagePicker.CameraType.front,
+      allowsEditing: true,
+      aspect: [3, 4],
+      quality: 0.9,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+
+    await saveCapturedPhoto({
+      sourceUri: result.assets[0].uri,
+      capturedAt: new Date(),
+      shutterTimestampMs: 0,
+      imageWidth: result.assets[0].width,
+      imageHeight: result.assets[0].height,
+      pose: null,
+    });
+  }, [saveCapturedPhoto]);
+
   const takePhoto = async () => {
     if (isCameraOpen || createPhotoMutation.isPending) return;
 
+    let keepCameraOpen = false;
     setIsCameraOpen(true);
     createPhotoMutation.reset();
+    setCaptureStatusMessage(null);
 
     try {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -52,28 +147,35 @@ export function ProgressPhotosContainer() {
         return;
       }
 
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ["images"],
-        cameraType: ImagePicker.CameraType.front,
-        allowsEditing: true,
-        aspect: [3, 4],
-        quality: 0.9,
-      });
+      const capability = poseCapability ?? (await getProgressPoseCapability());
+      setPoseCapability(capability);
+      setPoseCapabilityMessage(
+        capability.available ? null : (capability.reason ?? null),
+      );
 
-      if (result.canceled || !result.assets[0]) return;
+      if (capability.available) {
+        try {
+          const cameraModule =
+            await import("./progress-photo-camera-container");
+          setPoseCameraContainer(
+            () => cameraModule.ProgressPhotoCameraContainer,
+          );
+          keepCameraOpen = true;
+          return;
+        } catch (cause) {
+          console.warn(
+            "[progress-photos] failed to initialize pose camera",
+            cause,
+          );
+        }
+      }
 
       try {
-        await createPhotoMutation.mutateAsync({
-          id: generateId(),
-          sourceUri: result.assets[0].uri,
-          capturedAt: new Date(),
-        });
+        await launchFallbackCamera();
       } catch (cause) {
         console.warn("[progress-photos] failed to save photo", cause);
         return;
       }
-
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (cause) {
       console.warn("[progress-photos] failed to open camera", cause);
       Alert.alert(
@@ -81,9 +183,23 @@ export function ProgressPhotosContainer() {
         "The camera could not be opened. Please try again.",
       );
     } finally {
-      setIsCameraOpen(false);
+      if (!keepCameraOpen) {
+        setIsCameraOpen(false);
+      }
     }
   };
+
+  if (isCameraOpen && PoseCameraContainer) {
+    return (
+      <PoseCameraContainer
+        onCancel={() => {
+          setIsCameraOpen(false);
+          setPoseCameraContainer(null);
+        }}
+        onCaptured={saveCapturedPhoto}
+      />
+    );
+  }
 
   return (
     <ProgressPhotoScreen
@@ -91,6 +207,8 @@ export function ProgressPhotosContainer() {
       isLoading={photosQuery.isPending}
       isCapturing={isCameraOpen || createPhotoMutation.isPending}
       errorMessage={errorMessage}
+      poseCapabilityMessage={poseCapabilityMessage}
+      captureStatusMessage={captureStatusMessage}
       onTakePhoto={() => void takePhoto()}
     />
   );

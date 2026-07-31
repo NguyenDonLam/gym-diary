@@ -2,8 +2,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Directory, File, Paths } from "expo-file-system";
 import { Platform } from "react-native";
 
-import type { CreateProgressPhotoInput, ProgressPhoto } from "../types";
+import type {
+  CreateProgressPhotoInput,
+  ProgressPhoto,
+  UpdateProgressPhotoAlignmentInput,
+  UpdateProgressPhotoPoseMetadataInput,
+} from "../types";
 import { progressPhotoPersistenceMapper } from "./progress-photo-persistence.mapper";
+import {
+  updateProgressPhotoAlignment,
+  updateProgressPhotoPoseMetadata,
+} from "./progress-photo-records";
 
 const STORAGE_KEY = "progress-photos";
 const PHOTO_DIRECTORY_NAME = "progress-photos";
@@ -50,11 +59,45 @@ export const progressPhotoRepository = {
       id: input.id,
       uri,
       capturedAt: input.capturedAt,
+      poseGroupId: input.poseGroupId ?? null,
+      referencePhotoId: input.referencePhotoId ?? null,
+      poseData: input.poseData ?? null,
+      alignment: null,
     };
 
     const photos = await readAll();
     await persist([photo, ...photos]);
 
     return photo;
+  },
+
+  async updatePoseMetadata(
+    input: UpdateProgressPhotoPoseMetadataInput,
+  ): Promise<ProgressPhoto | null> {
+    const currentPhotos = await readAll();
+    const { photos, updatedPhoto } = updateProgressPhotoPoseMetadata(
+      currentPhotos,
+      input,
+    );
+
+    if (!updatedPhoto) return null;
+
+    await persist(photos);
+    return updatedPhoto;
+  },
+
+  async updateAlignment(
+    input: UpdateProgressPhotoAlignmentInput,
+  ): Promise<ProgressPhoto | null> {
+    const currentPhotos = await readAll();
+    const { photos, updatedPhoto } = updateProgressPhotoAlignment(
+      currentPhotos,
+      input,
+    );
+
+    if (!updatedPhoto) return null;
+
+    await persist(photos);
+    return updatedPhoto;
   },
 };

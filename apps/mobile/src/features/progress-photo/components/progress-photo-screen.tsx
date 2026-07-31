@@ -18,6 +18,8 @@ type ProgressPhotoScreenProps = {
   isLoading: boolean;
   isCapturing: boolean;
   errorMessage: string | null;
+  poseCapabilityMessage: string | null;
+  captureStatusMessage: string | null;
   onTakePhoto: () => void;
 };
 
@@ -26,6 +28,8 @@ export function ProgressPhotoScreen({
   isLoading,
   isCapturing,
   errorMessage,
+  poseCapabilityMessage,
+  captureStatusMessage,
   onTakePhoto,
 }: ProgressPhotoScreenProps) {
   const { colorScheme } = useColorScheme();
@@ -172,6 +176,21 @@ export function ProgressPhotoScreen({
           {errorMessage ? (
             <Text className="mt-3 text-center text-xs text-red-600 dark:text-[#FF5555]">
               {errorMessage}
+            </Text>
+          ) : null}
+
+          {poseCapabilityMessage ? (
+            <Text className="mt-3 text-center text-xs text-zinc-500 dark:text-[#6272A4]">
+              {poseCapabilityMessage}
+            </Text>
+          ) : null}
+
+          {captureStatusMessage ? (
+            <Text
+              accessibilityLiveRegion="polite"
+              className="mt-3 text-center text-xs font-medium text-emerald-700 dark:text-[#50FA7B]"
+            >
+              {captureStatusMessage}
             </Text>
           ) : null}
 
