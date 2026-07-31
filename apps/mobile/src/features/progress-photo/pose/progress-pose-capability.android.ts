@@ -8,5 +8,5 @@ export type { ProgressPoseCapability };
 export const getProgressPoseCapability: ProgressPoseCapabilityProvider =
   async () => ({
     available: false,
-    reason: "Automatic pose matching is not available on Android yet.",
+    reason: "Pose matching is not available on Android yet.",
   });

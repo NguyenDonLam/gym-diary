@@ -19,17 +19,24 @@ import type {
 import {
   useCreateProgressPhotoMutation,
   useProgressPhotosQuery,
+  useUpdateProgressPhotoAlignmentMutation,
 } from "../hooks/use-progress-photos";
+import {
+  calculateProgressPhotoAlignment,
+  createIdentityProgressPhotoAlignment,
+} from "../pose/progress-photo-alignment";
 import { createPoseDataForCapture } from "../pose/progress-pose-capture";
 import {
   getProgressPoseCapability,
   type ProgressPoseCapability,
 } from "../pose/progress-pose-runtime";
-import { progressPhotoViewMapper } from "../ui/progress-photo-view.mapper";
+import { progressPhotoCameraReferenceMapper } from "../ui/progress-photo-camera-reference.mapper";
+import { progressPhotoComparisonMapper } from "../ui/progress-photo-comparison.mapper";
 
 export function ProgressPhotosContainer() {
   const photosQuery = useProgressPhotosQuery();
   const createPhotoMutation = useCreateProgressPhotoMutation();
+  const updateAlignmentMutation = useUpdateProgressPhotoAlignmentMutation();
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [poseCapability, setPoseCapability] =
     useState<ProgressPoseCapability | null>(null);
@@ -60,7 +67,11 @@ export function ProgressPhotosContainer() {
   }, []);
 
   const photos = useMemo(
-    () => progressPhotoViewMapper.fromPhotos(photosQuery.data ?? []),
+    () => progressPhotoComparisonMapper.fromPhotos(photosQuery.data ?? []),
+    [photosQuery.data],
+  );
+  const cameraReferences = useMemo(
+    () => progressPhotoCameraReferenceMapper.fromPhotos(photosQuery.data ?? []),
     [photosQuery.data],
   );
 
@@ -72,21 +83,55 @@ export function ProgressPhotosContainer() {
 
   const saveCapturedPhoto = useCallback(
     async (capture: CapturedProgressPhoto) => {
+      const photoId = generateId();
       const poseData = createPoseDataForCapture({
         pose: capture.pose,
         shutterTimestampMs: capture.shutterTimestampMs,
         imageWidth: capture.imageWidth,
         imageHeight: capture.imageHeight,
       });
+      const selectedReference = capture.referencePhotoId
+        ? (photosQuery.data ?? []).find(
+            (photo) => photo.id === capture.referencePhotoId,
+          )
+        : null;
+      const alignment = poseData
+        ? selectedReference?.poseData
+          ? calculateProgressPhotoAlignment(
+              selectedReference.id,
+              selectedReference.poseData,
+              poseData,
+            )
+          : capture.referencePhotoId === null
+            ? createIdentityProgressPhotoAlignment(photoId)
+            : null
+        : null;
 
       await createPhotoMutation.mutateAsync({
-        id: generateId(),
+        id: photoId,
         sourceUri: capture.sourceUri,
         capturedAt: capture.capturedAt,
-        poseGroupId: poseData ? generateId() : null,
-        referencePhotoId: null,
+        poseGroupId: capture.poseGroupId ?? (poseData ? generateId() : null),
+        referencePhotoId: capture.referencePhotoId,
         poseData,
+        alignment,
       });
+
+      if (selectedReference) {
+        try {
+          await updateAlignmentMutation.mutateAsync({
+            id: selectedReference.id,
+            alignment: createIdentityProgressPhotoAlignment(
+              selectedReference.id,
+            ),
+          });
+        } catch (cause) {
+          console.warn(
+            "[progress-photos] failed to store reference alignment",
+            cause,
+          );
+        }
+      }
 
       setCaptureStatusMessage(
         poseData
@@ -97,7 +142,7 @@ export function ProgressPhotosContainer() {
       setPoseCameraContainer(null);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     },
-    [createPhotoMutation],
+    [createPhotoMutation, photosQuery.data, updateAlignmentMutation],
   );
 
   const launchFallbackCamera = useCallback(async () => {
@@ -118,6 +163,8 @@ export function ProgressPhotosContainer() {
       imageWidth: result.assets[0].width,
       imageHeight: result.assets[0].height,
       pose: null,
+      poseGroupId: null,
+      referencePhotoId: null,
     });
   }, [saveCapturedPhoto]);
 
@@ -192,6 +239,7 @@ export function ProgressPhotosContainer() {
   if (isCameraOpen && PoseCameraContainer) {
     return (
       <PoseCameraContainer
+        references={cameraReferences}
         onCancel={() => {
           setIsCameraOpen(false);
           setPoseCameraContainer(null);

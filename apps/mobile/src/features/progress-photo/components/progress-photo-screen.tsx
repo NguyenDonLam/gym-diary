@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   Text,
@@ -8,13 +9,17 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Image } from "expo-image";
-import { Camera, Images, LockKeyhole } from "lucide-react-native";
+import { Camera, Images, LockKeyhole, Maximize2, X } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
-import type { ProgressPhotoViewModel } from "../ui/progress-photo-view.mapper";
+import {
+  getProgressPhotoViewportSize,
+  getProgressPhotoViewportTransform,
+  type ProgressPhotoComparisonViewModel,
+} from "../ui/progress-photo-comparison.mapper";
 
 type ProgressPhotoScreenProps = {
-  photos: ProgressPhotoViewModel[];
+  photos: ProgressPhotoComparisonViewModel[];
   isLoading: boolean;
   isCapturing: boolean;
   errorMessage: string | null;
@@ -36,6 +41,7 @@ export function ProgressPhotoScreen({
   const isDark = colorScheme === "dark";
   const { width } = useWindowDimensions();
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
+  const [isFullOriginalOpen, setIsFullOriginalOpen] = useState(false);
   const latestPhotoIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -53,8 +59,40 @@ export function ProgressPhotoScreen({
     [photos, selectedPhotoId],
   );
 
-  const previewWidth = Math.max(0, width - 32);
-  const previewHeight = Math.min(previewWidth * 1.16, 520);
+  useEffect(() => {
+    setIsFullOriginalOpen(false);
+  }, [selectedPhoto?.id]);
+
+  useEffect(() => {
+    if (!selectedPhoto) return;
+
+    const selectedIndex = photos.findIndex(
+      (photo) => photo.id === selectedPhoto.id,
+    );
+    const neighbouringUris = [
+      photos[selectedIndex - 1]?.uri,
+      photos[selectedIndex + 1]?.uri,
+    ].filter((uri): uri is string => Boolean(uri));
+
+    if (neighbouringUris.length > 0) {
+      void Image.prefetch(neighbouringUris, {
+        cachePolicy: "memory-disk",
+      }).catch(() => undefined);
+    }
+  }, [photos, selectedPhoto]);
+
+  const { width: previewWidth, height: previewHeight } =
+    getProgressPhotoViewportSize(width - 32);
+  const viewportTransform = selectedPhoto?.renderTransform
+    ? getProgressPhotoViewportTransform(
+        selectedPhoto.renderTransform,
+        previewWidth,
+        previewHeight,
+      )
+    : null;
+  const alignmentNeedsAttention =
+    selectedPhoto?.alignmentState === "low_confidence" ||
+    selectedPhoto?.alignmentState === "missing_reference";
   const iconColor = isDark ? "#F8F8F2" : "#111827";
   const mutedIconColor = isDark ? "#6272A4" : "#64748B";
   const actionIconColor = isDark ? "#282A36" : "#FFFFFF";
@@ -83,14 +121,55 @@ export function ProgressPhotoScreen({
             <>
               <View
                 className="overflow-hidden rounded-3xl bg-neutral-100 dark:bg-[#343746]"
-                style={{ width: previewWidth, height: previewHeight }}
+                style={{
+                  alignSelf: "center",
+                  width: previewWidth,
+                  height: previewHeight,
+                }}
               >
                 <Image
                   source={{ uri: selectedPhoto.uri }}
                   contentFit="cover"
+                  cachePolicy="memory-disk"
                   transition={160}
-                  style={{ width: "100%", height: "100%" }}
+                  style={{
+                    position: "absolute",
+                    width: "100%",
+                    height: "100%",
+                    transform: viewportTransform
+                      ? [
+                          // React Native composes this array right-to-left.
+                          { translateX: viewportTransform.translateX },
+                          { translateY: viewportTransform.translateY },
+                          { scale: viewportTransform.scale },
+                          { rotate: viewportTransform.rotation },
+                        ]
+                      : undefined,
+                  }}
                 />
+
+                <View
+                  className={[
+                    "absolute left-3 top-3 rounded-full px-3 py-1.5",
+                    alignmentNeedsAttention ? "bg-amber-500/90" : "bg-black/55",
+                  ].join(" ")}
+                >
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    className="text-xs font-semibold text-white"
+                  >
+                    {selectedPhoto.alignmentStatusLabel}
+                  </Text>
+                </View>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Open full original photo"
+                  onPress={() => setIsFullOriginalOpen(true)}
+                  className="absolute right-3 top-3 h-10 w-10 items-center justify-center rounded-full bg-black/55"
+                >
+                  <Maximize2 size={18} color="#FFFFFF" strokeWidth={2.2} />
+                </Pressable>
 
                 <View className="absolute bottom-0 left-0 right-0 bg-black/45 px-4 py-3">
                   <Text className="text-base font-semibold text-white">
@@ -99,6 +178,11 @@ export function ProgressPhotoScreen({
                   <Text className="mt-0.5 text-xs text-white/75">
                     {selectedPhoto.timeLabel}
                   </Text>
+                  {selectedPhoto.alignmentDetailLabel ? (
+                    <Text className="mt-1 text-xs text-white/75">
+                      {selectedPhoto.alignmentDetailLabel}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
 
@@ -142,6 +226,7 @@ export function ProgressPhotoScreen({
                       <Image
                         source={{ uri: photo.uri }}
                         contentFit="cover"
+                        cachePolicy="memory-disk"
                         transition={100}
                         style={{ width: 72, height: 92 }}
                       />
@@ -217,6 +302,43 @@ export function ProgressPhotoScreen({
           </Pressable>
         </ScrollView>
       )}
+
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setIsFullOriginalOpen(false)}
+        statusBarTranslucent
+        visible={isFullOriginalOpen && selectedPhoto !== null}
+      >
+        <View className="flex-1 bg-black">
+          {selectedPhoto ? (
+            <Image
+              source={{ uri: selectedPhoto.uri }}
+              contentFit="contain"
+              cachePolicy="memory-disk"
+              style={{ flex: 1 }}
+            />
+          ) : null}
+
+          <View className="absolute left-0 right-0 top-0 flex-row items-center justify-between bg-black/55 px-4 pb-3 pt-14">
+            <View className="mr-4 flex-1">
+              <Text className="text-base font-semibold text-white">
+                Full original
+              </Text>
+              <Text className="mt-0.5 text-xs text-white/75">
+                Uncropped and without alignment
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close full original photo"
+              onPress={() => setIsFullOriginalOpen(false)}
+              className="h-11 w-11 items-center justify-center rounded-full bg-white/15"
+            >
+              <X size={22} color="#FFFFFF" strokeWidth={2.2} />
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

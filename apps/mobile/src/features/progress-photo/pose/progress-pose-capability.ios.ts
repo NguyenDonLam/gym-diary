@@ -55,7 +55,7 @@ export const getProgressPoseCapability: ProgressPoseCapabilityProvider =
       return {
         available: false,
         reason:
-          "Automatic pose matching requires an Expo development build and is not available in Expo Go.",
+          "Pose matching requires an Expo development build and is not available in Expo Go.",
       };
     }
 

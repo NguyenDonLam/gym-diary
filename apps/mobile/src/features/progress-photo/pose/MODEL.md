@@ -32,5 +32,35 @@ rate limiting are implemented in this feature's TypeScript detector adapter.
 On supported iOS development builds, the progress-photo camera retains the
 latest torso-valid pose and associates it with a manual capture when its native
 frame timestamp is no more than 350 milliseconds older than the shutter
-timestamp. The original photo file is copied unchanged. Automatic capture,
-pose comparison, and alignment are intentionally not implemented yet.
+timestamp. The original photo file is copied unchanged.
+
+The feature also contains a deterministic, pure TypeScript comparison engine.
+It scores normalized body geometry separately from camera framing, weights
+torso landmarks more heavily than extremities, ignores landmarks below the
+configured confidence threshold, and returns bounded pose, framing, visibility,
+and overall scores. On supported iOS development builds, the camera uses this
+engine to guide manual capture against a user-selected saved reference. The
+guidance applies score smoothing and instruction confirmation, and offers a
+reference overlay that can be disabled or displayed at several opacity levels.
+
+Automatic capture is available as an opt-in camera control. Its pure
+TypeScript state machine uses pose-frame timestamps, separate entry and
+cancellation thresholds, a 750 millisecond continuous hold, duplicate-request
+protection, and a post-capture cooldown. The manual shutter remains available.
+
+Guided captures also store a versioned two-dimensional similarity transform
+that maps the current photo's normalized landmark coordinates into the selected
+reference coordinate system. The weighted least-squares fit prefers torso
+landmarks, rejects extreme residual outliers, and bounds translation, uniform
+scale, and rotation. Reference photos store an identity transform. These values
+remain metadata only, and original image files remain unchanged.
+
+The progress-photo viewer renders those stored transforms inside a fixed 3:4
+comparison viewport. It uses the stored reference photo as the coordinate basis
+and applies only translation, uniform scale, and rotation to the displayed image.
+Photos without alignment data, or whose reference photo is missing, retain their
+original framing. Lower-confidence alignment is identified without blocking the
+comparison. The full original remains available in a separate untransformed,
+uncropped view. Timeline thumbnails use the image cache so nearby photos are
+ready when selected; transforms are read from metadata rather than recalculated
+during rendering.

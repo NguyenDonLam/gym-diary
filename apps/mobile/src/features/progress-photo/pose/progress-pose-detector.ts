@@ -6,6 +6,7 @@ import type {
 export type {
   DetectedPose,
   PoseLandmark,
+  ProgressPoseDetectionStatus,
   ProgressPoseDetector,
 } from "./progress-pose-detector.types";
 
@@ -14,5 +15,6 @@ export const createProgressPoseDetector: ProgressPoseDetectorFactory =
 
 export const unavailableProgressPoseDetector: ProgressPoseDetector = {
   detectFromFrame: () => null,
+  getLastDetectionStatus: () => "invalid",
   dispose: () => undefined,
 };

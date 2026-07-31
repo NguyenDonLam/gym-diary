@@ -6,5 +6,6 @@ export {
   createProgressPoseDetector,
   type DetectedPose,
   type PoseLandmark,
+  type ProgressPoseDetectionStatus,
   type ProgressPoseDetector,
 } from "./progress-pose-detector";

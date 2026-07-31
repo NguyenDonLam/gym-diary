@@ -41,6 +41,7 @@ export type CreateProgressPhotoInput = {
   poseGroupId?: string | null;
   referencePhotoId?: string | null;
   poseData?: ProgressPhotoPoseData | null;
+  alignment?: ProgressPhotoAlignment | null;
 };
 
 export type UpdateProgressPhotoPoseMetadataInput = {

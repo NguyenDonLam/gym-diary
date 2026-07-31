@@ -2,6 +2,7 @@ export const progressPoseConfig = {
   minimumLandmarkConfidence: 0.2,
   minimumOverallConfidence: 0.25,
   minimumVisibleLandmarkCount: 5,
+  noPersonOverallConfidenceMaximum: 0.05,
   requiredTorsoLandmarkNames: [
     "left_shoulder",
     "right_shoulder",

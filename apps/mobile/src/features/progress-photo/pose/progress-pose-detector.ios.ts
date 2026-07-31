@@ -2,10 +2,11 @@ import type { TfliteModel } from "react-native-fast-tflite";
 import type { CameraOrientation, Frame } from "react-native-vision-camera";
 import type { Resizer } from "react-native-vision-camera-resizer";
 
-import { parseMoveNetOutput } from "./movenet-output-parser";
+import { parseMoveNetOutputResult } from "./movenet-output-parser";
 import { getProgressPoseCapability } from "./progress-pose-capability";
 import { progressPoseConfig } from "./progress-pose-config";
 import type {
+  ProgressPoseDetectionStatus,
   ProgressPoseDetector,
   ProgressPoseDetectorFactory,
 } from "./progress-pose-detector.types";
@@ -17,6 +18,7 @@ import {
 export type {
   DetectedPose,
   PoseLandmark,
+  ProgressPoseDetectionStatus,
   ProgressPoseDetector,
 } from "./progress-pose-detector.types";
 
@@ -70,6 +72,7 @@ function createDetector(
 ): ProgressPoseDetector {
   const state = {
     lastInferenceTimestampMs: Number.NEGATIVE_INFINITY,
+    lastDetectionStatus: "skipped" as ProgressPoseDetectionStatus,
     disposed: false,
   };
 
@@ -77,7 +80,10 @@ function createDetector(
     detectFromFrame(frameValue: unknown) {
       "worklet";
 
-      if (state.disposed || !isUsableFrame(frameValue)) return null;
+      if (state.disposed || !isUsableFrame(frameValue)) {
+        state.lastDetectionStatus = "invalid";
+        return null;
+      }
 
       const timestampMs = frameValue.timestamp * 1000;
       const elapsedSinceLastInference =
@@ -86,6 +92,7 @@ function createDetector(
         elapsedSinceLastInference >= 0 &&
         elapsedSinceLastInference < progressPoseConfig.inferenceIntervalMs
       ) {
+        state.lastDetectionStatus = "skipped";
         return null;
       }
       state.lastInferenceTimestampMs = timestampMs;
@@ -97,13 +104,19 @@ function createDetector(
         const expectedInputBytes =
           PROGRESS_POSE_MODEL.inputWidth * PROGRESS_POSE_MODEL.inputHeight * 3;
 
-        if (inputBuffer.byteLength !== expectedInputBytes) return null;
+        if (inputBuffer.byteLength !== expectedInputBytes) {
+          state.lastDetectionStatus = "invalid";
+          return null;
+        }
 
         const outputs = model.runSync([inputBuffer]);
         const output = outputs[0];
-        if (!output) return null;
+        if (!output) {
+          state.lastDetectionStatus = "invalid";
+          return null;
+        }
 
-        return parseMoveNetOutput(new Float32Array(output), {
+        const result = parseMoveNetOutputResult(new Float32Array(output), {
           sourceWidth: frameValue.width,
           sourceHeight: frameValue.height,
           modelWidth: PROGRESS_POSE_MODEL.inputWidth,
@@ -116,10 +129,19 @@ function createDetector(
           minimumOverallConfidence: progressPoseConfig.minimumOverallConfidence,
           minimumVisibleLandmarkCount:
             progressPoseConfig.minimumVisibleLandmarkCount,
+          noPersonOverallConfidenceMaximum:
+            progressPoseConfig.noPersonOverallConfidenceMaximum,
         });
+        state.lastDetectionStatus = result.status;
+        return result.pose;
       } finally {
         resizedFrame.dispose();
       }
+    },
+
+    getLastDetectionStatus() {
+      "worklet";
+      return state.lastDetectionStatus;
     },
 
     dispose() {

@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   MOVENET_LANDMARK_NAMES,
   parseMoveNetOutput,
+  parseMoveNetOutputResult,
   type MoveNetParserOptions,
 } from "./movenet-output-parser";
 
@@ -108,4 +109,24 @@ test("returns null when too few landmarks are visible", () => {
   const output = createOutput(0.5, 0.5, 0.1);
 
   assert.equal(parseMoveNetOutput(output, createOptions()), null);
+});
+
+test("classifies an empty model result as no visible person", () => {
+  const result = parseMoveNetOutputResult(
+    createOutput(0.5, 0.5, 0.01),
+    createOptions(),
+  );
+
+  assert.equal(result.pose, null);
+  assert.equal(result.status, "no_person");
+});
+
+test("classifies a weak model result as low confidence", () => {
+  const result = parseMoveNetOutputResult(
+    createOutput(0.5, 0.5, 0.15),
+    createOptions(),
+  );
+
+  assert.equal(result.pose, null);
+  assert.equal(result.status, "low_confidence");
 });

@@ -13,8 +13,12 @@ export type DetectedPose = {
   timestampMs: number;
 };
 
+export type ProgressPoseDetectionStatus =
+  "skipped" | "detected" | "low_confidence" | "no_person" | "invalid";
+
 export interface ProgressPoseDetector {
   detectFromFrame(frame: unknown): DetectedPose | null;
+  getLastDetectionStatus(): ProgressPoseDetectionStatus;
   dispose(): void;
 }
 

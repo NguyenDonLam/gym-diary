@@ -62,7 +62,7 @@ export const progressPhotoRepository = {
       poseGroupId: input.poseGroupId ?? null,
       referencePhotoId: input.referencePhotoId ?? null,
       poseData: input.poseData ?? null,
-      alignment: null,
+      alignment: input.alignment ?? null,
     };
 
     const photos = await readAll();

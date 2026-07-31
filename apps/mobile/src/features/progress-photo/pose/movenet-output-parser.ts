@@ -36,6 +36,12 @@ export type MoveNetParserOptions = {
   minimumLandmarkConfidence: number;
   minimumOverallConfidence: number;
   minimumVisibleLandmarkCount: number;
+  noPersonOverallConfidenceMaximum?: number;
+};
+
+export type MoveNetParseResult = {
+  pose: DetectedPose | null;
+  status: "detected" | "low_confidence" | "no_person" | "invalid";
 };
 
 type NormalizedPoint = {
@@ -195,5 +201,64 @@ export function parseMoveNetOutput(
     sourceWidth: uprightSize.width,
     sourceHeight: uprightSize.height,
     timestampMs: options.timestampMs,
+  };
+}
+
+export function parseMoveNetOutputResult(
+  output: ArrayLike<number>,
+  options: MoveNetParserOptions,
+): MoveNetParseResult {
+  "worklet";
+
+  const pose = parseMoveNetOutput(output, options);
+  if (pose) return { pose, status: "detected" };
+
+  if (
+    output.length !== MOVENET_LANDMARK_NAMES.length * 3 ||
+    !Number.isFinite(options.sourceWidth) ||
+    !Number.isFinite(options.sourceHeight) ||
+    !Number.isFinite(options.modelWidth) ||
+    !Number.isFinite(options.modelHeight) ||
+    !Number.isFinite(options.timestampMs) ||
+    options.sourceWidth <= 0 ||
+    options.sourceHeight <= 0 ||
+    options.modelWidth <= 0 ||
+    options.modelHeight <= 0
+  ) {
+    return { pose: null, status: "invalid" };
+  }
+
+  let confidenceSum = 0;
+  let visibleLandmarkCount = 0;
+
+  for (let index = 0; index < MOVENET_LANDMARK_NAMES.length; index += 1) {
+    const offset = index * 3;
+    const modelY = output[offset];
+    const modelX = output[offset + 1];
+    const confidence = output[offset + 2];
+    if (
+      !Number.isFinite(modelX) ||
+      !Number.isFinite(modelY) ||
+      !Number.isFinite(confidence)
+    ) {
+      return { pose: null, status: "invalid" };
+    }
+
+    const normalizedConfidence = clampUnit(confidence);
+    confidenceSum += normalizedConfidence;
+    if (normalizedConfidence >= options.minimumLandmarkConfidence) {
+      visibleLandmarkCount += 1;
+    }
+  }
+
+  const overallConfidence = confidenceSum / MOVENET_LANDMARK_NAMES.length;
+  const noPersonThreshold = options.noPersonOverallConfidenceMaximum ?? 0.05;
+
+  return {
+    pose: null,
+    status:
+      visibleLandmarkCount === 0 && overallConfidence <= noPersonThreshold
+        ? "no_person"
+        : "low_confidence",
   };
 }
