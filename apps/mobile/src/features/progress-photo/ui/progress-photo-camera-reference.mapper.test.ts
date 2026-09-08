@@ -28,6 +28,8 @@ function photo(
     referencePhotoId: null,
     poseData: null,
     alignment: null,
+    automaticAlignment: null,
+    alignmentStatus: "unavailable",
     ...overrides,
   };
 }

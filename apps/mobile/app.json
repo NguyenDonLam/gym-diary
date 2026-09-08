@@ -18,6 +18,7 @@
     "android": {
       "package": "com.gymdiary.app",
       "versionCode": 2,
+      "allowBackup": false,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

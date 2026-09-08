@@ -3,15 +3,23 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { Alert, Linking } from "react-native";
 import * as Haptics from "expo-haptics";
+import { Image as ExpoImage } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 
 import { generateId } from "@/src/lib/id";
 
 import { ProgressPhotoScreen } from "../components/progress-photo-screen";
+import { ProgressPhotoAlignmentEditor } from "../components/progress-photo-alignment-editor";
+import { reportProgressPhotoDiagnostic } from "../progress-photo-diagnostics";
+import type {
+  ProgressPhotoAlignment,
+  ProgressPhotoAlignmentStatus,
+} from "../types";
 import type {
   CapturedProgressPhoto,
   ProgressPhotoCameraContainerProps,
@@ -31,7 +39,13 @@ import {
   type ProgressPoseCapability,
 } from "../pose/progress-pose-runtime";
 import { progressPhotoCameraReferenceMapper } from "../ui/progress-photo-camera-reference.mapper";
-import { progressPhotoComparisonMapper } from "../ui/progress-photo-comparison.mapper";
+import {
+  formatProgressPhotoElapsedTime,
+  getProgressPhotoPairCandidates,
+  getProgressPhotoPairNavigation,
+  progressPhotoComparisonMapper,
+  selectDefaultProgressPhotoPairId,
+} from "../ui/progress-photo-comparison.mapper";
 
 export function ProgressPhotosContainer() {
   const photosQuery = useProgressPhotosQuery();
@@ -48,6 +62,14 @@ export function ProgressPhotosContainer() {
   const [poseCapabilityMessage, setPoseCapabilityMessage] = useState<
     string | null
   >(null);
+  const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
+  const [comparisonPhotoId, setComparisonPhotoId] = useState<string | null>(
+    null,
+  );
+  const [alignmentEditorPhotoId, setAlignmentEditorPhotoId] = useState<
+    string | null
+  >(null);
+  const latestPhotoIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -74,12 +96,136 @@ export function ProgressPhotosContainer() {
     () => progressPhotoCameraReferenceMapper.fromPhotos(photosQuery.data ?? []),
     [photosQuery.data],
   );
+  const selectedPhoto = useMemo(
+    () =>
+      photos.find((photo) => photo.id === selectedPhotoId) ?? photos[0] ?? null,
+    [photos, selectedPhotoId],
+  );
+  const comparisonPhotos = useMemo(
+    () => getProgressPhotoPairCandidates(photos, selectedPhoto?.id ?? null),
+    [photos, selectedPhoto?.id],
+  );
+  const comparisonPhoto = useMemo(
+    () =>
+      comparisonPhotos.find((photo) => photo.id === comparisonPhotoId) ?? null,
+    [comparisonPhotoId, comparisonPhotos],
+  );
+  const alignmentEditorPhoto =
+    photos.find((photo) => photo.id === alignmentEditorPhotoId) ?? null;
+  const alignmentEditorReference = alignmentEditorPhoto?.referencePhotoId
+    ? (photos.find(
+        (photo) => photo.id === alignmentEditorPhoto.referencePhotoId,
+      ) ?? null)
+    : null;
+  const comparisonNavigation = useMemo(
+    () =>
+      getProgressPhotoPairNavigation(
+        photos,
+        selectedPhoto?.id ?? null,
+        comparisonPhoto?.id ?? null,
+      ),
+    [comparisonPhoto?.id, photos, selectedPhoto?.id],
+  );
+  const elapsedTimeLabel =
+    selectedPhoto && comparisonPhoto
+      ? formatProgressPhotoElapsedTime(
+          selectedPhoto.capturedAtMs,
+          comparisonPhoto.capturedAtMs,
+        )
+      : null;
+
+  useEffect(() => {
+    const latestPhotoId = photos[0]?.id ?? null;
+
+    if (latestPhotoId !== latestPhotoIdRef.current) {
+      latestPhotoIdRef.current = latestPhotoId;
+      setSelectedPhotoId(latestPhotoId);
+      setComparisonPhotoId(
+        selectDefaultProgressPhotoPairId(photos, latestPhotoId),
+      );
+    }
+  }, [photos]);
+
+  useEffect(() => {
+    setComparisonPhotoId((currentPhotoId) =>
+      comparisonPhotos.some((photo) => photo.id === currentPhotoId)
+        ? currentPhotoId
+        : selectDefaultProgressPhotoPairId(photos, selectedPhoto?.id ?? null),
+    );
+  }, [comparisonPhotos, photos, selectedPhoto?.id]);
+
+  useEffect(() => {
+    const preloadIds = [
+      comparisonPhoto?.id,
+      comparisonNavigation.previousPhotoId,
+      comparisonNavigation.nextPhotoId,
+    ].filter((id): id is string => Boolean(id));
+    const preloadUris = preloadIds
+      .map((id) => photos.find((photo) => photo.id === id)?.uri)
+      .filter((uri): uri is string => Boolean(uri));
+
+    if (preloadUris.length > 0) {
+      void ExpoImage.prefetch(preloadUris, {
+        cachePolicy: "memory-disk",
+      }).catch(() => undefined);
+    }
+  }, [comparisonNavigation, comparisonPhoto?.id, photos]);
+
+  const selectPhoto = useCallback(
+    (photoId: string) => {
+      setSelectedPhotoId(photoId);
+      setComparisonPhotoId(selectDefaultProgressPhotoPairId(photos, photoId));
+    },
+    [photos],
+  );
+
+  const selectComparisonPhoto = useCallback(
+    (photoId: string) => {
+      if (comparisonPhotos.some((photo) => photo.id === photoId)) {
+        setComparisonPhotoId(photoId);
+      }
+    },
+    [comparisonPhotos],
+  );
 
   const errorMessage = photosQuery.isError
     ? "Could not load your progress photos."
     : createPhotoMutation.isError
       ? "Your photo was taken, but could not be saved."
-      : null;
+      : updateAlignmentMutation.isError
+        ? "The alignment could not be saved."
+        : null;
+
+  const saveEditedAlignment = useCallback(
+    async (
+      alignment: ProgressPhotoAlignment | null,
+      alignmentStatus: ProgressPhotoAlignmentStatus,
+    ) => {
+      if (!alignmentEditorPhotoId) return;
+
+      try {
+        await updateAlignmentMutation.mutateAsync({
+          id: alignmentEditorPhotoId,
+          alignment,
+          alignmentStatus,
+        });
+        setAlignmentEditorPhotoId(null);
+        setCaptureStatusMessage(
+          alignmentStatus === "manual"
+            ? "Manual alignment saved"
+            : alignmentStatus === "automatic"
+              ? "Automatic alignment restored"
+              : "Alignment removed",
+        );
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
+      } catch {
+        // The mutation exposes a presentation-safe error in the editor.
+      }
+    },
+    [alignmentEditorPhotoId, updateAlignmentMutation],
+  );
 
   const saveCapturedPhoto = useCallback(
     async (capture: CapturedProgressPhoto) => {
@@ -124,12 +270,10 @@ export function ProgressPhotosContainer() {
             alignment: createIdentityProgressPhotoAlignment(
               selectedReference.id,
             ),
+            alignmentStatus: "automatic",
           });
-        } catch (cause) {
-          console.warn(
-            "[progress-photos] failed to store reference alignment",
-            cause,
-          );
+        } catch {
+          reportProgressPhotoDiagnostic("reference_alignment_save_failed");
         }
       }
 
@@ -209,22 +353,19 @@ export function ProgressPhotosContainer() {
           );
           keepCameraOpen = true;
           return;
-        } catch (cause) {
-          console.warn(
-            "[progress-photos] failed to initialize pose camera",
-            cause,
-          );
+        } catch {
+          reportProgressPhotoDiagnostic("camera_initialization_failed");
         }
       }
 
       try {
         await launchFallbackCamera();
-      } catch (cause) {
-        console.warn("[progress-photos] failed to save photo", cause);
+      } catch {
+        reportProgressPhotoDiagnostic("photo_save_failed");
         return;
       }
-    } catch (cause) {
-      console.warn("[progress-photos] failed to open camera", cause);
+    } catch {
+      reportProgressPhotoDiagnostic("camera_open_failed");
       Alert.alert(
         "Camera unavailable",
         "The camera could not be opened. Please try again.",
@@ -250,14 +391,63 @@ export function ProgressPhotosContainer() {
   }
 
   return (
-    <ProgressPhotoScreen
-      photos={photos}
-      isLoading={photosQuery.isPending}
-      isCapturing={isCameraOpen || createPhotoMutation.isPending}
-      errorMessage={errorMessage}
-      poseCapabilityMessage={poseCapabilityMessage}
-      captureStatusMessage={captureStatusMessage}
-      onTakePhoto={() => void takePhoto()}
-    />
+    <>
+      <ProgressPhotoScreen
+        photos={photos}
+        selectedPhoto={selectedPhoto}
+        comparisonPhotos={comparisonPhotos}
+        comparisonPhoto={comparisonPhoto}
+        elapsedTimeLabel={elapsedTimeLabel}
+        canEditAlignment={Boolean(
+          selectedPhoto?.referencePhotoId &&
+          photos.some((photo) => photo.id === selectedPhoto.referencePhotoId),
+        )}
+        canSelectPreviousComparison={
+          comparisonNavigation.previousPhotoId !== null
+        }
+        canSelectNextComparison={comparisonNavigation.nextPhotoId !== null}
+        isLoading={photosQuery.isPending}
+        isCapturing={isCameraOpen || createPhotoMutation.isPending}
+        errorMessage={errorMessage}
+        poseCapabilityMessage={poseCapabilityMessage}
+        captureStatusMessage={captureStatusMessage}
+        onEditAlignment={() => {
+          if (selectedPhoto) {
+            updateAlignmentMutation.reset();
+            setAlignmentEditorPhotoId(selectedPhoto.id);
+          }
+        }}
+        onSelectPhoto={selectPhoto}
+        onSelectComparisonPhoto={selectComparisonPhoto}
+        onSelectPreviousComparison={() => {
+          if (comparisonNavigation.previousPhotoId) {
+            setComparisonPhotoId(comparisonNavigation.previousPhotoId);
+          }
+        }}
+        onSelectNextComparison={() => {
+          if (comparisonNavigation.nextPhotoId) {
+            setComparisonPhotoId(comparisonNavigation.nextPhotoId);
+          }
+        }}
+        onTakePhoto={() => void takePhoto()}
+      />
+
+      {alignmentEditorPhoto && alignmentEditorReference ? (
+        <ProgressPhotoAlignmentEditor
+          photo={alignmentEditorPhoto}
+          referencePhoto={alignmentEditorReference}
+          isSaving={updateAlignmentMutation.isPending}
+          errorMessage={
+            updateAlignmentMutation.isError
+              ? "The alignment could not be saved. Please try again."
+              : null
+          }
+          onCancel={() => setAlignmentEditorPhotoId(null)}
+          onSave={(alignment, status) =>
+            void saveEditedAlignment(alignment, status)
+          }
+        />
+      ) : null}
+    </>
   );
 }

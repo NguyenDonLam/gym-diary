@@ -14,9 +14,11 @@ import {
   usePhotoOutput,
 } from "react-native-vision-camera";
 import { runOnJS } from "react-native-worklets";
+import { useSharedValue } from "react-native-reanimated";
 
 import { ProgressPhotoCameraScreen } from "../components/progress-photo-camera-screen";
 import { ProgressPoseDiagnosticOverlay } from "../components/progress-pose-diagnostic-overlay";
+import { progressPhotoPerformance } from "../progress-photo-performance";
 import {
   createAutoCaptureMachine,
   updateAutoCaptureMachine,
@@ -59,6 +61,9 @@ export function ProgressPhotoCameraContainer({
   const smoothedMatchRef = useRef<SmoothedPoseMatchState | null>(null);
   const autoCaptureMachineRef = useRef(createAutoCaptureMachine());
   const automaticCaptureInFlightRef = useRef(false);
+  const automaticCaptureStartedAtRef = useRef<number | null>(null);
+  const cameraFrameWindowStartedAt = useSharedValue(0);
+  const cameraFrameCount = useSharedValue(0);
   const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(
     selectDefaultProgressPhotoCameraReferenceId(references),
   );
@@ -131,6 +136,21 @@ export function ProgressPhotoCameraContainer({
   }, [applyAutoCaptureEvent]);
 
   useEffect(() => {
+    const subscription = AppState.addEventListener("memoryWarning", () => {
+      detectorRef.current?.dispose();
+      detectorRef.current = null;
+      setDetector(null);
+      applyAutoCaptureEvent({ type: "set_enabled", enabled: false });
+      setDetectionStatus("invalid");
+      setErrorMessage(
+        "Pose detection paused to protect device memory. Manual capture works.",
+      );
+    });
+
+    return () => subscription.remove();
+  }, [applyAutoCaptureEvent]);
+
+  useEffect(() => {
     let isCancelled = false;
 
     void createProgressPoseDetector()
@@ -190,7 +210,13 @@ export function ProgressPhotoCameraContainer({
 
       const previousTimestamp = previousPoseTimestampRef.current;
       if (previousTimestamp !== null && pose.timestampMs > previousTimestamp) {
-        setInferenceRateHz(1000 / (pose.timestampMs - previousTimestamp));
+        const nextInferenceRateHz =
+          1000 / (pose.timestampMs - previousTimestamp);
+        setInferenceRateHz(nextInferenceRateHz);
+        progressPhotoPerformance.record(
+          "pose_inference_rate_hz",
+          nextInferenceRateHz,
+        );
       }
       previousPoseTimestampRef.current = pose.timestampMs;
       setDisplayPose(pose);
@@ -238,16 +264,56 @@ export function ProgressPhotoCameraContainer({
     [applyAutoCaptureEvent, selectedReference],
   );
 
+  const receiveFramePerformance = useCallback(
+    (cameraFrameRateHz: number | null, inferenceDurationMs: number | null) => {
+      if (cameraFrameRateHz !== null) {
+        progressPhotoPerformance.record(
+          "camera_frame_rate_hz",
+          cameraFrameRateHz,
+        );
+      }
+      if (inferenceDurationMs !== null) {
+        progressPhotoPerformance.record(
+          "pose_inference_duration_ms",
+          inferenceDurationMs,
+        );
+      }
+    },
+    [],
+  );
+
   const onFrame = useCallback(
     (frame: Parameters<ProgressPoseDetector["detectFromFrame"]>[0]) => {
       "worklet";
 
       try {
+        const inferenceStartedAtMs = performance.now();
         const pose = detector?.detectFromFrame(frame) ?? null;
+        const inferenceDurationMs = performance.now() - inferenceStartedAtMs;
         const status = detector?.getLastDetectionStatus() ?? "invalid";
+        const timestampMs =
+          ((frame as { timestamp?: number }).timestamp ?? 0) * 1000;
+        if (cameraFrameWindowStartedAt.value === 0) {
+          cameraFrameWindowStartedAt.value = timestampMs;
+        }
+        cameraFrameCount.value += 1;
+        const frameWindowDurationMs =
+          timestampMs - cameraFrameWindowStartedAt.value;
+        let cameraFrameRateHz: number | null = null;
+        if (frameWindowDurationMs >= 1000) {
+          cameraFrameRateHz =
+            (cameraFrameCount.value * 1000) / frameWindowDurationMs;
+          cameraFrameWindowStartedAt.value = timestampMs;
+          cameraFrameCount.value = 0;
+        }
+
+        if (cameraFrameRateHz !== null || status !== "skipped") {
+          runOnJS(receiveFramePerformance)(
+            cameraFrameRateHz,
+            status === "skipped" ? null : inferenceDurationMs,
+          );
+        }
         if (status !== "skipped") {
-          const timestampMs =
-            ((frame as { timestamp?: number }).timestamp ?? 0) * 1000;
           runOnJS(receiveDetection)(pose, status, timestampMs);
         }
       } finally {
@@ -258,7 +324,13 @@ export function ProgressPhotoCameraContainer({
         ).dispose?.();
       }
     },
-    [detector, receiveDetection],
+    [
+      cameraFrameCount,
+      cameraFrameWindowStartedAt,
+      detector,
+      receiveDetection,
+      receiveFramePerformance,
+    ],
   );
 
   const frameOutput = useFrameOutput({
@@ -341,7 +413,16 @@ export function ProgressPhotoCameraContainer({
     }
 
     automaticCaptureInFlightRef.current = true;
+    automaticCaptureStartedAtRef.current = performance.now();
     void capturePhoto("automatic").finally(() => {
+      const startedAt = automaticCaptureStartedAtRef.current;
+      if (startedAt !== null) {
+        progressPhotoPerformance.record(
+          "automatic_capture_latency_ms",
+          performance.now() - startedAt,
+        );
+      }
+      automaticCaptureStartedAtRef.current = null;
       automaticCaptureInFlightRef.current = false;
     });
   }, [

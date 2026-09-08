@@ -1,4 +1,8 @@
-import type { ProgressPhotoAlignment, ProgressPhotoPoseData } from "../types";
+import type {
+  ProgressPhotoAlignment,
+  ProgressPhotoAlignmentStatus,
+  ProgressPhotoPoseData,
+} from "../types";
 
 export type StoredProgressPhoto = {
   id: string;
@@ -8,4 +12,6 @@ export type StoredProgressPhoto = {
   referencePhotoId?: string | null;
   poseData?: ProgressPhotoPoseData | null;
   alignment?: ProgressPhotoAlignment | null;
+  automaticAlignment?: ProgressPhotoAlignment | null;
+  alignmentStatus?: ProgressPhotoAlignmentStatus;
 };

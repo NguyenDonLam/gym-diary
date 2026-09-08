@@ -2,6 +2,7 @@ import type {
   NormalizedPoseLandmark,
   ProgressPhoto,
   ProgressPhotoAlignment,
+  ProgressPhotoAlignmentStatus,
   ProgressPhotoPoseData,
 } from "../types";
 import type { StoredProgressPhoto } from "./types";
@@ -65,6 +66,12 @@ function nullableString(value: unknown) {
   return typeof value === "string" ? value : null;
 }
 
+function isProgressPhotoAlignmentStatus(
+  value: unknown,
+): value is ProgressPhotoAlignmentStatus {
+  return value === "automatic" || value === "manual" || value === "unavailable";
+}
+
 function isStoredProgressPhoto(value: unknown): value is StoredProgressPhoto {
   if (!value || typeof value !== "object") return false;
 
@@ -84,6 +91,27 @@ export const progressPhotoPersistenceMapper = {
     const capturedAt = new Date(value.capturedAt);
     if (Number.isNaN(capturedAt.getTime())) return null;
 
+    const alignment = isProgressPhotoAlignment(value.alignment)
+      ? value.alignment
+      : null;
+    const storedAlignmentStatus = isProgressPhotoAlignmentStatus(
+      value.alignmentStatus,
+    )
+      ? value.alignmentStatus
+      : null;
+    const alignmentStatus: ProgressPhotoAlignmentStatus = alignment
+      ? storedAlignmentStatus === "manual"
+        ? "manual"
+        : "automatic"
+      : "unavailable";
+    const automaticAlignment = isProgressPhotoAlignment(
+      value.automaticAlignment,
+    )
+      ? value.automaticAlignment
+      : alignmentStatus === "automatic"
+        ? alignment
+        : null;
+
     return {
       id: value.id,
       uri: value.uri,
@@ -91,9 +119,9 @@ export const progressPhotoPersistenceMapper = {
       poseGroupId: nullableString(value.poseGroupId),
       referencePhotoId: nullableString(value.referencePhotoId),
       poseData: isProgressPhotoPoseData(value.poseData) ? value.poseData : null,
-      alignment: isProgressPhotoAlignment(value.alignment)
-        ? value.alignment
-        : null,
+      alignment,
+      automaticAlignment,
+      alignmentStatus,
     };
   },
 
@@ -106,6 +134,8 @@ export const progressPhotoPersistenceMapper = {
       referencePhotoId: photo.referencePhotoId,
       poseData: photo.poseData,
       alignment: photo.alignment,
+      automaticAlignment: photo.automaticAlignment,
+      alignmentStatus: photo.alignmentStatus,
     };
   },
 };

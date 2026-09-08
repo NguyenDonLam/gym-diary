@@ -45,6 +45,8 @@ test("loads legacy photos with null pose and alignment metadata", () => {
     referencePhotoId: null,
     poseData: null,
     alignment: null,
+    automaticAlignment: null,
+    alignmentStatus: "unavailable",
   });
 });
 
@@ -57,11 +59,39 @@ test("round trips valid pose and alignment metadata", () => {
     referencePhotoId: "reference-photo",
     poseData,
     alignment,
+    automaticAlignment: alignment,
+    alignmentStatus: "automatic",
   };
 
   const stored = progressPhotoPersistenceMapper.toStored(photo);
 
   assert.deepEqual(progressPhotoPersistenceMapper.fromStored(stored), photo);
+});
+
+test("preserves a manual alignment and its automatic reset baseline", () => {
+  const manualAlignment = {
+    ...alignment,
+    translateX: 0.08,
+    scale: 1.1,
+  };
+  const photo: ProgressPhoto = {
+    id: "manual-photo",
+    uri: "file:///manual.jpg",
+    capturedAt: new Date("2026-07-29T09:30:00.000Z"),
+    poseGroupId: "pose-group",
+    referencePhotoId: "reference-photo",
+    poseData,
+    alignment: manualAlignment,
+    automaticAlignment: alignment,
+    alignmentStatus: "manual",
+  };
+
+  assert.deepEqual(
+    progressPhotoPersistenceMapper.fromStored(
+      progressPhotoPersistenceMapper.toStored(photo),
+    ),
+    photo,
+  );
 });
 
 test("keeps a valid photo while discarding malformed optional metadata", () => {

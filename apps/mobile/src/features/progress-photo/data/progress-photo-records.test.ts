@@ -42,6 +42,8 @@ function createPhoto(): ProgressPhoto {
     referencePhotoId: null,
     poseData: null,
     alignment: existingAlignment,
+    automaticAlignment: existingAlignment,
+    alignmentStatus: "automatic",
   };
 }
 
@@ -74,9 +76,12 @@ test("updates alignment without changing pose metadata", () => {
   const result = updateProgressPhotoAlignment([original], {
     id: original.id,
     alignment: updatedAlignment,
+    alignmentStatus: "manual",
   });
 
   assert.deepEqual(result.updatedPhoto?.alignment, updatedAlignment);
+  assert.deepEqual(result.updatedPhoto?.automaticAlignment, existingAlignment);
+  assert.equal(result.updatedPhoto?.alignmentStatus, "manual");
   assert.equal(result.updatedPhoto?.poseGroupId, "pose-group");
   assert.deepEqual(result.updatedPhoto?.poseData, poseData);
 });
@@ -86,8 +91,22 @@ test("does not modify records when the photo is missing", () => {
   const result = updateProgressPhotoAlignment([original], {
     id: "missing-photo",
     alignment: null,
+    alignmentStatus: "unavailable",
   });
 
   assert.equal(result.updatedPhoto, null);
   assert.equal(result.photos[0], original);
+});
+
+test("removes active alignment without discarding the automatic baseline", () => {
+  const original = createPhoto();
+  const result = updateProgressPhotoAlignment([original], {
+    id: original.id,
+    alignment: null,
+    alignmentStatus: "unavailable",
+  });
+
+  assert.equal(result.updatedPhoto?.alignment, null);
+  assert.equal(result.updatedPhoto?.alignmentStatus, "unavailable");
+  assert.deepEqual(result.updatedPhoto?.automaticAlignment, existingAlignment);
 });

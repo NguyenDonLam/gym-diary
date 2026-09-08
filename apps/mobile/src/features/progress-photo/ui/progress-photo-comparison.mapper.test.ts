@@ -8,9 +8,13 @@ import type {
 } from "../types";
 import { progressPhotoComparisonConfig as config } from "./progress-photo-comparison.config";
 import {
+  formatProgressPhotoElapsedTime,
+  getProgressPhotoPairCandidates,
+  getProgressPhotoPairNavigation,
   getProgressPhotoViewportSize,
   getProgressPhotoViewportTransform,
   progressPhotoComparisonMapper,
+  selectDefaultProgressPhotoPairId,
 } from "./progress-photo-comparison.mapper";
 
 function assertClose(actual: number, expected: number, tolerance = 1e-9) {
@@ -41,6 +45,8 @@ function createPhoto(
     referencePhotoId: null,
     poseData,
     alignment: null,
+    automaticAlignment: null,
+    alignmentStatus: "unavailable",
     ...overrides,
   };
 }
@@ -138,6 +144,27 @@ test("identifies low-confidence alignment without disabling it", () => {
   assert.notEqual(viewModel.renderTransform, null);
 });
 
+test("identifies a manually adjusted alignment", () => {
+  const reference = createPhoto("reference");
+  const current = createPhoto("current", {
+    referencePhotoId: reference.id,
+    alignment: createAlignment(reference.id),
+    automaticAlignment: createAlignment(reference.id, {
+      translateX: 0.01,
+    }),
+    alignmentStatus: "manual",
+  });
+
+  const [, viewModel] = progressPhotoComparisonMapper.fromPhotos([
+    reference,
+    current,
+  ]);
+
+  assert.equal(viewModel.alignmentState, "manual");
+  assert.equal(viewModel.alignmentStatusLabel, "Manually aligned");
+  assert.notEqual(viewModel.automaticRenderTransform, null);
+});
+
 test("falls back when the stored reference photo is missing", () => {
   const current = createPhoto("current", {
     referencePhotoId: "deleted-reference",
@@ -192,4 +219,105 @@ test("converts an origin-based transform to a center-based viewport transform", 
 
   assertClose(translated.translateX, 30);
   assertClose(translated.translateY, -20);
+});
+
+test("offers comparison candidates only from the selected pose group", () => {
+  const selected = createPhoto("selected", {
+    capturedAt: new Date("2026-07-20T10:00:00.000Z"),
+  });
+  const sameGroup = createPhoto("same-group", {
+    capturedAt: new Date("2026-07-10T10:00:00.000Z"),
+  });
+  const otherGroup = createPhoto("other-group", {
+    poseGroupId: "other",
+  });
+  const ungrouped = createPhoto("ungrouped", {
+    poseGroupId: null,
+    poseData: null,
+  });
+  const viewModels = progressPhotoComparisonMapper.fromPhotos([
+    selected,
+    sameGroup,
+    otherGroup,
+    ungrouped,
+  ]);
+
+  assert.deepEqual(
+    getProgressPhotoPairCandidates(viewModels, selected.id).map(
+      (photo) => photo.id,
+    ),
+    [sameGroup.id],
+  );
+  assert.deepEqual(
+    getProgressPhotoPairCandidates(viewModels, ungrouped.id),
+    [],
+  );
+});
+
+test("defaults to the closest earlier photo in the pose group", () => {
+  const selected = createPhoto("selected", {
+    capturedAt: new Date("2026-07-20T10:00:00.000Z"),
+  });
+  const oldest = createPhoto("oldest", {
+    capturedAt: new Date("2026-07-01T10:00:00.000Z"),
+  });
+  const closestEarlier = createPhoto("closest-earlier", {
+    capturedAt: new Date("2026-07-18T10:00:00.000Z"),
+  });
+  const newer = createPhoto("newer", {
+    capturedAt: new Date("2026-07-25T10:00:00.000Z"),
+  });
+  const viewModels = progressPhotoComparisonMapper.fromPhotos([
+    selected,
+    oldest,
+    closestEarlier,
+    newer,
+  ]);
+
+  assert.equal(
+    selectDefaultProgressPhotoPairId(viewModels, selected.id),
+    closestEarlier.id,
+  );
+});
+
+test("navigates comparison photos chronologically within the pose group", () => {
+  const selected = createPhoto("selected", {
+    capturedAt: new Date("2026-07-20T10:00:00.000Z"),
+  });
+  const first = createPhoto("first", {
+    capturedAt: new Date("2026-07-01T10:00:00.000Z"),
+  });
+  const second = createPhoto("second", {
+    capturedAt: new Date("2026-07-10T10:00:00.000Z"),
+  });
+  const third = createPhoto("third", {
+    capturedAt: new Date("2026-07-15T10:00:00.000Z"),
+  });
+  const viewModels = progressPhotoComparisonMapper.fromPhotos([
+    selected,
+    third,
+    first,
+    second,
+  ]);
+
+  assert.deepEqual(
+    getProgressPhotoPairNavigation(viewModels, selected.id, second.id),
+    {
+      previousPhotoId: first.id,
+      nextPhotoId: third.id,
+    },
+  );
+});
+
+test("formats the elapsed time between both selected photos", () => {
+  const start = new Date("2026-07-01T10:00:00.000Z").getTime();
+
+  assert.equal(
+    formatProgressPhotoElapsedTime(start, start + 90 * 60_000),
+    "2 hours apart",
+  );
+  assert.equal(
+    formatProgressPhotoElapsedTime(start, start + 14 * 86_400_000),
+    "14 days apart",
+  );
 });

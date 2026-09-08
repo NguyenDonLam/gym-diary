@@ -24,6 +24,9 @@ export type ProgressPhotoAlignment = {
   version: number;
 };
 
+export type ProgressPhotoAlignmentStatus =
+  "automatic" | "manual" | "unavailable";
+
 export type ProgressPhoto = {
   id: string;
   uri: string;
@@ -32,6 +35,8 @@ export type ProgressPhoto = {
   referencePhotoId: string | null;
   poseData: ProgressPhotoPoseData | null;
   alignment: ProgressPhotoAlignment | null;
+  automaticAlignment: ProgressPhotoAlignment | null;
+  alignmentStatus: ProgressPhotoAlignmentStatus;
 };
 
 export type CreateProgressPhotoInput = {
@@ -42,6 +47,8 @@ export type CreateProgressPhotoInput = {
   referencePhotoId?: string | null;
   poseData?: ProgressPhotoPoseData | null;
   alignment?: ProgressPhotoAlignment | null;
+  automaticAlignment?: ProgressPhotoAlignment | null;
+  alignmentStatus?: ProgressPhotoAlignmentStatus;
 };
 
 export type UpdateProgressPhotoPoseMetadataInput = {
@@ -54,4 +61,5 @@ export type UpdateProgressPhotoPoseMetadataInput = {
 export type UpdateProgressPhotoAlignmentInput = {
   id: string;
   alignment: ProgressPhotoAlignment | null;
+  alignmentStatus: ProgressPhotoAlignmentStatus;
 };

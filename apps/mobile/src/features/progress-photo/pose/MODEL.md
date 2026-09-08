@@ -64,3 +64,126 @@ comparison. The full original remains available in a separate untransformed,
 uncropped view. Timeline thumbnails use the image cache so nearby photos are
 ready when selected; transforms are read from metadata rather than recalculated
 during rendering.
+
+Immediate comparison is limited to two photos in the same non-null pose group.
+The main timeline selects the default photo, while a second selector and
+chronological previous/next controls choose the comparison photo. Both aligned
+images stay mounted in the same viewport, crop, and reference coordinate system;
+switching changes visibility without an image-position transition. Pressing and
+holding shows the comparison until release, and tapping pins or unpins the same
+switch for accessibility. The viewer displays both capture dates and their
+elapsed time, and preloads the active comparison and its neighbouring dates.
+
+## Physical iOS verification
+
+Use an Expo development build with at least three photos in one pose group and
+one photo in a different group:
+
+1. Open the newest grouped photo and confirm the closest earlier photo is chosen
+   for comparison.
+2. Press and hold the comparison viewport. Confirm the second photo appears
+   immediately and the default returns immediately on release.
+3. Tap the viewport twice and confirm it pins the comparison, then returns to
+   the default.
+4. Use Previous and Next and confirm dates move chronologically without offering
+   the photo from the other pose group.
+5. Confirm both capture dates and the elapsed time are shown, and rapid switching
+   does not flash, animate, stretch, or change the viewport crop.
+6. Open Full original while each photo is displayed and confirm the uncropped,
+   unaligned source opens.
+7. Rotate the device where the app supports rotation and confirm the viewport
+   retains its 3:4 aspect ratio.
+
+The repository does not currently include a React Native component-rendering
+test harness. Pure mapper tests cover pair eligibility, default selection,
+chronological navigation, elapsed time, viewport sizing, and transform mapping.
+
+## Manual alignment and metadata
+
+Later photos with an available reference expose an alignment editor. The
+reference is rendered as an adjustable-opacity overlay while the current photo
+supports simultaneous drag, pinch, and rotation gestures. Translation, uniform
+scale, and rotation use the same bounds as automatic alignment. The editor owns
+only a temporary draft; persistence remains in `ProgressPhotosContainer`.
+
+Each record stores an `alignmentStatus` of `automatic`, `manual`, or
+`unavailable`. `automaticAlignment` preserves the original calculated transform
+when a manual transform becomes active, making Reset to automatic lossless.
+Reset to no alignment clears the active transform without deleting that
+automatic baseline. Legacy records infer `automatic` when a valid transform
+exists and `unavailable` otherwise.
+
+## Failure handling
+
+- Camera and photo-library permission failures retain the existing manual flow
+  and present English recovery actions.
+- Model-load, missing-asset, unsupported-platform, and inference failures disable
+  pose matching without disabling manual capture.
+- An iOS memory warning disposes the pose detector, disables automatic capture,
+  and leaves manual camera capture running.
+- Missing image files render an explicit unavailable state. The alignment editor
+  disables saving if its current or reference image cannot load.
+- Missing reference records and corrupt optional metadata fall back to original
+  framing.
+- The alignment editor contains no delete action, so a photo cannot be deleted
+  accidentally while editing.
+
+There is currently no progress-photo deletion workflow or repository delete API.
+Consequently no Stage 11 UI path removes files. A future delete use case must
+remove only the managed file under the app's `progress-photos` document
+directory, remove its metadata record, and invalidate or mark unavailable every
+alignment that references it.
+
+## Privacy and offline boundary
+
+Photos are copied into the app-private document directory. Metadata and
+normalised landmarks are stored in AsyncStorage. The feature has no HTTP client,
+upload, analytics, notification, social-sharing, or runtime model-download path,
+so capture, matching, alignment, editing, and comparison operate in airplane
+mode. The bundled MoveNet model is the only inference asset.
+
+Development diagnostics accept only fixed event names. They never include image
+URIs, identifiers, landmarks, alignment metadata, caught error objects, or photo
+contents, and are compiled out of production behaviour through `__DEV__`.
+Progress-photo data is not placed in notification previews or analytics/error
+payloads by this feature.
+
+Android application backup is disabled in Expo configuration. On iOS the files
+remain inside the application sandbox, but the current TypeScript-only
+implementation cannot opt individual document files out of an encrypted device
+backup without an additional supported native capability. The app performs no
+independent cloud backup or sync.
+
+## Performance measurements
+
+A bounded in-memory development collector records:
+
+- Camera frame rate, sampled across the worklet bridge at most once per second.
+- Pose inference rate and average inference duration.
+- Automatic-capture request-to-completion latency.
+- Comparison visibility-switch latency.
+
+The collector retains at most 120 finite samples per metric, contains no photo
+data, performs no network transmission, and is disabled in production. Raw pose
+diagnostics remain disabled by `progressPoseConfig.diagnosticsEnabled`.
+Automatic-capture thresholds and hold/cooldown timings remain centralised in
+`progress-pose-auto-capture.config.ts`.
+
+## Architecture and remaining platform boundary
+
+The progress-photo screen and alignment editor are presentational. The
+container owns queries, mutations, pair selection, preloading, and persistence.
+Pure mappers prepare reference, alignment, navigation, date, and viewport data.
+The repository owns AsyncStorage and filesystem boundaries, and pose/alignment
+algorithms remain deterministic TypeScript modules.
+
+iOS development builds provide live pose inference and automatic capture.
+Android continues to compile and uses the shared storage, comparison, and manual
+alignment UI, but its platform capability intentionally reports automatic pose
+matching as unavailable. Future Android inference should implement the existing
+`ProgressPoseDetector` and capability boundaries without changing screens,
+storage, comparison, or alignment contracts.
+
+Physical-device checks remain required for multi-touch gesture feel,
+memory-pressure behaviour, camera frame rate, switch latency, and a full
+airplane-mode capture-to-comparison pass.

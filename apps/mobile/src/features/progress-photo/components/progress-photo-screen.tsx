@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -9,7 +9,16 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Image } from "expo-image";
-import { Camera, Images, LockKeyhole, Maximize2, X } from "lucide-react-native";
+import {
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  Images,
+  LockKeyhole,
+  Maximize2,
+  SlidersHorizontal,
+  X,
+} from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
 import {
@@ -17,82 +26,169 @@ import {
   getProgressPhotoViewportTransform,
   type ProgressPhotoComparisonViewModel,
 } from "../ui/progress-photo-comparison.mapper";
+import { progressPhotoPerformance } from "../progress-photo-performance";
 
 type ProgressPhotoScreenProps = {
   photos: ProgressPhotoComparisonViewModel[];
+  selectedPhoto: ProgressPhotoComparisonViewModel | null;
+  comparisonPhotos: ProgressPhotoComparisonViewModel[];
+  comparisonPhoto: ProgressPhotoComparisonViewModel | null;
+  elapsedTimeLabel: string | null;
+  canEditAlignment: boolean;
+  canSelectPreviousComparison: boolean;
+  canSelectNextComparison: boolean;
   isLoading: boolean;
   isCapturing: boolean;
   errorMessage: string | null;
   poseCapabilityMessage: string | null;
   captureStatusMessage: string | null;
+  onEditAlignment: () => void;
+  onSelectPhoto: (photoId: string) => void;
+  onSelectComparisonPhoto: (photoId: string) => void;
+  onSelectPreviousComparison: () => void;
+  onSelectNextComparison: () => void;
   onTakePhoto: () => void;
 };
 
+type ViewportImageProps = {
+  photo: ProgressPhotoComparisonViewModel;
+  viewportWidth: number;
+  viewportHeight: number;
+  isVisible: boolean;
+  onError: () => void;
+};
+
+function ProgressPhotoViewportImage({
+  photo,
+  viewportWidth,
+  viewportHeight,
+  isVisible,
+  onError,
+}: ViewportImageProps) {
+  const viewportTransform = photo.renderTransform
+    ? getProgressPhotoViewportTransform(
+        photo.renderTransform,
+        viewportWidth,
+        viewportHeight,
+      )
+    : null;
+
+  return (
+    <Image
+      source={{ uri: photo.uri }}
+      contentFit="cover"
+      cachePolicy="memory-disk"
+      recyclingKey={photo.id}
+      onError={onError}
+      style={{
+        position: "absolute",
+        width: "100%",
+        height: "100%",
+        opacity: isVisible ? 1 : 0,
+        transform: viewportTransform
+          ? [
+              // React Native composes this array right-to-left.
+              { translateX: viewportTransform.translateX },
+              { translateY: viewportTransform.translateY },
+              { scale: viewportTransform.scale },
+              { rotate: viewportTransform.rotation },
+            ]
+          : undefined,
+      }}
+    />
+  );
+}
+
 export function ProgressPhotoScreen({
   photos,
+  selectedPhoto,
+  comparisonPhotos,
+  comparisonPhoto,
+  elapsedTimeLabel,
+  canEditAlignment,
+  canSelectPreviousComparison,
+  canSelectNextComparison,
   isLoading,
   isCapturing,
   errorMessage,
   poseCapabilityMessage,
   captureStatusMessage,
+  onEditAlignment,
+  onSelectPhoto,
+  onSelectComparisonPhoto,
+  onSelectPreviousComparison,
+  onSelectNextComparison,
   onTakePhoto,
 }: ProgressPhotoScreenProps) {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const { width } = useWindowDimensions();
-  const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
-  const [isFullOriginalOpen, setIsFullOriginalOpen] = useState(false);
-  const latestPhotoIdRef = useRef<string | null>(null);
+  const [isHoldingComparison, setIsHoldingComparison] = useState(false);
+  const [isComparisonPinned, setIsComparisonPinned] = useState(false);
+  const [fullOriginalPhoto, setFullOriginalPhoto] =
+    useState<ProgressPhotoComparisonViewModel | null>(null);
+  const [unavailablePhotoIds, setUnavailablePhotoIds] = useState<
+    ReadonlySet<string>
+  >(new Set());
+  const didLongPressRef = useRef(false);
+  const comparisonSwitchStartedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const latestPhotoId = photos[0]?.id ?? null;
+    setIsHoldingComparison(false);
+    setIsComparisonPinned(false);
+    setFullOriginalPhoto(null);
+  }, [comparisonPhoto?.id, selectedPhoto?.id]);
 
-    if (latestPhotoId !== latestPhotoIdRef.current) {
-      latestPhotoIdRef.current = latestPhotoId;
-      setSelectedPhotoId(latestPhotoId);
-    }
-  }, [photos]);
-
-  const selectedPhoto = useMemo(
-    () =>
-      photos.find((photo) => photo.id === selectedPhotoId) ?? photos[0] ?? null,
-    [photos, selectedPhotoId],
-  );
-
-  useEffect(() => {
-    setIsFullOriginalOpen(false);
-  }, [selectedPhoto?.id]);
+  const isDisplayingComparison =
+    comparisonPhoto !== null && (isHoldingComparison || isComparisonPinned);
+  const displayedPhoto =
+    isDisplayingComparison && comparisonPhoto ? comparisonPhoto : selectedPhoto;
+  const alignmentNeedsAttention =
+    displayedPhoto?.alignmentState === "low_confidence" ||
+    displayedPhoto?.alignmentState === "missing_reference";
+  const displayedPhotoIsUnavailable = displayedPhoto
+    ? unavailablePhotoIds.has(displayedPhoto.id)
+    : false;
 
   useEffect(() => {
-    if (!selectedPhoto) return;
+    const startedAt = comparisonSwitchStartedAtRef.current;
+    if (startedAt === null) return;
 
-    const selectedIndex = photos.findIndex(
-      (photo) => photo.id === selectedPhoto.id,
-    );
-    const neighbouringUris = [
-      photos[selectedIndex - 1]?.uri,
-      photos[selectedIndex + 1]?.uri,
-    ].filter((uri): uri is string => Boolean(uri));
+    const frame = requestAnimationFrame(() => {
+      progressPhotoPerformance.record(
+        "comparison_switch_latency_ms",
+        performance.now() - startedAt,
+      );
+      comparisonSwitchStartedAtRef.current = null;
+    });
 
-    if (neighbouringUris.length > 0) {
-      void Image.prefetch(neighbouringUris, {
-        cachePolicy: "memory-disk",
-      }).catch(() => undefined);
-    }
-  }, [photos, selectedPhoto]);
+    return () => cancelAnimationFrame(frame);
+  }, [isDisplayingComparison]);
+
+  const showComparisonWhilePressed = () => {
+    if (!comparisonPhoto) return;
+    didLongPressRef.current = false;
+    comparisonSwitchStartedAtRef.current = performance.now();
+    setIsHoldingComparison(true);
+  };
+
+  const releaseComparison = () => {
+    comparisonSwitchStartedAtRef.current = performance.now();
+    setIsHoldingComparison(false);
+  };
+
+  const toggleComparison = () => {
+    if (!comparisonPhoto || didLongPressRef.current) return;
+    comparisonSwitchStartedAtRef.current = performance.now();
+    setIsComparisonPinned((isPinned) => !isPinned);
+  };
+
+  const markPhotoUnavailable = (photoId: string) => {
+    setUnavailablePhotoIds((current) => new Set(current).add(photoId));
+  };
 
   const { width: previewWidth, height: previewHeight } =
     getProgressPhotoViewportSize(width - 32);
-  const viewportTransform = selectedPhoto?.renderTransform
-    ? getProgressPhotoViewportTransform(
-        selectedPhoto.renderTransform,
-        previewWidth,
-        previewHeight,
-      )
-    : null;
-  const alignmentNeedsAttention =
-    selectedPhoto?.alignmentState === "low_confidence" ||
-    selectedPhoto?.alignmentState === "missing_reference";
   const iconColor = isDark ? "#F8F8F2" : "#111827";
   const mutedIconColor = isDark ? "#6272A4" : "#64748B";
   const actionIconColor = isDark ? "#282A36" : "#FFFFFF";
@@ -127,28 +223,60 @@ export function ProgressPhotoScreen({
                   height: previewHeight,
                 }}
               >
-                <Image
-                  source={{ uri: selectedPhoto.uri }}
-                  contentFit="cover"
-                  cachePolicy="memory-disk"
-                  transition={160}
-                  style={{
-                    position: "absolute",
-                    width: "100%",
-                    height: "100%",
-                    transform: viewportTransform
-                      ? [
-                          // React Native composes this array right-to-left.
-                          { translateX: viewportTransform.translateX },
-                          { translateY: viewportTransform.translateY },
-                          { scale: viewportTransform.scale },
-                          { rotate: viewportTransform.rotation },
-                        ]
-                      : undefined,
-                  }}
+                <ProgressPhotoViewportImage
+                  photo={selectedPhoto}
+                  viewportWidth={previewWidth}
+                  viewportHeight={previewHeight}
+                  isVisible={!isDisplayingComparison}
+                  onError={() => markPhotoUnavailable(selectedPhoto.id)}
                 />
 
+                {comparisonPhoto ? (
+                  <ProgressPhotoViewportImage
+                    photo={comparisonPhoto}
+                    viewportWidth={previewWidth}
+                    viewportHeight={previewHeight}
+                    isVisible={isDisplayingComparison}
+                    onError={() => markPhotoUnavailable(comparisonPhoto.id)}
+                  />
+                ) : null}
+
+                {displayedPhotoIsUnavailable ? (
+                  <View
+                    pointerEvents="none"
+                    className="absolute inset-0 items-center justify-center bg-neutral-900 px-6"
+                  >
+                    <Images size={28} color="#FFFFFF" strokeWidth={1.8} />
+                    <Text className="mt-3 text-center text-sm font-semibold text-white">
+                      This photo file is unavailable.
+                    </Text>
+                  </View>
+                ) : null}
+
+                {comparisonPhoto ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Switch between default and comparison photo"
+                    accessibilityHint="Press and hold to show the comparison photo, or tap to keep switching between both photos."
+                    delayLongPress={350}
+                    onLongPress={() => {
+                      didLongPressRef.current = true;
+                    }}
+                    onPress={toggleComparison}
+                    onPressIn={showComparisonWhilePressed}
+                    onPressOut={releaseComparison}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      bottom: 0,
+                      left: 0,
+                    }}
+                  />
+                ) : null}
+
                 <View
+                  pointerEvents="none"
                   className={[
                     "absolute left-3 top-3 rounded-full px-3 py-1.5",
                     alignmentNeedsAttention ? "bg-amber-500/90" : "bg-black/55",
@@ -158,33 +286,211 @@ export function ProgressPhotoScreen({
                     accessibilityLiveRegion="polite"
                     className="text-xs font-semibold text-white"
                   >
-                    {selectedPhoto.alignmentStatusLabel}
+                    {isDisplayingComparison ? "Comparison" : "Default"}
+                    {" · "}
+                    {displayedPhoto?.alignmentStatusLabel}
                   </Text>
                 </View>
 
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Open full original photo"
-                  onPress={() => setIsFullOriginalOpen(true)}
+                  onPress={() => {
+                    if (displayedPhoto) {
+                      setFullOriginalPhoto(displayedPhoto);
+                    }
+                  }}
                   className="absolute right-3 top-3 h-10 w-10 items-center justify-center rounded-full bg-black/55"
                 >
                   <Maximize2 size={18} color="#FFFFFF" strokeWidth={2.2} />
                 </Pressable>
 
-                <View className="absolute bottom-0 left-0 right-0 bg-black/45 px-4 py-3">
+                <View
+                  pointerEvents="none"
+                  className="absolute bottom-0 left-0 right-0 bg-black/45 px-4 py-3"
+                >
                   <Text className="text-base font-semibold text-white">
-                    {selectedPhoto.dateLabel}
+                    {displayedPhoto?.dateLabel}
                   </Text>
                   <Text className="mt-0.5 text-xs text-white/75">
-                    {selectedPhoto.timeLabel}
+                    {displayedPhoto?.timeLabel}
                   </Text>
-                  {selectedPhoto.alignmentDetailLabel ? (
+                  {displayedPhoto?.alignmentDetailLabel ? (
                     <Text className="mt-1 text-xs text-white/75">
-                      {selectedPhoto.alignmentDetailLabel}
+                      {displayedPhoto.alignmentDetailLabel}
                     </Text>
                   ) : null}
                 </View>
               </View>
+
+              {canEditAlignment ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Adjust photo alignment"
+                  onPress={onEditAlignment}
+                  className="mt-3 flex-row items-center justify-center rounded-xl bg-neutral-100 px-4 py-3 dark:bg-[#343746]"
+                >
+                  <SlidersHorizontal
+                    size={17}
+                    color={iconColor}
+                    strokeWidth={2.2}
+                  />
+                  <Text className="ml-2 text-xs font-semibold text-zinc-900 dark:text-[#F8F8F2]">
+                    Adjust alignment
+                  </Text>
+                </Pressable>
+              ) : null}
+
+              {comparisonPhoto ? (
+                <View className="mt-3 rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
+                  <View className="flex-row items-start justify-between">
+                    <View className="mr-4 flex-1">
+                      <Text className="text-sm font-semibold text-zinc-900 dark:text-[#F8F8F2]">
+                        Immediate comparison
+                      </Text>
+                      <Text className="mt-1 text-xs leading-4 text-zinc-500 dark:text-[#A5A8C2]">
+                        Hold the photo to compare. Tap it to keep switching.
+                      </Text>
+                    </View>
+                    <Text className="text-xs font-semibold text-zinc-600 dark:text-[#BD93F9]">
+                      {elapsedTimeLabel}
+                    </Text>
+                  </View>
+
+                  <View className="mt-3 flex-row gap-2">
+                    <View className="flex-1 rounded-xl bg-white px-3 py-2 dark:bg-[#2B2D3A]">
+                      <Text className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-[#6272A4]">
+                        Default
+                      </Text>
+                      <Text className="mt-1 text-xs font-semibold text-zinc-900 dark:text-[#F8F8F2]">
+                        {selectedPhoto.dateLabel}
+                      </Text>
+                      <Text className="mt-0.5 text-[11px] text-zinc-500 dark:text-[#A5A8C2]">
+                        {selectedPhoto.timeLabel}
+                      </Text>
+                    </View>
+                    <View className="flex-1 rounded-xl bg-white px-3 py-2 dark:bg-[#2B2D3A]">
+                      <Text className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-[#6272A4]">
+                        Comparison
+                      </Text>
+                      <Text className="mt-1 text-xs font-semibold text-zinc-900 dark:text-[#F8F8F2]">
+                        {comparisonPhoto.dateLabel}
+                      </Text>
+                      <Text className="mt-0.5 text-[11px] text-zinc-500 dark:text-[#A5A8C2]">
+                        {comparisonPhoto.timeLabel}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View className="mt-3 flex-row gap-2">
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Previous comparison photo"
+                      disabled={!canSelectPreviousComparison}
+                      onPress={onSelectPreviousComparison}
+                      className={[
+                        "flex-1 flex-row items-center justify-center rounded-xl px-3 py-2.5",
+                        canSelectPreviousComparison
+                          ? "bg-white dark:bg-[#2B2D3A]"
+                          : "bg-white/50 dark:bg-[#2B2D3A]/50",
+                      ].join(" ")}
+                    >
+                      <ChevronLeft
+                        size={17}
+                        color={
+                          canSelectPreviousComparison
+                            ? iconColor
+                            : mutedIconColor
+                        }
+                        strokeWidth={2.2}
+                      />
+                      <Text
+                        className={[
+                          "ml-1 text-xs font-semibold",
+                          canSelectPreviousComparison
+                            ? "text-zinc-900 dark:text-[#F8F8F2]"
+                            : "text-zinc-400 dark:text-[#6272A4]",
+                        ].join(" ")}
+                      >
+                        Previous
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Next comparison photo"
+                      disabled={!canSelectNextComparison}
+                      onPress={onSelectNextComparison}
+                      className={[
+                        "flex-1 flex-row items-center justify-center rounded-xl px-3 py-2.5",
+                        canSelectNextComparison
+                          ? "bg-white dark:bg-[#2B2D3A]"
+                          : "bg-white/50 dark:bg-[#2B2D3A]/50",
+                      ].join(" ")}
+                    >
+                      <Text
+                        className={[
+                          "mr-1 text-xs font-semibold",
+                          canSelectNextComparison
+                            ? "text-zinc-900 dark:text-[#F8F8F2]"
+                            : "text-zinc-400 dark:text-[#6272A4]",
+                        ].join(" ")}
+                      >
+                        Next
+                      </Text>
+                      <ChevronRight
+                        size={17}
+                        color={
+                          canSelectNextComparison ? iconColor : mutedIconColor
+                        }
+                        strokeWidth={2.2}
+                      />
+                    </Pressable>
+                  </View>
+
+                  {comparisonPhotos.length > 1 ? (
+                    <>
+                      <Text className="mt-4 text-xs font-semibold text-zinc-700 dark:text-[#F8F8F2]">
+                        Compare with
+                      </Text>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{
+                          gap: 8,
+                          paddingTop: 8,
+                        }}
+                      >
+                        {comparisonPhotos.map((photo) => {
+                          const isSelected = photo.id === comparisonPhoto.id;
+
+                          return (
+                            <Pressable
+                              key={photo.id}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Compare with photo from ${photo.dateLabel}`}
+                              accessibilityState={{ selected: isSelected }}
+                              onPress={() => onSelectComparisonPhoto(photo.id)}
+                              className={[
+                                "overflow-hidden rounded-xl border-2",
+                                isSelected
+                                  ? "border-neutral-900 dark:border-[#BD93F9]"
+                                  : "border-transparent",
+                              ].join(" ")}
+                            >
+                              <Image
+                                source={{ uri: photo.uri }}
+                                contentFit="cover"
+                                cachePolicy="memory-disk"
+                                style={{ width: 58, height: 74 }}
+                              />
+                            </Pressable>
+                          );
+                        })}
+                      </ScrollView>
+                    </>
+                  ) : null}
+                </View>
+              ) : null}
 
               <View className="mt-4 flex-row items-center justify-between">
                 <View>
@@ -192,7 +498,7 @@ export function ProgressPhotoScreen({
                     Your timeline
                   </Text>
                   <Text className="mt-0.5 text-xs text-zinc-500 dark:text-[#6272A4]">
-                    Tap a photo to compare
+                    Tap a photo to make it the default
                   </Text>
                 </View>
 
@@ -215,7 +521,7 @@ export function ProgressPhotoScreen({
                       accessibilityRole="button"
                       accessibilityLabel={photo.accessibilityLabel}
                       accessibilityState={{ selected: isSelected }}
-                      onPress={() => setSelectedPhotoId(photo.id)}
+                      onPress={() => onSelectPhoto(photo.id)}
                       className={[
                         "overflow-hidden rounded-2xl border-2",
                         isSelected
@@ -305,16 +611,17 @@ export function ProgressPhotoScreen({
 
       <Modal
         animationType="fade"
-        onRequestClose={() => setIsFullOriginalOpen(false)}
+        onRequestClose={() => setFullOriginalPhoto(null)}
         statusBarTranslucent
-        visible={isFullOriginalOpen && selectedPhoto !== null}
+        visible={fullOriginalPhoto !== null}
       >
         <View className="flex-1 bg-black">
-          {selectedPhoto ? (
+          {fullOriginalPhoto ? (
             <Image
-              source={{ uri: selectedPhoto.uri }}
+              source={{ uri: fullOriginalPhoto.uri }}
               contentFit="contain"
               cachePolicy="memory-disk"
+              onError={() => markPhotoUnavailable(fullOriginalPhoto.id)}
               style={{ flex: 1 }}
             />
           ) : null}
@@ -331,7 +638,7 @@ export function ProgressPhotoScreen({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Close full original photo"
-              onPress={() => setIsFullOriginalOpen(false)}
+              onPress={() => setFullOriginalPhoto(null)}
               className="h-11 w-11 items-center justify-center rounded-full bg-white/15"
             >
               <X size={22} color="#FFFFFF" strokeWidth={2.2} />

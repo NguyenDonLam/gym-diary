@@ -55,6 +55,12 @@ export const progressPhotoRepository = {
 
   async create(input: CreateProgressPhotoInput): Promise<ProgressPhoto> {
     const uri = await copyToDocumentStorage(input.sourceUri, input.id);
+    const alignment = input.alignment ?? null;
+    const alignmentStatus = alignment
+      ? input.alignmentStatus === "manual"
+        ? "manual"
+        : "automatic"
+      : "unavailable";
     const photo: ProgressPhoto = {
       id: input.id,
       uri,
@@ -62,7 +68,11 @@ export const progressPhotoRepository = {
       poseGroupId: input.poseGroupId ?? null,
       referencePhotoId: input.referencePhotoId ?? null,
       poseData: input.poseData ?? null,
-      alignment: input.alignment ?? null,
+      alignment,
+      automaticAlignment:
+        input.automaticAlignment ??
+        (alignmentStatus === "automatic" ? alignment : null),
+      alignmentStatus,
     };
 
     const photos = await readAll();
