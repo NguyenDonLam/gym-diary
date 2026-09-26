@@ -14,6 +14,7 @@ import {
   toKey,
 } from "@/src/features/history/ui/date";
 import { CalendarMonth } from "@/src/features/history/ui/calendar-month";
+import { HistoryMonthNavigation } from "@/src/features/history/ui/history-month-navigation";
 import { LoadUnit, ProgramColor } from "@/db/enums";
 import { router } from "expo-router";
 import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
@@ -137,7 +138,7 @@ export default function History() {
   const { colorScheme } = useColorScheme();
   const schemeClass = colorScheme === "dark" ? "dark" : "";
   const insets = useSafeAreaInsets();
-  const tabBarHeight = 56 + insets.bottom;
+  const tabBarHeight = insets.bottom;
 
   const [monthDate, setMonthDate] = useState(() => firstDayOfMonth(new Date()));
   const [selectedDateKey, setSelectedDateKey] = useState<string>(() =>
@@ -172,11 +173,9 @@ export default function History() {
 
         if (cancelled) return;
         setSessions(rows);
-      } catch (e) {
+      } catch {
         if (cancelled) return;
-        setLoadError(
-          e instanceof Error ? e.message : "Failed to load sessions",
-        );
+        setLoadError("Unable to load workout history.");
         setSessions([]);
       } finally {
         if (cancelled) return;
@@ -267,6 +266,13 @@ export default function History() {
 
   return (
     <View className={`${schemeClass} flex-1 bg-white dark:bg-[#2B2D3A]`}>
+      <HistoryMonthNavigation
+        month={monthDate}
+        onChange={(date) => {
+          setMonthDate(date);
+          setSelectedDateKey(toKey(date));
+        }}
+      />
       <View className="border-b border-zinc-200 px-4 pb-3 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
         <Text className="text-xl font-bold text-zinc-900 dark:text-[#F8F8F2]">
           History
@@ -309,7 +315,7 @@ export default function History() {
           sessions={selectedSessions}
           bottomInset={tabBarHeight}
           onSessionPress={(s) => {
-            router.push(`/session-workout/${s.id}`);
+            router.replace(`/session-workout/${s.id}`);
           }}
         />
       </View>

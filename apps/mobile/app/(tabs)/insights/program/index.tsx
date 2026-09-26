@@ -2,7 +2,10 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
-import { COLOR_STRIP_MAP, WorkoutProgram } from "@/src/features/program-workout/domain/type";
+import {
+  COLOR_STRIP_MAP,
+  WorkoutProgram,
+} from "@/src/features/program-workout/domain/type";
 import { useWorkoutPrograms } from "@/src/features/program-workout/hooks/use-workout-programs";
 
 function ProgramRow(props: {
@@ -82,12 +85,12 @@ export default function InsightsProgramIndexScreen() {
     if (!query) return programs;
 
     return programs.filter((p) =>
-      getProgramName(p).toLowerCase().includes(query)
+      getProgramName(p).toLowerCase().includes(query),
     );
   }, [programs, q]);
 
   function openProgram(programId: string) {
-    router.push({
+    router.replace({
       pathname: "/(tabs)/insights/program/[programId]",
       params: { programId },
     });

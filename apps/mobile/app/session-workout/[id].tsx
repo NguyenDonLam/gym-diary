@@ -58,7 +58,7 @@ function toExerciseViews(
     isOpen: true,
     isProgressOpen: false,
     progressHistory: ex.exerciseId
-      ? progressHistoryByExerciseId[ex.exerciseId] ?? []
+      ? (progressHistoryByExerciseId[ex.exerciseId] ?? [])
       : [],
   }));
 }
@@ -232,8 +232,8 @@ export default function SessionWorkoutPage() {
             ...exercise,
             progressHistory:
               exercise.exerciseId != null
-                ? progressHistoryByExerciseId[exercise.exerciseId] ??
-                  exercise.progressHistory
+                ? (progressHistoryByExerciseId[exercise.exerciseId] ??
+                  exercise.progressHistory)
                 : exercise.progressHistory,
           })),
         );
@@ -247,7 +247,17 @@ export default function SessionWorkoutPage() {
   return (
     <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
       <View className="flex-row items-center justify-between border-b border-zinc-200 bg-white px-4 pb-2 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
-        <Pressable onPress={() => router.back()} hitSlop={10} className="mr-2">
+        <Pressable
+          onPress={() =>
+            router.replace(
+              sessionStatus === "in_progress"
+                ? "/(tabs)/workout"
+                : "/(tabs)/history",
+            )
+          }
+          hitSlop={10}
+          className="mr-2"
+        >
           <ChevronLeft width={20} height={20} color={iconColor} />
         </Pressable>
 

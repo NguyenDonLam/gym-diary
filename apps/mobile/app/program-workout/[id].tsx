@@ -31,7 +31,7 @@ export default function ProgramWorkoutEditScreen() {
   const isDark = colorScheme === "dark";
 
   const [formData, setFormData] = useState<WorkoutProgramFormData>(
-    WorkoutProgramFactory.createForm()
+    WorkoutProgramFactory.createForm(),
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,7 +100,7 @@ export default function ProgramWorkoutEditScreen() {
 
   const handleCancel = () => {
     if (isSaving) return;
-    router.back();
+    router.replace("/(tabs)/workout");
   };
 
   const handleSave = async () => {
@@ -114,7 +114,7 @@ export default function ProgramWorkoutEditScreen() {
 
       await workoutProgramRepository.save(template);
 
-      router.replace("/workout");
+      router.replace("/(tabs)/workout");
     } finally {
       setIsSaving(false);
     }

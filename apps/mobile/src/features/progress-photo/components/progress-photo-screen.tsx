@@ -144,6 +144,7 @@ export function ProgressPhotoScreen({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const { width } = useWindowDimensions();
+  const [contentWidth, setContentWidth] = useState(width);
   const [isHoldingComparison, setIsHoldingComparison] = useState(false);
   const [isComparisonPinned, setIsComparisonPinned] = useState(false);
   const [fullOriginalPhoto, setFullOriginalPhoto] =
@@ -209,13 +210,16 @@ export function ProgressPhotoScreen({
   };
 
   const { width: previewWidth, height: previewHeight } =
-    getProgressPhotoViewportSize(width - 32);
+    getProgressPhotoViewportSize(contentWidth - 32);
   const iconColor = isDark ? "#F8F8F2" : "#111827";
   const mutedIconColor = isDark ? "#6272A4" : "#64748B";
   const actionIconColor = isDark ? "#282A36" : "#FFFFFF";
 
   return (
-    <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
+    <View
+      onLayout={(event) => setContentWidth(event.nativeEvent.layout.width)}
+      className="flex-1 bg-white dark:bg-[#2B2D3A]"
+    >
       <View className="border-b border-zinc-200 px-4 pb-3 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
         <Text className="text-xl font-bold text-zinc-900 dark:text-[#F8F8F2]">
           Progress

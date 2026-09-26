@@ -66,7 +66,8 @@ function toView(
   progressHistoryByExerciseId: ProgressHistoryLookup = {},
   previous?: ViewModel | null,
 ): ViewModel {
-  const previousExercises = previous?.id === session.id ? previous.exercises : [];
+  const previousExercises =
+    previous?.id === session.id ? previous.exercises : [];
   const previousById = new Map(previousExercises.map((ex) => [ex.id, ex]));
 
   return {
@@ -96,7 +97,9 @@ function toView(
           isCompleted: previousSet.isCompleted || set.isCompleted,
           e1rm: previousSet.e1rm ?? set.e1rm,
           e1rmVersion:
-            previousSet.e1rm != null ? previousSet.e1rmVersion : set.e1rmVersion,
+            previousSet.e1rm != null
+              ? previousSet.e1rmVersion
+              : set.e1rmVersion,
         };
       });
 
@@ -106,9 +109,9 @@ function toView(
         isOpen: previousExercise?.isOpen ?? true,
         isProgressOpen: previousExercise?.isProgressOpen ?? false,
         progressHistory: ex.exerciseId
-          ? progressHistoryByExerciseId[ex.exerciseId] ??
+          ? (progressHistoryByExerciseId[ex.exerciseId] ??
             previousExercise?.progressHistory ??
-            []
+            [])
           : [],
       };
     }),
@@ -132,7 +135,9 @@ function applyProgressHistoryToView(
     exercises: previous.exercises.map((ex) => ({
       ...ex,
       progressHistory: ex.exerciseId
-        ? progressHistoryByExerciseId[ex.exerciseId] ?? ex.progressHistory ?? []
+        ? (progressHistoryByExerciseId[ex.exerciseId] ??
+          ex.progressHistory ??
+          [])
         : [],
     })),
   };
@@ -359,8 +364,8 @@ export default function OngoingSessionPage() {
                   ...exercise,
                   progressHistory:
                     exercise.exerciseId != null
-                      ? progressHistoryByExerciseId[exercise.exerciseId] ??
-                        exercise.progressHistory
+                      ? (progressHistoryByExerciseId[exercise.exerciseId] ??
+                        exercise.progressHistory)
                       : exercise.progressHistory,
                 })),
               },
@@ -375,7 +380,11 @@ export default function OngoingSessionPage() {
   return (
     <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
       <View className="flex-row items-center justify-between border-b border-zinc-200 bg-white px-4 pb-2 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
-        <Pressable onPress={() => router.back()} hitSlop={10} className="mr-2">
+        <Pressable
+          onPress={() => router.replace("/(tabs)/workout")}
+          hitSlop={10}
+          className="mr-2"
+        >
           <ChevronLeft width={20} height={20} color={iconColor} />
         </Pressable>
 

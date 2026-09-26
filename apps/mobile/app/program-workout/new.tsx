@@ -23,9 +23,8 @@ export default function ProgramWorkoutCreate() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
 
-
   const [formData, setFormData] = useState<WorkoutProgramFormData>(
-    WorkoutProgramFactory.createForm({folderId})
+    WorkoutProgramFactory.createForm({ folderId }),
   );
 
   useEffect(() => {
@@ -53,7 +52,7 @@ export default function ProgramWorkoutCreate() {
 
   const handleCancel = () => {
     if (isSaving) return;
-    router.push("/(tabs)/workout");
+    router.replace("/(tabs)/workout");
   };
 
   const handleSave = async () => {
@@ -63,7 +62,7 @@ export default function ProgramWorkoutCreate() {
       const template = await WorkoutProgramFactory.domainFromForm(formData);
       await workoutProgramRepository.save(template);
 
-      router.replace("/workout");
+      router.replace("/(tabs)/workout");
     } finally {
       setIsSaving(false);
     }

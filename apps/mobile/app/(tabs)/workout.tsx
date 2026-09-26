@@ -1,5 +1,6 @@
 // apps/mobile/app/(tabs)/workout.tsx
 import React, { useEffect, useMemo, useState } from "react";
+
 import {
   View,
   Text,
@@ -19,7 +20,7 @@ import DraggableFlatList, {
 
 import { useWorkoutPrograms } from "@/src/features/program-workout/hooks/use-workout-programs";
 import { WorkoutProgram } from "@/src/features/program-workout/domain/type";
-import { templateFolderRepository } from "@/src/features/template-folder/data/repository";
+import { useTemplateFolders } from "@/src/features/template-folder/hooks/use-template-folders";
 import type { TemplateFolder } from "@/src/features/template-folder/domain/types";
 import FolderRow from "@/src/features/template-folder/components/folder-row";
 import { workoutProgramRepository } from "@/src/features/program-workout/data/workout-program-repository";
@@ -50,14 +51,16 @@ export default function Workout() {
   const isDark = colorScheme === "dark";
   const { programs, deleteProgram, isLoading } = useWorkoutPrograms();
   const listRef = React.useRef<FlatList<Row>>(null);
-  const renameScrollTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const renameScrollTimeoutRef = React.useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
-  const [folders, setFolders] = useState<TemplateFolder[]>([]);
-  const [foldersLoading, setFoldersLoading] = useState(true);
-  const [foldersError, setFoldersError] = useState<Error | null>(null);
-
+  const folderActions = useTemplateFolders();
+  const {
+    folders,
+    isLoading: foldersLoading,
+    error: foldersError,
+  } = folderActions;
   const [templateProgram, setTemplateProgram] = useState<WorkoutProgram[]>([]);
 
   const [unassignedOpen, setUnassignedOpen] = useState(true);
@@ -89,36 +92,6 @@ export default function Workout() {
   useEffect(() => {
     setTemplateProgram(programs);
   }, [programs]);
-
-  // folders
-  useEffect(() => {
-    let cancelled = false;
-
-    const load = async () => {
-      setFoldersLoading(true);
-      setFoldersError(null);
-      try {
-        const all = await templateFolderRepository.getAll();
-        if (cancelled) return;
-        setFolders(all);
-      } catch (e) {
-        if (cancelled) return;
-        setFoldersError(
-          e instanceof Error ? e : new Error("Failed to load folders"),
-        );
-        setFolders([]);
-      } finally {
-        if (!cancelled) {
-          setFoldersLoading(false);
-        }
-      }
-    };
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   // new folders open by default
   useEffect(() => {
@@ -191,11 +164,14 @@ export default function Workout() {
   }, [keyboardHeight, renamingFolderId, scrollFolderIntoKeyboardView]);
 
   const handleCreateTemplate = () => {
-    router.push("/program-workout/new");
+    router.replace({
+      pathname: "/program-workout/new",
+      params: {},
+    });
   };
 
   const handleCreateTemplateInFolder = (folderId: string) => {
-    router.push({
+    router.replace({
       pathname: "/program-workout/new",
       params: { folderId },
     });
@@ -204,7 +180,7 @@ export default function Workout() {
   const handleOpenOngoingSession = () => {
     if (!ongoingSession) return;
 
-    router.push({
+    router.replace({
       pathname: "/session-workout/[id]",
       params: { id: ongoingSession.id },
     });
@@ -212,14 +188,14 @@ export default function Workout() {
 
   const openProgramDraft = (draft: FinishProgramDraftRoute) => {
     if (draft.kind === "edit") {
-      router.push({
+      router.replace({
         pathname: "/program-workout/[id]",
         params: { id: draft.programId, draftKey: draft.draftKey },
       });
       return;
     }
 
-    router.push({
+    router.replace({
       pathname: "/program-workout/new",
       params: { draftKey: draft.draftKey },
     });
@@ -245,7 +221,7 @@ export default function Workout() {
     const startNewSession = async () => {
       await startSession(program?.id);
 
-      router.push({
+      router.replace({
         pathname: "/session-workout/ongoing",
       });
     };
@@ -261,7 +237,7 @@ export default function Workout() {
             text: "Keep going",
             style: "default",
             onPress: () => {
-              router.push({
+              router.replace({
                 pathname: "/session-workout/[id]",
                 params: { id: ongoingSession.id },
               });
@@ -317,7 +293,7 @@ export default function Workout() {
   }
 
   const handleEditTemplate = (id: string) => {
-    router.push({
+    router.replace({
       pathname: "/program-workout/[id]",
       params: { id },
     });
@@ -340,11 +316,11 @@ export default function Workout() {
 
   const handleCreateFolder = async () => {
     try {
-      const folder = await templateFolderRepository.create("New folder");
-      setFolders((prev) => [...prev, folder]);
+      const folder = await folderActions.create("New folder");
+
       setOpenFolderIds((prev) => [...prev, folder.id]);
-    } catch (err) {
-      console.error("Failed to create folder", err);
+    } catch {
+      Alert.alert("Folder not created", "Please try again.");
     }
   };
 
@@ -355,9 +331,7 @@ export default function Workout() {
     const updated: TemplateFolder = { ...folder, name: newName };
 
     try {
-      const saved = await templateFolderRepository.save(updated);
-
-      setFolders((prev) => prev.map((f) => (f.id === saved.id ? saved : f)));
+      await folderActions.save(updated);
     } catch (err) {
       console.error("Failed to update folder", err);
     }
@@ -365,8 +339,8 @@ export default function Workout() {
 
   const handleDeleteFolder = async (folderId: string) => {
     try {
-      await templateFolderRepository.delete(folderId);
-      setFolders((prev) => prev.filter((f) => f.id !== folderId));
+      await folderActions.remove(folderId);
+
       setOpenFolderIds((prev) => prev.filter((id) => id !== folderId));
       setTemplateProgram((prev) =>
         prev.map((t) =>

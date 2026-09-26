@@ -267,7 +267,7 @@ function WeeklyActivityCard(props: { buckets: WeekBucket[] }) {
 
 function ExerciseCard(props: { rows: PreviewRow[] }) {
   return (
-    <Link href="/(tabs)/insights/exercise" asChild>
+    <Link replace href="/(tabs)/insights/exercise" asChild>
       <Pressable className="rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
         <View className="flex-row items-start justify-between">
           <View className="pr-4">
@@ -287,7 +287,7 @@ function ExerciseCard(props: { rows: PreviewRow[] }) {
 
 function ProgramCard() {
   return (
-    <Link href="/(tabs)/insights/program" asChild>
+    <Link replace href="/(tabs)/insights/program" asChild>
       <Pressable className="rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
         <View className="flex-row items-start justify-between">
           <View className="pr-4">

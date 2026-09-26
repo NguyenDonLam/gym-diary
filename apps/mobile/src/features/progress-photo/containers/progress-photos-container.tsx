@@ -12,6 +12,7 @@ import { Image as ExpoImage } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 
 import { generateId } from "@/src/lib/id";
+import { useSectionRail } from "@/src/components/section-rail-context";
 
 import { ProgressPhotoScreen } from "../components/progress-photo-screen";
 import { ProgressPhotoAlignmentEditor } from "../components/progress-photo-alignment-editor";
@@ -473,6 +474,29 @@ export function ProgressPhotosContainer() {
       }
     }
   };
+
+  useSectionRail("progress", [
+    ...trackers.map((tracker) => ({
+      id: tracker.id ?? "ungrouped",
+      label: tracker.id === null ? "Other" : tracker.label,
+      selected: tracker.id === activeTracker?.id,
+      disabled:
+        isCameraOpen ||
+        createPhotoMutation.isPending ||
+        deletePhotoMutation.isPending,
+      onPress: () => setSelectedTrackerId(tracker.id),
+    })),
+    {
+      id: "add",
+      label: "Add",
+      disabled:
+        photosQuery.isPending ||
+        isCameraOpen ||
+        createPhotoMutation.isPending ||
+        deletePhotoMutation.isPending,
+      onPress: () => void takePhoto(true),
+    },
+  ]);
 
   if (isCameraOpen && PoseCameraContainer && captureGroupId) {
     return (

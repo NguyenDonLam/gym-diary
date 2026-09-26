@@ -7,7 +7,7 @@ import ExerciseLibraryPicker from "@/src/features/exercise/components/exercise-l
 
 export default function InsightsExerciseIndexScreen() {
   const openExercise = useCallback((exercise: Exercise) => {
-    router.push({
+    router.replace({
       pathname: "/(tabs)/insights/exercise/[exerciseId]",
       params: { exerciseId: exercise.id },
     });
