@@ -50,6 +50,7 @@ function toFileUri(path: string) {
 }
 
 export function ProgressPhotoCameraContainer({
+  poseGroupId,
   references,
   onCancel,
   onCaptured,
@@ -394,7 +395,7 @@ export function ProgressPhotoCameraContainer({
             imageWidth: photo.width,
             imageHeight: photo.height,
             pose: nearestPose,
-            poseGroupId: selectedReference?.poseGroupId ?? null,
+            poseGroupId,
             referencePhotoId: selectedReference?.id ?? null,
           });
         } finally {
@@ -417,6 +418,7 @@ export function ProgressPhotoCameraContainer({
       onCaptured,
       photoOutput,
       selectedReference,
+      poseGroupId,
     ],
   );
 

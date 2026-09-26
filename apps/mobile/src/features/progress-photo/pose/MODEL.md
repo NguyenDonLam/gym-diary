@@ -173,6 +173,27 @@ Automatic-capture thresholds and hold/cooldown timings remain centralised in
 
 ## Architecture and remaining platform boundary
 
+### Pose trackers
+
+The Progress screen derives independent trackers from persisted `poseGroupId`
+values. Start with one using Take photo; New pose creates another group when a
+photo is saved. Selecting a tracker filters its gallery and locks the next
+capture to that group. Comparisons remain within the same group.
+
+Each tracker uses its earliest surviving root photo with pose data as its fixed
+camera reference, never an average or the latest follow-up. Regular-camera
+photos retain their selected group even without pose data. If a reference is
+deleted, the tracker retains its history and the next valid manual pose capture
+can establish a replacement. Existing follow-ups are not silently promoted or
+realigned. Ungrouped legacy photos remain available under Other photos.
+
+Default tracker labels (Pose 1, Pose 2, etc.) are derived in chronological order
+and may renumber when a group is entirely deleted. Rename saves a trimmed name
+of 1–40 characters in AsyncStorage under `progress-pose-name:<group ID>`.
+Custom names remain tied to the group ID across restarts and reference deletion.
+The query layer owns name loading and refresh; names do not modify photo files,
+group membership, or pose matching. Other photos is not a named pose tracker.
+
 The progress-photo screen and alignment editor are presentational. The
 container owns queries, mutations, pair selection, preloading, and persistence.
 Pure mappers prepare reference, alignment, navigation, date, and viewport data.

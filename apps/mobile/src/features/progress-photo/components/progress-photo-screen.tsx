@@ -28,8 +28,15 @@ import {
   type ProgressPhotoComparisonViewModel,
 } from "../ui/progress-photo-comparison.mapper";
 import { progressPhotoPerformance } from "../progress-photo-performance";
+import {
+  PoseTrackerSelector,
+  type PoseTrackerSelectorProps,
+} from "./pose-tracker-selector";
 
-type ProgressPhotoScreenProps = {
+type ProgressPhotoScreenProps = Omit<PoseTrackerSelectorProps, "disabled"> & {
+  selectedTrackerId: string | null;
+  onSelectTracker: (id: string | null) => void;
+  onNewPose: () => void;
   photos: ProgressPhotoComparisonViewModel[];
   selectedPhoto: ProgressPhotoComparisonViewModel | null;
   comparisonPhotos: ProgressPhotoComparisonViewModel[];
@@ -104,6 +111,14 @@ function ProgressPhotoViewportImage({
 }
 
 export function ProgressPhotoScreen({
+  trackers,
+  isRenaming,
+  renameError,
+  onBeginRename,
+  onRenameTracker,
+  selectedTrackerId,
+  onSelectTracker,
+  onNewPose,
   photos,
   selectedPhoto,
   comparisonPhotos,
@@ -219,6 +234,17 @@ export function ProgressPhotoScreen({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         >
+          <PoseTrackerSelector
+            trackers={trackers}
+            selectedTrackerId={selectedTrackerId}
+            onSelectTracker={onSelectTracker}
+            onNewPose={onNewPose}
+            disabled={isCapturing || isDeleting}
+            isRenaming={isRenaming}
+            renameError={renameError}
+            onBeginRename={onBeginRename}
+            onRenameTracker={onRenameTracker}
+          />
           {selectedPhoto ? (
             <>
               <View

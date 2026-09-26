@@ -13,6 +13,7 @@ export type CapturedProgressPhoto = {
 };
 
 export type ProgressPhotoCameraContainerProps = {
+  poseGroupId: string;
   references: ProgressPhotoCameraReference[];
   onCancel: () => void;
   onCaptured: (capture: CapturedProgressPhoto) => Promise<void>;

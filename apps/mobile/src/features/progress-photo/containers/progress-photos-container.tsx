@@ -40,6 +40,11 @@ import {
   type ProgressPoseCapability,
 } from "../pose/progress-pose-runtime";
 import { progressPhotoCameraReferenceMapper } from "../ui/progress-photo-camera-reference.mapper";
+import { mapProgressPoseTrackers } from "../ui/progress-pose-tracker.mapper";
+import {
+  usePoseTrackerNames,
+  useRenamePoseTracker,
+} from "../hooks/use-pose-tracker-names";
 import {
   formatProgressPhotoElapsedTime,
   getProgressPhotoPairCandidates,
@@ -53,6 +58,8 @@ const POSE_CAMERA_UNAVAILABLE_MESSAGE =
 
 export function ProgressPhotosContainer() {
   const photosQuery = useProgressPhotosQuery();
+  const trackerNames = usePoseTrackerNames();
+  const renameTracker = useRenamePoseTracker();
   const createPhotoMutation = useCreateProgressPhotoMutation();
   const deletePhotoMutation = useDeleteProgressPhotoMutation();
   const updateAlignmentMutation = useUpdateProgressPhotoAlignmentMutation();
@@ -75,6 +82,18 @@ export function ProgressPhotosContainer() {
     string | null
   >(null);
   const latestPhotoIdRef = useRef<string | null>(null);
+  const [selectedTrackerId, setSelectedTrackerId] = useState<
+    string | null | undefined
+  >(undefined);
+  const [captureGroupId, setCaptureGroupId] = useState<string | null>(null);
+  const trackers = useMemo(
+    () => mapProgressPoseTrackers(photosQuery.data ?? [], trackerNames.data),
+    [photosQuery.data, trackerNames.data],
+  );
+  const activeTracker =
+    trackers.find((tracker) => tracker.id === selectedTrackerId) ??
+    trackers[0] ??
+    null;
 
   useEffect(() => {
     let isMounted = true;
@@ -96,13 +115,18 @@ export function ProgressPhotosContainer() {
   }, []);
 
   const photos = useMemo(
-    () => progressPhotoComparisonMapper.fromPhotos(photosQuery.data ?? []),
-    [photosQuery.data],
+    () =>
+      progressPhotoComparisonMapper
+        .fromPhotos(photosQuery.data ?? [])
+        .filter((photo) => photo.poseGroupId === (activeTracker?.id ?? null)),
+    [photosQuery.data, activeTracker?.id],
   );
-  const cameraReferences = useMemo(
-    () => progressPhotoCameraReferenceMapper.fromPhotos(photosQuery.data ?? []),
-    [photosQuery.data],
-  );
+  const cameraReferences = useMemo(() => {
+    const tracker = trackers.find((item) => item.id === captureGroupId);
+    return progressPhotoCameraReferenceMapper
+      .fromPhotos(photosQuery.data ?? [])
+      .filter((reference) => reference.id === tracker?.referencePhotoId);
+  }, [photosQuery.data, trackers, captureGroupId]);
   const selectedPhoto = useMemo(
     () =>
       photos.find((photo) => photo.id === selectedPhotoId) ?? photos[0] ?? null,
@@ -304,6 +328,8 @@ export function ProgressPhotosContainer() {
         alignment,
       });
 
+      setSelectedTrackerId(capture.poseGroupId ?? undefined);
+
       if (selectedReference) {
         try {
           await updateAlignmentMutation.mutateAsync({
@@ -320,7 +346,9 @@ export function ProgressPhotosContainer() {
 
       setCaptureStatusMessage(
         poseData
-          ? "Pose reference saved"
+          ? selectedReference
+            ? "Progress photo saved"
+            : "Pose reference saved"
           : "Photo saved without pose reference",
       );
       setIsCameraOpen(false);
@@ -330,30 +358,35 @@ export function ProgressPhotosContainer() {
     [createPhotoMutation, photosQuery.data, updateAlignmentMutation],
   );
 
-  const launchFallbackCamera = useCallback(async () => {
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["images"],
-      cameraType: ImagePicker.CameraType.front,
-      allowsEditing: true,
-      aspect: [3, 4],
-      quality: 0.9,
-    });
+  const launchFallbackCamera = useCallback(
+    async (poseGroupId: string) => {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        cameraType: ImagePicker.CameraType.front,
+        allowsEditing: true,
+        aspect: [3, 4],
+        quality: 0.9,
+      });
 
-    if (result.canceled || !result.assets[0]) return;
+      if (result.canceled || !result.assets[0]) return;
 
-    await saveCapturedPhoto({
-      sourceUri: result.assets[0].uri,
-      capturedAt: new Date(),
-      shutterTimestampMs: 0,
-      imageWidth: result.assets[0].width,
-      imageHeight: result.assets[0].height,
-      pose: null,
-      poseGroupId: null,
-      referencePhotoId: null,
-    });
-  }, [saveCapturedPhoto]);
+      await saveCapturedPhoto({
+        sourceUri: result.assets[0].uri,
+        capturedAt: new Date(),
+        shutterTimestampMs: 0,
+        imageWidth: result.assets[0].width,
+        imageHeight: result.assets[0].height,
+        pose: null,
+        poseGroupId,
+        referencePhotoId:
+          trackers.find((tracker) => tracker.id === poseGroupId)
+            ?.referencePhotoId ?? null,
+      });
+    },
+    [saveCapturedPhoto, trackers],
+  );
 
-  const takePhoto = async () => {
+  const takePhoto = async (newPose = false) => {
     if (
       isCameraOpen ||
       createPhotoMutation.isPending ||
@@ -362,6 +395,10 @@ export function ProgressPhotosContainer() {
       return;
 
     let keepCameraOpen = false;
+    const groupId = newPose
+      ? generateId()
+      : (activeTracker?.id ?? generateId());
+    setCaptureGroupId(groupId);
     setIsCameraOpen(true);
     createPhotoMutation.reset();
     setCaptureStatusMessage(null);
@@ -419,7 +456,7 @@ export function ProgressPhotosContainer() {
       if (!useRegularCamera) return;
 
       try {
-        await launchFallbackCamera();
+        await launchFallbackCamera(groupId);
       } catch {
         reportProgressPhotoDiagnostic("photo_save_failed");
         return;
@@ -437,9 +474,10 @@ export function ProgressPhotosContainer() {
     }
   };
 
-  if (isCameraOpen && PoseCameraContainer) {
+  if (isCameraOpen && PoseCameraContainer && captureGroupId) {
     return (
       <PoseCameraContainer
+        poseGroupId={captureGroupId}
         references={cameraReferences}
         onCancel={() => {
           setIsCameraOpen(false);
@@ -453,6 +491,25 @@ export function ProgressPhotosContainer() {
   return (
     <>
       <ProgressPhotoScreen
+        trackers={trackers}
+        isRenaming={renameTracker.isPending}
+        renameError={
+          renameTracker.isError
+            ? "Could not save the name. Please try again."
+            : null
+        }
+        onBeginRename={() => renameTracker.reset()}
+        onRenameTracker={async (id, name) => {
+          try {
+            await renameTracker.mutateAsync({ id, name });
+            return true;
+          } catch {
+            return false;
+          }
+        }}
+        selectedTrackerId={activeTracker?.id ?? null}
+        onSelectTracker={setSelectedTrackerId}
+        onNewPose={() => void takePhoto(true)}
         photos={photos}
         selectedPhoto={selectedPhoto}
         comparisonPhotos={comparisonPhotos}
@@ -466,11 +523,16 @@ export function ProgressPhotosContainer() {
           comparisonNavigation.previousPhotoId !== null
         }
         canSelectNextComparison={comparisonNavigation.nextPhotoId !== null}
-        isLoading={photosQuery.isPending}
+        isLoading={photosQuery.isPending || trackerNames.isPending}
         isCapturing={isCameraOpen || createPhotoMutation.isPending}
         isDeleting={deletePhotoMutation.isPending}
         onDeletePhoto={requestDeletePhoto}
-        errorMessage={errorMessage}
+        errorMessage={
+          errorMessage ??
+          (trackerNames.isError
+            ? "Could not load pose names. Your photos are still available."
+            : null)
+        }
         poseCapabilityMessage={poseCapabilityMessage}
         captureStatusMessage={captureStatusMessage}
         onEditAlignment={() => {
