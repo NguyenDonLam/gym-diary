@@ -7,9 +7,60 @@ import type {
   ProgressPhotoPoseData,
 } from "../types";
 import {
+  deleteProgressPhoto,
   updateProgressPhotoAlignment,
   updateProgressPhotoPoseMetadata,
 } from "./progress-photo-records";
+
+test("deleting a reference clears dependent alignments but keeps photos and pose data", () => {
+  const reference = { ...createPhoto(), id: "reference-photo" };
+  const dependent = {
+    ...createPhoto(),
+    referencePhotoId: reference.id,
+    poseData,
+    poseGroupId: "group",
+  };
+  const unrelated = {
+    ...createPhoto(),
+    id: "unrelated",
+    alignment: null,
+    automaticAlignment: null,
+  };
+  const result = deleteProgressPhoto(
+    [reference, dependent, unrelated],
+    reference.id,
+  );
+  assert.deepEqual(
+    result.map((photo) => photo.id),
+    ["photo", "unrelated"],
+  );
+  assert.equal(result[0].alignment, null);
+  assert.equal(result[0].automaticAlignment, null);
+  assert.equal(result[0].alignmentStatus, "unavailable");
+  assert.equal(result[0].poseData, poseData);
+  assert.equal(result[0].poseGroupId, "group");
+  assert.equal(result[1], unrelated);
+  assert.equal(dependent.alignment, existingAlignment);
+});
+
+test("deleting an automatic baseline preserves alignment to a different reference", () => {
+  const photo = {
+    ...createPhoto(),
+    alignment: { ...existingAlignment, referencePhotoId: "other" },
+    alignmentStatus: "manual" as const,
+  };
+  const [result] = deleteProgressPhoto([photo], "reference-photo");
+  assert.equal(result.alignment, photo.alignment);
+  assert.equal(result.alignmentStatus, "manual");
+  assert.equal(result.automaticAlignment, null);
+});
+
+test("deleting the final photo returns an empty collection and retries are safe", () => {
+  assert.deepEqual(deleteProgressPhoto([createPhoto()], "photo"), []);
+  assert.deepEqual(deleteProgressPhoto([], "photo"), []);
+  const photo = createPhoto();
+  assert.equal(deleteProgressPhoto([photo], "unknown")[0], photo);
+});
 
 const existingAlignment: ProgressPhotoAlignment = {
   referencePhotoId: "reference-photo",

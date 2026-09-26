@@ -62,6 +62,14 @@ export function ProgressPhotoCameraContainer({
   const autoCaptureMachineRef = useRef(createAutoCaptureMachine());
   const automaticCaptureInFlightRef = useRef(false);
   const automaticCaptureStartedAtRef = useRef<number | null>(null);
+  const captureInFlightRef = useRef(false);
+  const countdownDeadlineRef = useRef<number | null>(null);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
+  const cancelCountdown = useCallback(() => {
+    countdownDeadlineRef.current = null;
+    setCountdownSeconds(null);
+  }, []);
   const cameraFrameWindowStartedAt = useSharedValue(0);
   const cameraFrameCount = useSharedValue(0);
   const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(
@@ -128,12 +136,13 @@ export function ProgressPhotoCameraContainer({
       const isActive = state === "active";
       setIsAppActive(isActive);
       if (!isActive) {
+        cancelCountdown();
         applyAutoCaptureEvent({ type: "cancel" });
       }
     });
 
     return () => subscription.remove();
-  }, [applyAutoCaptureEvent]);
+  }, [applyAutoCaptureEvent, cancelCountdown]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("memoryWarning", () => {
@@ -350,8 +359,15 @@ export function ProgressPhotoCameraContainer({
 
   const capturePhoto = useCallback(
     async (source: "manual" | "automatic") => {
-      if (!isCameraStarted || isCapturing) return;
+      if (
+        !isCameraStarted ||
+        AppState.currentState !== "active" ||
+        captureInFlightRef.current ||
+        isCapturing
+      )
+        return;
 
+      captureInFlightRef.current = true;
       if (source === "manual") {
         applyAutoCaptureEvent({ type: "cancel" });
       }
@@ -390,6 +406,8 @@ export function ProgressPhotoCameraContainer({
         }
         setErrorMessage("The photo could not be captured. Please try again.");
         setIsCapturing(false);
+      } finally {
+        captureInFlightRef.current = false;
       }
     },
     [
@@ -402,10 +420,55 @@ export function ProgressPhotoCameraContainer({
     ],
   );
 
+  const isCountingDown = countdownSeconds !== null;
+  useEffect(() => {
+    if (!isCountingDown) return;
+    const interval = setInterval(() => {
+      const deadline = countdownDeadlineRef.current;
+      if (deadline === null) return;
+      const remaining = Math.max(
+        0,
+        Math.ceil((deadline - performance.now()) / 1000),
+      );
+      if (remaining === 0) {
+        cancelCountdown();
+        void capturePhoto("manual");
+      } else {
+        setCountdownSeconds(remaining);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [cancelCountdown, capturePhoto, isCountingDown]);
+
+  const startManualCapture = useCallback(() => {
+    if (
+      !isCameraStarted ||
+      isCapturing ||
+      captureInFlightRef.current ||
+      countdownDeadlineRef.current !== null
+    )
+      return;
+    applyAutoCaptureEvent({ type: "set_enabled", enabled: false });
+    setErrorMessage(null);
+    if (timerSeconds === 0) {
+      void capturePhoto("manual");
+      return;
+    }
+    countdownDeadlineRef.current = performance.now() + timerSeconds * 1000;
+    setCountdownSeconds(timerSeconds);
+  }, [
+    applyAutoCaptureEvent,
+    capturePhoto,
+    isCameraStarted,
+    isCapturing,
+    timerSeconds,
+  ]);
+
   useEffect(() => {
     if (
       !autoCaptureMachine.captureRequested ||
       automaticCaptureInFlightRef.current ||
+      countdownDeadlineRef.current !== null ||
       isCapturing ||
       !isAppActive
     ) {
@@ -453,6 +516,11 @@ export function ProgressPhotoCameraContainer({
   return (
     <ProgressPhotoCameraScreen
       isCapturing={isCapturing || autoCaptureMachine.state === "capturing"}
+      isCameraReady={isCameraStarted && isAppActive}
+      timerSeconds={timerSeconds}
+      countdownSeconds={countdownSeconds}
+      onTimerSecondsChange={setTimerSeconds}
+      onCancelCountdown={cancelCountdown}
       errorMessage={errorMessage}
       references={references}
       selectedReferenceId={selectedReferenceId}
@@ -465,8 +533,11 @@ export function ProgressPhotoCameraContainer({
         applyAutoCaptureEvent({ type: "set_enabled", enabled })
       }
       onSelectReference={setSelectedReferenceId}
-      onCancel={onCancel}
-      onCapture={() => void capturePhoto("manual")}
+      onCancel={() => {
+        cancelCountdown();
+        onCancel();
+      }}
+      onCapture={startManualCapture}
       preview={
         <View style={StyleSheet.absoluteFill}>
           <Camera
@@ -477,8 +548,12 @@ export function ProgressPhotoCameraContainer({
             mirrorMode="auto"
             orientationSource="device"
             onStarted={() => setIsCameraStarted(true)}
-            onStopped={() => setIsCameraStarted(false)}
+            onStopped={() => {
+              cancelCountdown();
+              setIsCameraStarted(false);
+            }}
             onError={() => {
+              cancelCountdown();
               applyAutoCaptureEvent({
                 type: "set_enabled",
                 enabled: false,

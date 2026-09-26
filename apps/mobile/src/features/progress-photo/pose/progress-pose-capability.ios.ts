@@ -1,5 +1,6 @@
 import Constants, { AppOwnership } from "expo-constants";
 
+import { reportProgressPhotoDiagnostic } from "../progress-photo-diagnostics";
 import type {
   ProgressPoseCapability,
   ProgressPoseCapabilityProvider,
@@ -26,25 +27,30 @@ async function initializeProgressPoseDependencies(): Promise<ProgressPoseCapabil
       PROGRESS_POSE_MODEL_ASSET > 0;
 
     if (!dependenciesAreReady) {
+      reportProgressPhotoDiagnostic("pose_dependencies_not_ready");
       return {
         available: false,
-        reason: "Pose-processing dependencies could not be initialized.",
+        reason:
+          "Pose-processing dependencies could not be initialized. Rebuild and reinstall the iOS development app, then try again.",
       };
     }
 
     if (!frameResizer.isResizerAvailable()) {
+      reportProgressPhotoDiagnostic("pose_frame_resizer_unavailable");
       return {
         available: false,
-        reason: "Frame resizing is unavailable on this device.",
+        reason:
+          "Frame resizing is unavailable on this device. Rebuild and reinstall the iOS development app. If this continues, use regular photos on this device.",
       };
     }
 
     return { available: true };
   } catch {
+    reportProgressPhotoDiagnostic("pose_dependencies_initialization_failed");
     return {
       available: false,
       reason:
-        "Pose processing is unavailable. Rebuild the iOS development client.",
+        "Pose processing is unavailable. Rebuild and reinstall the iOS development app, then try again.",
     };
   }
 }
@@ -55,7 +61,7 @@ export const getProgressPoseCapability: ProgressPoseCapabilityProvider =
       return {
         available: false,
         reason:
-          "Pose matching requires an Expo development build and is not available in Expo Go.",
+          "Pose matching is unavailable in Expo Go. Install and open the iOS development app to use pose guidance.",
       };
     }
 

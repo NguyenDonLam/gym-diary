@@ -1,4 +1,7 @@
 export type ProgressPhotoDiagnosticEvent =
+  | "pose_dependencies_initialization_failed"
+  | "pose_dependencies_not_ready"
+  | "pose_frame_resizer_unavailable"
   | "camera_initialization_failed"
   | "camera_open_failed"
   | "photo_save_failed"

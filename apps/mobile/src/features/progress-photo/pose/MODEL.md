@@ -128,11 +128,13 @@ exists and `unavailable` otherwise.
 - The alignment editor contains no delete action, so a photo cannot be deleted
   accidentally while editing.
 
-There is currently no progress-photo deletion workflow or repository delete API.
-Consequently no Stage 11 UI path removes files. A future delete use case must
-remove only the managed file under the app's `progress-photos` document
-directory, remove its metadata record, and invalidate or mark unavailable every
-alignment that references it.
+The progress screen offers deletion of the displayed photo with a confirmation
+showing its date and time. The repository removes only the managed file directly
+under the app's `progress-photos` document directory and its metadata record.
+Other photos and pose data are preserved; active and automatic alignments using
+the deleted reference are cleared. The query layer refreshes the photo list,
+camera references, and comparisons. Missing managed files can still be deleted
+from the list, and original files outside the managed directory are untouched.
 
 ## Privacy and offline boundary
 

@@ -17,6 +17,7 @@ import {
   LockKeyhole,
   Maximize2,
   SlidersHorizontal,
+  Trash2,
   X,
 } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
@@ -39,6 +40,8 @@ type ProgressPhotoScreenProps = {
   canSelectNextComparison: boolean;
   isLoading: boolean;
   isCapturing: boolean;
+  isDeleting: boolean;
+  onDeletePhoto: (photoId: string) => void;
   errorMessage: string | null;
   poseCapabilityMessage: string | null;
   captureStatusMessage: string | null;
@@ -93,7 +96,8 @@ function ProgressPhotoViewportImage({
               { scale: viewportTransform.scale },
               { rotate: viewportTransform.rotation },
             ]
-          : undefined,
+          : // Keep the reset value iterable for React Native's transform validator.
+            [],
       }}
     />
   );
@@ -110,6 +114,8 @@ export function ProgressPhotoScreen({
   canSelectNextComparison,
   isLoading,
   isCapturing,
+  isDeleting,
+  onDeletePhoto,
   errorMessage,
   poseCapabilityMessage,
   captureStatusMessage,
@@ -327,6 +333,7 @@ export function ProgressPhotoScreen({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Adjust photo alignment"
+                  disabled={isDeleting}
                   onPress={onEditAlignment}
                   className="mt-3 flex-row items-center justify-center rounded-xl bg-neutral-100 px-4 py-3 dark:bg-[#343746]"
                 >
@@ -340,6 +347,25 @@ export function ProgressPhotoScreen({
                   </Text>
                 </Pressable>
               ) : null}
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Delete displayed photo"
+                disabled={isDeleting || isCapturing}
+                onPress={() =>
+                  displayedPhoto && onDeletePhoto(displayedPhoto.id)
+                }
+                className="mt-3 flex-row items-center justify-center rounded-xl bg-red-50 px-4 py-3 dark:bg-red-950/40"
+              >
+                {isDeleting ? (
+                  <ActivityIndicator color="#DC2626" />
+                ) : (
+                  <Trash2 size={17} color="#DC2626" />
+                )}
+                <Text className="ml-2 text-xs font-semibold text-red-600 dark:text-red-400">
+                  {isDeleting ? "Deleting photo…" : "Delete displayed photo"}
+                </Text>
+              </Pressable>
 
               {comparisonPhoto ? (
                 <View className="mt-3 rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
@@ -571,9 +597,22 @@ export function ProgressPhotoScreen({
           ) : null}
 
           {poseCapabilityMessage ? (
-            <Text className="mt-3 text-center text-xs text-zinc-500 dark:text-[#6272A4]">
-              {poseCapabilityMessage}
-            </Text>
+            <View
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+              className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950"
+            >
+              <Text className="text-sm font-bold text-amber-900 dark:text-amber-100">
+                Pose guidance unavailable
+              </Text>
+              <Text className="mt-1 text-sm leading-5 text-amber-900 dark:text-amber-100">
+                {poseCapabilityMessage}
+              </Text>
+              <Text className="mt-2 text-sm leading-5 text-amber-900 dark:text-amber-100">
+                You can still take a regular photo, but pose guidance and
+                automatic capture will be unavailable.
+              </Text>
+            </View>
           ) : null}
 
           {captureStatusMessage ? (
@@ -588,7 +627,7 @@ export function ProgressPhotoScreen({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Take a progress photo"
-            disabled={isCapturing}
+            disabled={isCapturing || isDeleting}
             onPress={onTakePhoto}
             className={[
               "mt-4 flex-row items-center justify-center rounded-2xl px-4 py-4",

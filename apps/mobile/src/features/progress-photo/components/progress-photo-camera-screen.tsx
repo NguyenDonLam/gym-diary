@@ -2,12 +2,12 @@ import React, { type ReactNode, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
   ScrollView,
   Switch,
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Camera, X } from "lucide-react-native";
 
@@ -24,6 +24,11 @@ type ProgressPhotoCameraScreenProps = {
   selectedReferenceId: string | null;
   guidance: ProgressPoseGuidanceViewModel;
   isCapturing: boolean;
+  isCameraReady: boolean;
+  timerSeconds: number;
+  countdownSeconds: number | null;
+  onTimerSecondsChange: (seconds: number) => void;
+  onCancelCountdown: () => void;
   autoCaptureEnabled: boolean;
   autoCaptureState: AutoCaptureState;
   autoCaptureHoldProgress: number;
@@ -41,6 +46,11 @@ export function ProgressPhotoCameraScreen({
   selectedReferenceId,
   guidance,
   isCapturing,
+  isCameraReady,
+  timerSeconds,
+  countdownSeconds,
+  onTimerSecondsChange,
+  onCancelCountdown,
   autoCaptureEnabled,
   autoCaptureState,
   autoCaptureHoldProgress,
@@ -57,6 +67,7 @@ export function ProgressPhotoCameraScreen({
     references.find((reference) => reference.id === selectedReferenceId) ??
     null;
   const isHolding = autoCaptureState === "holding";
+  const isCountingDown = countdownSeconds !== null;
   const holdRemainingSeconds = Math.max(
     0,
     (progressPoseAutoCaptureConfig.holdDurationMs *
@@ -130,7 +141,7 @@ export function ProgressPhotoCameraScreen({
                       accessibilityRole="button"
                       accessibilityLabel={reference.accessibilityLabel}
                       accessibilityState={{ selected: isSelected }}
-                      disabled={isCapturing}
+                      disabled={isCapturing || isCountingDown}
                       onPress={() => onSelectReference(reference.id)}
                       className={[
                         "overflow-hidden rounded-xl border-2",
@@ -242,7 +253,9 @@ export function ProgressPhotoCameraScreen({
               <Switch
                 accessibilityLabel="Automatic progress photo capture"
                 value={autoCaptureEnabled}
-                disabled={!isAutoCaptureAvailable || isCapturing}
+                disabled={
+                  !isAutoCaptureAvailable || isCapturing || isCountingDown
+                }
                 onValueChange={onAutoCaptureEnabledChange}
                 trackColor={{ false: "#52525B", true: "#10B981" }}
                 thumbColor="#FFFFFF"
@@ -272,12 +285,54 @@ export function ProgressPhotoCameraScreen({
           </View>
         </View>
 
+        {isCountingDown ? (
+          <View pointerEvents="none" className="items-center">
+            <Text
+              accessibilityLiveRegion="polite"
+              accessibilityLabel={`Photo in ${countdownSeconds} seconds`}
+              className="rounded-3xl bg-black/70 px-8 py-2 text-7xl font-bold text-white"
+            >
+              {countdownSeconds}
+            </Text>
+          </View>
+        ) : null}
+
         <View className="items-center pb-8">
+          <View className="mb-4 flex-row items-center rounded-2xl bg-black/70 p-2">
+            <Text className="mx-2 text-xs font-semibold text-white">Timer</Text>
+            {[0, 3, 5, 10].map((seconds) => (
+              <Pressable
+                key={seconds}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  seconds === 0
+                    ? "Turn photo timer off"
+                    : `Set photo timer to ${seconds} seconds`
+                }
+                accessibilityState={{ selected: timerSeconds === seconds }}
+                disabled={isCapturing || isCountingDown}
+                onPress={() => onTimerSecondsChange(seconds)}
+                className={`min-h-11 min-w-11 items-center justify-center rounded-xl px-3 ${timerSeconds === seconds ? "bg-white" : "bg-transparent"}`}
+              >
+                <Text
+                  className={`text-sm font-semibold ${timerSeconds === seconds ? "text-black" : "text-white"}`}
+                >
+                  {seconds === 0 ? "Off" : `${seconds}s`}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Take progress photo"
-            disabled={isCapturing}
-            onPress={onCapture}
+            accessibilityLabel={
+              isCountingDown
+                ? "Cancel photo countdown"
+                : timerSeconds > 0
+                  ? `Take progress photo after ${timerSeconds} seconds`
+                  : "Take progress photo"
+            }
+            disabled={isCapturing || !isCameraReady}
+            onPress={isCountingDown ? onCancelCountdown : onCapture}
             className={[
               "h-20 w-20 items-center justify-center rounded-full border-4 border-white",
               isCapturing ? "bg-white/40" : "bg-white/20",
@@ -285,13 +340,19 @@ export function ProgressPhotoCameraScreen({
           >
             {isCapturing ? (
               <ActivityIndicator color="#FFFFFF" />
+            ) : isCountingDown ? (
+              <X color="#FFFFFF" size={30} />
             ) : (
               <Camera color="#FFFFFF" size={30} strokeWidth={2.2} />
             )}
           </Pressable>
 
           <Text className="mt-3 text-xs text-white/80">
-            Manual capture remains available
+            {isCountingDown
+              ? "Tap to cancel countdown"
+              : timerSeconds > 0
+                ? `Tap shutter, then pose · ${timerSeconds}s timer`
+                : "Tap shutter to take a photo"}
           </Text>
         </View>
       </SafeAreaView>

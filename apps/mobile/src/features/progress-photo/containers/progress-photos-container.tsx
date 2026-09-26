@@ -26,6 +26,7 @@ import type {
 } from "./progress-photo-camera.types";
 import {
   useCreateProgressPhotoMutation,
+  useDeleteProgressPhotoMutation,
   useProgressPhotosQuery,
   useUpdateProgressPhotoAlignmentMutation,
 } from "../hooks/use-progress-photos";
@@ -47,9 +48,13 @@ import {
   selectDefaultProgressPhotoPairId,
 } from "../ui/progress-photo-comparison.mapper";
 
+const POSE_CAMERA_UNAVAILABLE_MESSAGE =
+  "The pose camera could not start. Restart the app and try again. If this continues, rebuild and reinstall the iOS development app.";
+
 export function ProgressPhotosContainer() {
   const photosQuery = useProgressPhotosQuery();
   const createPhotoMutation = useCreateProgressPhotoMutation();
+  const deletePhotoMutation = useDeleteProgressPhotoMutation();
   const updateAlignmentMutation = useUpdateProgressPhotoAlignmentMutation();
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [poseCapability, setPoseCapability] =
@@ -78,7 +83,9 @@ export function ProgressPhotosContainer() {
       if (isMounted) {
         setPoseCapability(capability);
         setPoseCapabilityMessage(
-          capability.available ? null : (capability.reason ?? null),
+          capability.available
+            ? null
+            : (capability.reason ?? POSE_CAMERA_UNAVAILABLE_MESSAGE),
         );
       }
     });
@@ -188,13 +195,47 @@ export function ProgressPhotosContainer() {
     [comparisonPhotos],
   );
 
-  const errorMessage = photosQuery.isError
-    ? "Could not load your progress photos."
-    : createPhotoMutation.isError
-      ? "Your photo was taken, but could not be saved."
-      : updateAlignmentMutation.isError
-        ? "The alignment could not be saved."
-        : null;
+  const requestDeletePhoto = (photoId: string) => {
+    const photo = photos.find((item) => item.id === photoId);
+    if (!photo || deletePhotoMutation.isPending || isCameraOpen) return;
+    const hasDependents = (photosQuery.data ?? []).some(
+      (item) =>
+        item.id !== photoId &&
+        (item.referencePhotoId === photoId ||
+          item.alignment?.referencePhotoId === photoId ||
+          item.automaticAlignment?.referencePhotoId === photoId),
+    );
+    Alert.alert(
+      "Delete progress photo?",
+      `Delete the photo from ${photo.dateLabel} at ${photo.timeLabel}? This cannot be undone.${hasDependents ? " Other photos will be kept, but alignment using this reference will be removed." : ""}`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            setCaptureStatusMessage(null);
+            deletePhotoMutation.mutate(photoId, {
+              onSuccess: () => {
+                setAlignmentEditorPhotoId(null);
+                setCaptureStatusMessage("Photo deleted");
+              },
+            });
+          },
+        },
+      ],
+    );
+  };
+
+  const errorMessage = deletePhotoMutation.isError
+    ? "The photo could not be deleted. Please try again."
+    : photosQuery.isError
+      ? "Could not load your progress photos."
+      : createPhotoMutation.isError
+        ? "Your photo was taken, but could not be saved."
+        : updateAlignmentMutation.isError
+          ? "The alignment could not be saved."
+          : null;
 
   const saveEditedAlignment = useCallback(
     async (
@@ -313,7 +354,12 @@ export function ProgressPhotosContainer() {
   }, [saveCapturedPhoto]);
 
   const takePhoto = async () => {
-    if (isCameraOpen || createPhotoMutation.isPending) return;
+    if (
+      isCameraOpen ||
+      createPhotoMutation.isPending ||
+      deletePhotoMutation.isPending
+    )
+      return;
 
     let keepCameraOpen = false;
     setIsCameraOpen(true);
@@ -340,9 +386,8 @@ export function ProgressPhotosContainer() {
 
       const capability = poseCapability ?? (await getProgressPoseCapability());
       setPoseCapability(capability);
-      setPoseCapabilityMessage(
-        capability.available ? null : (capability.reason ?? null),
-      );
+      let fallbackReason = capability.reason ?? POSE_CAMERA_UNAVAILABLE_MESSAGE;
+      setPoseCapabilityMessage(capability.available ? null : fallbackReason);
 
       if (capability.available) {
         try {
@@ -355,8 +400,23 @@ export function ProgressPhotosContainer() {
           return;
         } catch {
           reportProgressPhotoDiagnostic("camera_initialization_failed");
+          fallbackReason = POSE_CAMERA_UNAVAILABLE_MESSAGE;
+          setPoseCapabilityMessage(fallbackReason);
         }
       }
+
+      const useRegularCamera = await new Promise<boolean>((resolve) => {
+        Alert.alert(
+          "Pose guidance unavailable",
+          `${fallbackReason}\n\nRegular photos will not include pose guidance or automatic capture.`,
+          [
+            { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+            { text: "Use regular camera", onPress: () => resolve(true) },
+          ],
+          { cancelable: true, onDismiss: () => resolve(false) },
+        );
+      });
+      if (!useRegularCamera) return;
 
       try {
         await launchFallbackCamera();
@@ -408,6 +468,8 @@ export function ProgressPhotosContainer() {
         canSelectNextComparison={comparisonNavigation.nextPhotoId !== null}
         isLoading={photosQuery.isPending}
         isCapturing={isCameraOpen || createPhotoMutation.isPending}
+        isDeleting={deletePhotoMutation.isPending}
+        onDeletePhoto={requestDeletePhoto}
         errorMessage={errorMessage}
         poseCapabilityMessage={poseCapabilityMessage}
         captureStatusMessage={captureStatusMessage}

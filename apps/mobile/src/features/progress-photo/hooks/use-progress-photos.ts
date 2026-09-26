@@ -19,6 +19,20 @@ export function useProgressPhotosQuery() {
   });
 }
 
+export function useDeleteProgressPhotoMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => progressPhotoRepository.delete(id),
+    onMutate: () =>
+      queryClient.cancelQueries({ queryKey: progressPhotoKeys.all }),
+    onSuccess: (photos) => {
+      queryClient.setQueryData(progressPhotoKeys.all, photos);
+    },
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: progressPhotoKeys.all }),
+  });
+}
+
 export function useCreateProgressPhotoMutation() {
   const queryClient = useQueryClient();
 

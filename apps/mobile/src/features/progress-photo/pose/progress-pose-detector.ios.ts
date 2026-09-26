@@ -1,6 +1,7 @@
 import type { TfliteModel } from "react-native-fast-tflite";
 import type { CameraOrientation, Frame } from "react-native-vision-camera";
 import type { Resizer } from "react-native-vision-camera-resizer";
+import { createSynchronizable } from "react-native-worklets";
 
 import { parseMoveNetOutputResult } from "./movenet-output-parser";
 import { getProgressPoseCapability } from "./progress-pose-capability";
@@ -70,85 +71,109 @@ function createDetector(
   model: TfliteModel,
   resizer: Resizer,
 ): ProgressPoseDetector {
-  const state = {
+  const sharedState = createSynchronizable({
     lastInferenceTimestampMs: Number.NEGATIVE_INFINITY,
     lastDetectionStatus: "skipped" as ProgressPoseDetectionStatus,
     disposed: false,
-  };
+  });
 
   return {
     detectFromFrame(frameValue: unknown) {
       "worklet";
 
-      if (state.disposed || !isUsableFrame(frameValue)) {
-        state.lastDetectionStatus = "invalid";
-        return null;
-      }
-
-      const timestampMs = frameValue.timestamp * 1000;
-      const elapsedSinceLastInference =
-        timestampMs - state.lastInferenceTimestampMs;
-      if (
-        elapsedSinceLastInference >= 0 &&
-        elapsedSinceLastInference < progressPoseConfig.inferenceIntervalMs
-      ) {
-        state.lastDetectionStatus = "skipped";
-        return null;
-      }
-      state.lastInferenceTimestampMs = timestampMs;
-
-      const resizedFrame = resizer.resize(frameValue);
-
+      // Serialize inference and disposal so native resources cannot be freed
+      // while the camera runtime is using them.
+      sharedState.lock();
+      const state = { ...sharedState.getBlocking() };
       try {
-        const inputBuffer = resizedFrame.getPixelBuffer();
-        const expectedInputBytes =
-          PROGRESS_POSE_MODEL.inputWidth * PROGRESS_POSE_MODEL.inputHeight * 3;
-
-        if (inputBuffer.byteLength !== expectedInputBytes) {
+        if (state.disposed || !isUsableFrame(frameValue)) {
           state.lastDetectionStatus = "invalid";
           return null;
         }
 
-        const outputs = model.runSync([inputBuffer]);
-        const output = outputs[0];
-        if (!output) {
-          state.lastDetectionStatus = "invalid";
+        const timestampMs = frameValue.timestamp * 1000;
+        const elapsedSinceLastInference =
+          timestampMs - state.lastInferenceTimestampMs;
+        if (
+          elapsedSinceLastInference >= 0 &&
+          elapsedSinceLastInference < progressPoseConfig.inferenceIntervalMs
+        ) {
+          state.lastDetectionStatus = "skipped";
           return null;
         }
+        state.lastInferenceTimestampMs = timestampMs;
 
-        const result = parseMoveNetOutputResult(new Float32Array(output), {
-          sourceWidth: frameValue.width,
-          sourceHeight: frameValue.height,
-          modelWidth: PROGRESS_POSE_MODEL.inputWidth,
-          modelHeight: PROGRESS_POSE_MODEL.inputHeight,
-          orientation: frameValue.orientation,
-          isMirrored: frameValue.isMirrored,
-          timestampMs,
-          minimumLandmarkConfidence:
-            progressPoseConfig.minimumLandmarkConfidence,
-          minimumOverallConfidence: progressPoseConfig.minimumOverallConfidence,
-          minimumVisibleLandmarkCount:
-            progressPoseConfig.minimumVisibleLandmarkCount,
-          noPersonOverallConfidenceMaximum:
-            progressPoseConfig.noPersonOverallConfidenceMaximum,
-        });
-        state.lastDetectionStatus = result.status;
-        return result.pose;
+        const resizedFrame = resizer.resize(frameValue);
+
+        try {
+          const inputBuffer = resizedFrame.getPixelBuffer();
+          const expectedInputBytes =
+            PROGRESS_POSE_MODEL.inputWidth *
+            PROGRESS_POSE_MODEL.inputHeight *
+            3;
+
+          if (inputBuffer.byteLength !== expectedInputBytes) {
+            state.lastDetectionStatus = "invalid";
+            return null;
+          }
+
+          const outputs = model.runSync([inputBuffer]);
+          const output = outputs[0];
+          if (!output) {
+            state.lastDetectionStatus = "invalid";
+            return null;
+          }
+
+          const result = parseMoveNetOutputResult(new Float32Array(output), {
+            sourceWidth: frameValue.width,
+            sourceHeight: frameValue.height,
+            modelWidth: PROGRESS_POSE_MODEL.inputWidth,
+            modelHeight: PROGRESS_POSE_MODEL.inputHeight,
+            orientation: frameValue.orientation,
+            isMirrored: frameValue.isMirrored,
+            timestampMs,
+            minimumLandmarkConfidence:
+              progressPoseConfig.minimumLandmarkConfidence,
+            minimumOverallConfidence:
+              progressPoseConfig.minimumOverallConfidence,
+            minimumVisibleLandmarkCount:
+              progressPoseConfig.minimumVisibleLandmarkCount,
+            noPersonOverallConfidenceMaximum:
+              progressPoseConfig.noPersonOverallConfidenceMaximum,
+          });
+          state.lastDetectionStatus = result.status;
+          return result.pose;
+        } finally {
+          resizedFrame.dispose();
+        }
       } finally {
-        resizedFrame.dispose();
+        try {
+          sharedState.setBlocking(state);
+        } finally {
+          sharedState.unlock();
+        }
       }
     },
 
     getLastDetectionStatus() {
       "worklet";
-      return state.lastDetectionStatus;
+      return sharedState.getBlocking().lastDetectionStatus;
     },
 
     dispose() {
-      if (state.disposed) return;
-      state.disposed = true;
-      resizer.dispose();
-      model.dispose();
+      sharedState.lock();
+      try {
+        const state = sharedState.getBlocking();
+        if (state.disposed) return;
+        sharedState.setBlocking({ ...state, disposed: true });
+        try {
+          resizer.dispose();
+        } finally {
+          model.dispose();
+        }
+      } finally {
+        sharedState.unlock();
+      }
     },
   };
 }

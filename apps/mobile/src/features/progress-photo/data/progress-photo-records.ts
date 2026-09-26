@@ -9,6 +9,33 @@ type ProgressPhotoUpdateResult = {
   updatedPhoto: ProgressPhoto | null;
 };
 
+export function deleteProgressPhoto(
+  photos: ProgressPhoto[],
+  id: string,
+): ProgressPhoto[] {
+  return photos
+    .filter((photo) => photo.id !== id)
+    .map((photo) => {
+      const alignment =
+        photo.alignment?.referencePhotoId === id ? null : photo.alignment;
+      const automaticAlignment =
+        photo.automaticAlignment?.referencePhotoId === id
+          ? null
+          : photo.automaticAlignment;
+      if (
+        alignment === photo.alignment &&
+        automaticAlignment === photo.automaticAlignment
+      )
+        return photo;
+      return {
+        ...photo,
+        alignment,
+        automaticAlignment,
+        alignmentStatus: alignment ? photo.alignmentStatus : "unavailable",
+      };
+    });
+}
+
 export function updateProgressPhotoPoseMetadata(
   photos: ProgressPhoto[],
   input: UpdateProgressPhotoPoseMetadataInput,

@@ -10,6 +10,7 @@ import type {
 } from "../types";
 import { progressPhotoPersistenceMapper } from "./progress-photo-persistence.mapper";
 import {
+  deleteProgressPhoto,
   updateProgressPhotoAlignment,
   updateProgressPhotoPoseMetadata,
 } from "./progress-photo-records";
@@ -52,6 +53,26 @@ async function copyToDocumentStorage(sourceUri: string, id: string) {
 
 export const progressPhotoRepository = {
   getAll: readAll,
+
+  async delete(id: string): Promise<ProgressPhoto[]> {
+    const currentPhotos = await readAll();
+    const photo = currentPhotos.find((item) => item.id === id);
+    const remainingPhotos = deleteProgressPhoto(currentPhotos, id);
+    if (
+      photo &&
+      Platform.OS !== "web" &&
+      !remainingPhotos.some((item) => item.uri === photo.uri)
+    ) {
+      const directory = new Directory(Paths.document, PHOTO_DIRECTORY_NAME);
+      const file = new File(photo.uri);
+      // Only delete a managed file, never the original in a library or another directory.
+      if (file.parentDirectory.uri === directory.uri && file.exists) {
+        file.delete();
+      }
+    }
+    await persist(remainingPhotos);
+    return remainingPhotos;
+  },
 
   async create(input: CreateProgressPhotoInput): Promise<ProgressPhoto> {
     const uri = await copyToDocumentStorage(input.sourceUri, input.id);
