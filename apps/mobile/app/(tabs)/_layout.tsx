@@ -1,7 +1,7 @@
-import React, { useMemo } from "react";
-import { View } from "react-native";
+import React from "react";
+import { AppTabRail } from "@/src/components/app-tab-rail";
 import { Tabs } from "expo-router";
-import { useColorScheme } from "nativewind";
+
 import {
   History,
   Dumbbell,
@@ -11,39 +11,11 @@ import {
 } from "lucide-react-native";
 
 export default function TabLayout() {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  const screenOptions = useMemo(
-    () => ({
-      headerShown: false,
-
-      tabBarStyle: {
-        backgroundColor: "transparent",
-        borderTopWidth: 0,
-        elevation: 0,
-        shadowOpacity: 0,
-      },
-
-      tabBarActiveTintColor: isDark ? "#BD93F9" : "#0f172a",
-      tabBarInactiveTintColor: isDark ? "#6272A4" : "#64748b",
-
-      tabBarBackground: () => (
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: isDark ? "#21222C" : "#ffffff",
-            borderTopWidth: 1,
-            borderTopColor: isDark ? "#44475A" : "#e5e7eb",
-          }}
-        />
-      ),
-    }),
-    [isDark],
-  );
-
   return (
-    <Tabs screenOptions={screenOptions}>
+    <Tabs
+      screenOptions={{ headerShown: false, tabBarPosition: "right" }}
+      tabBar={(props) => <AppTabRail {...props} />}
+    >
       <Tabs.Screen
         name="history"
         options={{
