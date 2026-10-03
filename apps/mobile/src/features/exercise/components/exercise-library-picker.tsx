@@ -223,23 +223,25 @@ const ExerciseRow = React.memo(function ExerciseRow(props: {
         </View>
 
         <View className="items-end">
-          <View
-            className={`rounded-full px-2 py-0.5 ${
-              props.selected
-                ? "bg-white/15 dark:bg-[#282A36]/10"
-                : "bg-neutral-100 dark:bg-[#21222C]"
-            }`}
-          >
-            <Text
-              className={`text-[10px] font-semibold ${
+          {props.exercise.quantityUnit === "time" ? (
+            <View
+              className={`rounded-full px-2 py-0.5 ${
                 props.selected
-                  ? "text-white dark:text-[#282A36]"
-                  : "text-neutral-500 dark:text-[#6272A4]"
+                  ? "bg-white/15 dark:bg-[#282A36]/10"
+                  : "bg-neutral-100 dark:bg-[#21222C]"
               }`}
             >
-              {getQuantityUnitLabel(props.exercise.quantityUnit ?? "reps")}
-            </Text>
-          </View>
+              <Text
+                className={`text-[10px] font-semibold ${
+                  props.selected
+                    ? "text-white dark:text-[#282A36]"
+                    : "text-neutral-500 dark:text-[#6272A4]"
+                }`}
+              >
+                Time
+              </Text>
+            </View>
+          ) : null}
 
           <Text
             className={`mt-1 text-base ${
@@ -257,6 +259,7 @@ const ExerciseRow = React.memo(function ExerciseRow(props: {
 }, (prev, next) => {
   return (
     getExerciseId(prev.exercise) === getExerciseId(next.exercise) &&
+    prev.exercise.quantityUnit === next.exercise.quantityUnit &&
     prev.subtitle === next.subtitle &&
     prev.selected === next.selected &&
     prev.selectable === next.selectable

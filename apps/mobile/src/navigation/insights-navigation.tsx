@@ -46,7 +46,10 @@ export function InsightsDetailStack({
 }) {
   const options = useInsightsHeaderOptions();
   return (
-    <Stack initialRouteName="index" screenOptions={options}>
+    <Stack
+      initialRouteName="index"
+      screenOptions={{ ...options, animation: "none" }}
+    >
       <Stack.Screen
         name="index"
         options={{ title, headerBackVisible: false }}

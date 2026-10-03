@@ -146,7 +146,7 @@ export default function RootLayout() {
                       edges={["top", "bottom"]}
                     >
                       <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
-                        <Stack screenOptions={{ headerShown: false }}>
+                        <Stack screenOptions={{ headerShown: false, animation: "none" }}>
                           <Stack.Screen name="(tabs)" />
                           <Stack.Screen name="program-workout" />
                           <Stack.Screen name="program-workout/new" />

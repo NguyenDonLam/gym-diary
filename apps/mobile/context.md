@@ -318,3 +318,10 @@
 - **Cross-module change:** Update system-wide state and every affected module section.
 - **Verify:** Check actual source, storage owner, downstream refresh, and platform-specific behavior.
 - **Rules:** AGENTS.md is the architecture and human-review authority; this file records implemented behavior.
+
+
+
+## Current problem
+- page doesnt auto load into the next page, there is a buffer period of a loading page (need to be instant)
+- opening the keypad does not slide content upward properly
+- maybe make buttons and cards have sharp edges instead of rounded program edit UI looks ugly right now
