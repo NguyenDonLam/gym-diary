@@ -7,7 +7,8 @@
  * - Keep unassigned and folder expansion locally, opening newly loaded
  *   folders by default. buildRows combines those values into draggable
  *   unassigned-header, folder-header, and program rows.
- * - Wait for both program and folder loads before showing the list.
+ * - Render the Workout header immediately; show row-shaped placeholders
+ *   while programs or folders load, then replace them with draggable rows.
  * - useOngoingSession supplies the active session and start/end/discard
  *   actions. useSessionTimer formats elapsed time from its startedAt.
  * - The active-session card opens /session-workout/[id]; its End button
@@ -41,7 +42,6 @@ import {
   Text,
   Pressable,
   Alert,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -141,6 +141,8 @@ export default function Workout() {
     () => buildRows(templateProgram, folders, unassignedOpen, openFolderIds),
     [templateProgram, folders, unassignedOpen, openFolderIds],
   );
+  const isProgramListLoading =
+    isLoading || foldersLoading || programs.length !== templateProgram.length;
 
   const scrollFolderIntoKeyboardView = React.useCallback(
     (folderId: string) => {
@@ -468,14 +470,6 @@ export default function Workout() {
     );
   };
 
-  if (isLoading || foldersLoading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-[#282A36]">
-        <ActivityIndicator size="large" color="#BD93F9" />
-      </View>
-    );
-  }
-
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-white dark:bg-[#282A36]"
@@ -484,7 +478,7 @@ export default function Workout() {
     >
       <DraggableFlatList
         ref={listRef}
-        data={rows}
+        data={isProgramListLoading ? [] : rows}
         keyExtractor={(item) => item.key}
         renderItem={renderRow}
         onDragEnd={handleDragEnd}
@@ -515,7 +509,7 @@ export default function Workout() {
             </Text>
 
             <Text className="mt-0.5 text-xs text-neutral-500 dark:text-[#6272A4]">
-              Total: {programs.length}
+              Total: {isLoading ? "…" : programs.length}
             </Text>
 
             {ongoingSession ? (
@@ -666,6 +660,15 @@ export default function Workout() {
               </Pressable>
             </View>
           </View>
+        }
+        ListEmptyComponent={
+          isProgramListLoading ? (
+            <View accessibilityLabel="Loading programs" className="gap-2">
+              <View className="h-12 bg-neutral-200 dark:bg-[#343746]" />
+              <View className="h-16 bg-neutral-200 dark:bg-[#343746]" />
+              <View className="h-16 bg-neutral-200 dark:bg-[#343746]" />
+            </View>
+          ) : null
         }
         ListFooterComponent={
           foldersError ? (
