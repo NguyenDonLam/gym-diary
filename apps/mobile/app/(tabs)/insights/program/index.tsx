@@ -1,8 +1,23 @@
-// app/(tabs)/insights/program/index.tsx
+/**
+ * Insights program selection flow:
+ * - useWorkoutPrograms loads the saved programs, loading flag, and error.
+ * - Keep search text locally; trim and lowercase it, then filter programs
+ *   by case-insensitive name substring without changing the loaded list.
+ * - Render loading, error, or empty feedback before the matching rows.
+ * - Each ProgramRow shows the program name and color strip; subtitle and
+ *   right-side value selectors currently return undefined.
+ * - Tapping a row replaces this route with
+ *   /(tabs)/insights/program/[programId] using that program's ID.
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
-import { COLOR_STRIP_MAP, WorkoutProgram } from "@/src/features/program-workout/domain/type";
+import {
+  COLOR_STRIP_MAP,
+  WorkoutProgram,
+} from "@/src/features/program-workout/domain/type";
 import { useWorkoutPrograms } from "@/src/features/program-workout/hooks/use-workout-programs";
 
 function ProgramRow(props: {
@@ -82,12 +97,12 @@ export default function InsightsProgramIndexScreen() {
     if (!query) return programs;
 
     return programs.filter((p) =>
-      getProgramName(p).toLowerCase().includes(query)
+      getProgramName(p).toLowerCase().includes(query),
     );
   }, [programs, q]);
 
   function openProgram(programId: string) {
-    router.push({
+    router.replace({
       pathname: "/(tabs)/insights/program/[programId]",
       params: { programId },
     });

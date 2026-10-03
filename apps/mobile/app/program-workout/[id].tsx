@@ -1,4 +1,20 @@
-// apps/mobile/app/template-workout/[id].tsx
+/**
+ * Edit workout program flow:
+ * - Read program id and optional draftKey from Expo Router parameters.
+ * - Validate id, then load the full program through workoutProgramRepository.
+ * - Convert the saved domain program to WorkoutProgramFormData with
+ *   WorkoutProgramFactory.formFromDomain.
+ * - If draftKey exists, consume its one-time form draft and use it in place
+ *   of the saved values; cancellation prevents stale async updates.
+ * - Show a loading indicator or load error until a program has been loaded;
+ *   only then mount WorkoutProgramForm with editable formData.
+ * - Save requires a loaded program, a nonblank name, and no active load/save.
+ * - Convert the form back with domainFromForm, restore the route's original
+ *   id, persist via workoutProgramRepository.save, then return to Workout.
+ * - Cancel returns to Workout unless a save is in progress.
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -31,7 +47,7 @@ export default function ProgramWorkoutEditScreen() {
   const isDark = colorScheme === "dark";
 
   const [formData, setFormData] = useState<WorkoutProgramFormData>(
-    WorkoutProgramFactory.createForm()
+    WorkoutProgramFactory.createForm(),
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,7 +116,7 @@ export default function ProgramWorkoutEditScreen() {
 
   const handleCancel = () => {
     if (isSaving) return;
-    router.back();
+    router.replace("/(tabs)/workout");
   };
 
   const handleSave = async () => {
@@ -114,7 +130,7 @@ export default function ProgramWorkoutEditScreen() {
 
       await workoutProgramRepository.save(template);
 
-      router.replace("/workout");
+      router.replace("/(tabs)/workout");
     } finally {
       setIsSaving(false);
     }

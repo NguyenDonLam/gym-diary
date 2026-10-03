@@ -1,5 +1,29 @@
-// apps/mobile/app/session-workout/[id].tsx
-
+/**
+ * Saved session detail page flow:
+ * - Read and normalize id from Expo Router parameters; without an ID the
+ *   page leaves loading and shows an empty session.
+ * - getInitialSessionData loads the stored session and its exercise graph
+ *   through sessionWorkoutRepository. If exercises exist, batch-load their
+ *   progress histories through sessionExerciseRepository.
+ * - toExerciseViews creates display rows with open exercise cards, closed
+ *   progress panels, and history for each exercise ID.
+ * - Store the session name/status and exercise rows locally. Only status
+ *   in_progress permits editing; every other status is read-only.
+ * - Render SessionExerciseCard rows, RestTimerBanner, loading/empty states,
+ *   and keyboard-aware padding; onChange edits the local card draft.
+ * - In an active session, adding exercises opens ExerciseLibraryPicker.
+ *   SessionExerciseFactory creates ordered session exercise domains;
+ *   optimistic rows appear, then repository saves and a batch history
+ *   lookup enrich the displayed rows.
+ * - Adding or committing sets persists them with sessionSetRepository.
+ *   A newly completed set may start useRestTimer after target lookup and
+ *   positive restSeconds normalization. This route does not refresh a
+ *   shared session provider after these saves.
+ * - Back replaces this route with Workout for in_progress sessions or
+ *   History for any other status; session finishing is on Workout.
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -58,7 +82,7 @@ function toExerciseViews(
     isOpen: true,
     isProgressOpen: false,
     progressHistory: ex.exerciseId
-      ? progressHistoryByExerciseId[ex.exerciseId] ?? []
+      ? (progressHistoryByExerciseId[ex.exerciseId] ?? [])
       : [],
   }));
 }
@@ -232,8 +256,8 @@ export default function SessionWorkoutPage() {
             ...exercise,
             progressHistory:
               exercise.exerciseId != null
-                ? progressHistoryByExerciseId[exercise.exerciseId] ??
-                  exercise.progressHistory
+                ? (progressHistoryByExerciseId[exercise.exerciseId] ??
+                  exercise.progressHistory)
                 : exercise.progressHistory,
           })),
         );
@@ -247,7 +271,17 @@ export default function SessionWorkoutPage() {
   return (
     <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
       <View className="flex-row items-center justify-between border-b border-zinc-200 bg-white px-4 pb-2 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
-        <Pressable onPress={() => router.back()} hitSlop={10} className="mr-2">
+        <Pressable
+          onPress={() =>
+            router.replace(
+              sessionStatus === "in_progress"
+                ? "/(tabs)/workout"
+                : "/(tabs)/history",
+            )
+          }
+          hitSlop={10}
+          className="mr-2"
+        >
           <ChevronLeft width={20} height={20} color={iconColor} />
         </Pressable>
 

@@ -9,7 +9,7 @@ type Props = {
   template: WorkoutProgram;
   inFolder: boolean;
   isActive: boolean;
-  onDragHandleLongPress: () => void;
+  onDragHandleLongPress?: () => void;
   onPress: () => void;
   onLongPress: () => void;
   onDeletePress: () => void;
@@ -37,14 +37,16 @@ export function ProgramRow({
     >
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center flex-1">
-          <Pressable
-            onLongPress={onDragHandleLongPress}
-            delayLongPress={120}
-            hitSlop={8}
-            className="mr-2 h-9 flex-row items-center rounded-xl border border-neutral-300 bg-white px-2 dark:border-[#6272A4] dark:bg-[#343746]"
-          >
-            <GripVertical width={15} height={15} color="#6B7280" />
-          </Pressable>
+          {onDragHandleLongPress ? (
+            <Pressable
+              onLongPress={onDragHandleLongPress}
+              delayLongPress={120}
+              hitSlop={8}
+              className="mr-2 h-9 flex-row items-center rounded-xl border border-neutral-300 bg-white px-2 dark:border-[#6272A4] dark:bg-[#343746]"
+            >
+              <GripVertical width={15} height={15} color="#6B7280" />
+            </Pressable>
+          ) : null}
 
           <View className={`mr-3 h-7 w-1 rounded-full ${stripClass}`} />
 

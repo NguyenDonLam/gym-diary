@@ -1,4 +1,13 @@
-// app/(tabs)/insights/exercise/index.tsx
+/**
+ * Insights exercise selection flow:
+ * - Render ExerciseLibraryPicker in browse mode; the picker owns exercise
+ *   loading, search ranking, usage summaries, and empty-state display.
+ * - Enable browse-all and pass the page's title, subtitle, and empty text.
+ * - When an exercise is pressed, take its ID and replace this route with
+ *   /(tabs)/insights/exercise/[exerciseId] for its statistics.
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useCallback } from "react";
 import { router } from "expo-router";
 
@@ -7,7 +16,7 @@ import ExerciseLibraryPicker from "@/src/features/exercise/components/exercise-l
 
 export default function InsightsExerciseIndexScreen() {
   const openExercise = useCallback((exercise: Exercise) => {
-    router.push({
+    router.replace({
       pathname: "/(tabs)/insights/exercise/[exerciseId]",
       params: { exerciseId: exercise.id },
     });

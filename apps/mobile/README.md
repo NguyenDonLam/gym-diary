@@ -213,6 +213,69 @@ npm run dev:mobile
 
 Use the Expo CLI output to run on iOS simulator, Android emulator, or a physical device.
 
+### Development builds and app variants
+
+`app.config.js` selects the app variant using `APP_VARIANT`. EAS sets this
+automatically through the build profile in `eas.json`, regardless of the Git branch:
+
+| Build profile | App name | iOS bundle identifier / Android package |
+| --- | --- | --- |
+| `development` | Diary Dev | `com.gymdiary.app.dev` |
+| `preview` / `production` | Gym Diary | `com.gymdiary.app` |
+
+The development app can be installed alongside the regular app. Each has separate
+local data: keep the regular app installed to retain your progress, and use Diary
+Dev for testing.
+
+From `apps/mobile`, create an iPhone development build:
+
+```powershell
+npx eas-cli build --profile development --platform ios
+```
+
+Install the completed build using its EAS installation link on your registered
+iPhone. You do not need to set `APP_VARIANT` in the terminal for EAS builds.
+Use `--profile production` when creating a production build.
+
+#### Rebuild after an Expo native startup crash
+
+The development profile sets `EXPO_USE_PRECOMPILED_MODULES=0` so Expo modules
+compile from source together. This works around the suspected precompiled binary
+mismatch seen when iOS reports a missing `ExpoModulesCore` symbol referenced by
+`ExpoFileSystem` and terminates the app at launch. Source compilation can increase
+build time.
+
+After changing this setting, create a fresh development build from `apps/mobile`:
+
+```powershell
+npx eas-cli build --profile development --platform ios --clear-cache
+```
+
+Install the new build over Gym Diary Dev, then open it to verify that the
+development launcher starts. The regular Gym Diary app remains separate.
+Restarting Metro alone cannot fix native frameworks in an already installed build.
+
+### Start Diary Dev over a tunnel
+
+For the local development server, set the variant explicitly. From `apps/mobile`
+in PowerShell:
+
+```powershell
+$env:APP_VARIANT="development"
+npx expo start --dev-client --tunnel
+```
+
+Scan the QR code and open it in the installed Diary Dev app. A tunnel lets your
+phone connect over mobile data or another Wi-Fi network; both devices need
+internet access. Keep the terminal running while testing.
+
+The environment variable stays set for that PowerShell session. Set it again
+when opening a new terminal. If `APP_VARIANT` is `production` or unset, the
+configuration uses the regular app identifier and scheme, so the development
+link may target the wrong app or fail to connect. Stop Metro with **Ctrl+C**,
+then run the two commands above to restart with the development variant.
+Starting Metro does not rebuild or replace an installed app or erase its data.
+
 ### Expo Go LAN URL on some machines
 
 On some machines, Expo may print a QR/link that points to

@@ -1,5 +1,33 @@
-// apps/mobile/app/session-workout/ongoing.tsx
-
+/**
+ * Ongoing session page flow:
+ * - useOngoingSession supplies the current session, refresh, and mutation
+ *   version; mount refreshes the provider before leaving the loading state.
+ * - When a session arrives, remember its ID and project its exercises/sets
+ *   into SessionExerciseView rows with toView. Carry prior draft set values
+ *   and card expansion state across provider refreshes.
+ * - Batch-load progress history for the session's exercise IDs through
+ *   sessionExerciseRepository, then attach it to the existing view rows.
+ * - If the provider later clears the session, reload the remembered ID
+ *   through sessionWorkoutRepository and show it in completed/read-only
+ *   mode; mutationVersion also retriggers this fallback read.
+ * - Render SessionExerciseCard rows, RestTimerBanner, loading/empty states,
+ *   and keyboard-aware scroll padding. Card onChange updates local draft
+ *   rows; read-only mode hides add actions and blocks mutations.
+ * - Adding exercises opens ExerciseLibraryPicker in multi-select mode.
+ *   SessionExerciseFactory maps selections into ordered session exercises;
+ *   optimistic rows appear before repository saves complete.
+ * - Batch-load new exercises' progress, save each through
+ *   sessionExerciseRepository, refresh the provider, bump mutationVersion,
+ *   then attach progress history to the displayed rows.
+ * - Adding or committing a set saves it through sessionSetRepository,
+ *   refreshes the provider, and bumps mutationVersion.
+ * - A newly completed set may start a rest timer: find its next target,
+ *   normalize restSeconds, and call useRestTimer only for positive duration.
+ * - Back replaces this route with the Workout tab; session finishing lives
+ *   on that tab, not on this page.
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useRouter } from "expo-router";
@@ -66,7 +94,8 @@ function toView(
   progressHistoryByExerciseId: ProgressHistoryLookup = {},
   previous?: ViewModel | null,
 ): ViewModel {
-  const previousExercises = previous?.id === session.id ? previous.exercises : [];
+  const previousExercises =
+    previous?.id === session.id ? previous.exercises : [];
   const previousById = new Map(previousExercises.map((ex) => [ex.id, ex]));
 
   return {
@@ -96,7 +125,9 @@ function toView(
           isCompleted: previousSet.isCompleted || set.isCompleted,
           e1rm: previousSet.e1rm ?? set.e1rm,
           e1rmVersion:
-            previousSet.e1rm != null ? previousSet.e1rmVersion : set.e1rmVersion,
+            previousSet.e1rm != null
+              ? previousSet.e1rmVersion
+              : set.e1rmVersion,
         };
       });
 
@@ -106,9 +137,9 @@ function toView(
         isOpen: previousExercise?.isOpen ?? true,
         isProgressOpen: previousExercise?.isProgressOpen ?? false,
         progressHistory: ex.exerciseId
-          ? progressHistoryByExerciseId[ex.exerciseId] ??
+          ? (progressHistoryByExerciseId[ex.exerciseId] ??
             previousExercise?.progressHistory ??
-            []
+            [])
           : [],
       };
     }),
@@ -132,7 +163,9 @@ function applyProgressHistoryToView(
     exercises: previous.exercises.map((ex) => ({
       ...ex,
       progressHistory: ex.exerciseId
-        ? progressHistoryByExerciseId[ex.exerciseId] ?? ex.progressHistory ?? []
+        ? (progressHistoryByExerciseId[ex.exerciseId] ??
+          ex.progressHistory ??
+          [])
         : [],
     })),
   };
@@ -359,8 +392,8 @@ export default function OngoingSessionPage() {
                   ...exercise,
                   progressHistory:
                     exercise.exerciseId != null
-                      ? progressHistoryByExerciseId[exercise.exerciseId] ??
-                        exercise.progressHistory
+                      ? (progressHistoryByExerciseId[exercise.exerciseId] ??
+                        exercise.progressHistory)
                       : exercise.progressHistory,
                 })),
               },
@@ -375,7 +408,11 @@ export default function OngoingSessionPage() {
   return (
     <View className="flex-1 bg-white dark:bg-[#2B2D3A]">
       <View className="flex-row items-center justify-between border-b border-zinc-200 bg-white px-4 pb-2 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
-        <Pressable onPress={() => router.back()} hitSlop={10} className="mr-2">
+        <Pressable
+          onPress={() => router.replace("/(tabs)/workout")}
+          hitSlop={10}
+          className="mr-2"
+        >
           <ChevronLeft width={20} height={20} color={iconColor} />
         </Pressable>
 

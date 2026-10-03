@@ -1,8 +1,9 @@
-import {
-  createLiveActivity,
-  type LiveActivity,
-  type LiveActivityEnvironment,
+import type {
+  LiveActivity,
+  LiveActivityComponent,
+  LiveActivityEnvironment,
 } from "expo-widgets";
+import { requireOptionalNativeModule } from "expo-modules-core";
 import { Platform } from "react-native";
 import {
   HStack,
@@ -44,8 +45,26 @@ type WorkoutLiveActivityEnvironment = LiveActivityEnvironment & {
   isStale?: boolean;
 };
 
+const ExpoWidgetsNativeModule = requireOptionalNativeModule("ExpoWidgets");
+const expoWidgets = ExpoWidgetsNativeModule
+  ? // The conditional load keeps stale development clients from crashing at startup.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    (require("expo-widgets") as typeof import("expo-widgets"))
+  : null;
+
+function createLiveActivity<T extends object>(
+  name: string,
+  component: LiveActivityComponent<T>,
+) {
+  return expoWidgets?.createLiveActivity(name, component) ?? null;
+}
+
 if (__DEV__) {
-  console.log("[LiveActivity] iOS module loaded");
+  console.log(
+    ExpoWidgetsNativeModule
+      ? "[LiveActivity] iOS module loaded"
+      : "[LiveActivity] ExpoWidgets unavailable; Live Activities disabled",
+  );
 }
 
 const workoutLiveActivity = createLiveActivity<WorkoutLiveActivityProps>(
@@ -648,7 +667,7 @@ function runLiveActivityTask(task: () => Promise<void>) {
 }
 
 function canUseLiveActivities() {
-  return Platform.OS === "ios";
+  return Platform.OS === "ios" && workoutLiveActivity != null;
 }
 
 function getLiveActivityUrl() {
@@ -660,10 +679,14 @@ export function syncWorkoutLiveActivity(props: WorkoutLiveActivityProps) {
     console.log("[LiveActivity] syncWorkoutLiveActivity()");
   }
 
-  if (!canUseLiveActivities()) return Promise.resolve();
+  const activityFactory = workoutLiveActivity;
+
+  if (!canUseLiveActivities() || activityFactory == null) {
+    return Promise.resolve();
+  }
 
   return runLiveActivityTask(async () => {
-    const instances = workoutLiveActivity.getInstances();
+    const instances = activityFactory.getInstances();
 
     if (instances.length > 0) {
       currentActivity = instances[0] ?? null;
@@ -671,17 +694,21 @@ export function syncWorkoutLiveActivity(props: WorkoutLiveActivityProps) {
       return;
     }
 
-    currentActivity = workoutLiveActivity.start(props, getLiveActivityUrl());
+    currentActivity = activityFactory.start(props, getLiveActivityUrl());
   });
 }
 
 export function endWorkoutLiveActivity(finalProps?: WorkoutLiveActivityProps) {
-  if (!canUseLiveActivities()) return Promise.resolve();
+  const activityFactory = workoutLiveActivity;
+
+  if (!canUseLiveActivities() || activityFactory == null) {
+    return Promise.resolve();
+  }
 
   return runLiveActivityTask(async () => {
     const instances = currentActivity
       ? [currentActivity]
-      : workoutLiveActivity.getInstances();
+      : activityFactory.getInstances();
 
     await Promise.all(
       instances.map((activity) =>

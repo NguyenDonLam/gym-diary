@@ -1,3 +1,19 @@
+/**
+ * Settings screen flow:
+ * - Read the active NativeWind color scheme and the ongoing-session
+ *   provider's autoEndAfterMinutes setting.
+ * - Highlight the selected Light/Dark option. Choosing one writes "theme"
+ *   to AsyncStorage, then applies setColorScheme even if storage fails.
+ * - Mirror the provider's auto-end value into an editable text draft;
+ *   disabled auto-end appears as an empty draft.
+ * - On submit or end-editing, trim the draft, accept a comma decimal
+ *   separator, and parse minutes. Invalid or nonpositive input resets to
+ *   the current provider value; valid input calls setAutoEndAfterMinutes.
+ * - The Off action dismisses the keyboard, clears the draft, and persists
+ *   false through the provider. The confirm button saves then dismisses.
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useCallback, useEffect, useState } from "react";
 import { Keyboard, Pressable, Text, TextInput, View } from "react-native";

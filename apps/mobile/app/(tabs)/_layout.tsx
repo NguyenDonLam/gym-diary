@@ -1,88 +1,77 @@
-import React, { useMemo } from "react";
-import { View } from "react-native";
+import React from "react";
+import { AppTabRail } from "@/src/components/app-tab-rail";
+import { SectionRailProvider } from "@/src/components/section-rail-context";
 import { Tabs } from "expo-router";
-import { useColorScheme } from "nativewind";
+import { mainTabBackBehavior } from "@/src/navigation/navigation-policy";
+
 import {
   History,
   Dumbbell,
   LineChart,
+  Camera,
   Settings as SettingsIcon,
 } from "lucide-react-native";
 
 export default function TabLayout() {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  const screenOptions = useMemo(
-    () => ({
-      headerShown: false,
-
-      tabBarStyle: {
-        backgroundColor: "transparent",
-        borderTopWidth: 0,
-        elevation: 0,
-        shadowOpacity: 0,
-      },
-
-      tabBarActiveTintColor: isDark ? "#BD93F9" : "#0f172a",
-      tabBarInactiveTintColor: isDark ? "#6272A4" : "#64748b",
-
-      tabBarBackground: () => (
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: isDark ? "#21222C" : "#ffffff",
-            borderTopWidth: 1,
-            borderTopColor: isDark ? "#44475A" : "#e5e7eb",
+  return (
+    <SectionRailProvider>
+      <Tabs
+        initialRouteName="history"
+        backBehavior={mainTabBackBehavior}
+        screenOptions={{ headerShown: false, tabBarPosition: "right" }}
+        tabBar={(props) => <AppTabRail {...props} />}
+      >
+        <Tabs.Screen
+          name="history"
+          options={{
+            title: "History",
+            tabBarIcon: ({ color, size }) => (
+              <History size={size} color={color} />
+            ),
           }}
         />
-      ),
-    }),
-    [isDark],
-  );
 
-  return (
-    <Tabs screenOptions={screenOptions}>
-      <Tabs.Screen
-        name="history"
-        options={{
-          title: "History",
-          tabBarIcon: ({ color, size }) => (
-            <History size={size} color={color} />
-          ),
-        }}
-      />
+        <Tabs.Screen
+          name="workout"
+          options={{
+            title: "Workout",
+            tabBarIcon: ({ color, size }) => (
+              <Dumbbell size={size} color={color} />
+            ),
+          }}
+        />
 
-      <Tabs.Screen
-        name="workout"
-        options={{
-          title: "Workout",
-          tabBarIcon: ({ color, size }) => (
-            <Dumbbell size={size} color={color} />
-          ),
-        }}
-      />
+        <Tabs.Screen
+          name="insights"
+          options={{
+            title: "Insights",
+            tabBarIcon: ({ color, size }) => (
+              <LineChart size={size} color={color} />
+            ),
+          }}
+        />
 
-      <Tabs.Screen
-        name="insights"
-        options={{
-          title: "Insights",
-          tabBarIcon: ({ color, size }) => (
-            <LineChart size={size} color={color} />
-          ),
-        }}
-      />
+        <Tabs.Screen
+          name="progress"
+          options={{
+            title: "Progress",
+            tabBarIcon: ({ color, size }) => (
+              <Camera size={size} color={color} />
+            ),
+          }}
+        />
 
-      <Tabs.Screen
-        name="settings/index"
-        options={{
-          title: "Settings",
-          tabBarIcon: ({ color, size }) => (
-            <SettingsIcon size={size} color={color} />
-          ),
-          tabBarItemStyle: { display: "flex" },
-        }}
-      />
-    </Tabs>
+        <Tabs.Screen
+          name="settings/index"
+          options={{
+            title: "Settings",
+            tabBarIcon: ({ color, size }) => (
+              <SettingsIcon size={size} color={color} />
+            ),
+            tabBarItemStyle: { display: "flex" },
+          }}
+        />
+      </Tabs>
+    </SectionRailProvider>
   );
 }

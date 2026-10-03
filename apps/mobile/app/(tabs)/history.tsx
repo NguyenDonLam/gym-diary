@@ -1,3 +1,28 @@
+/**
+ * Workout History tab flow:
+ * - Start on the current month and today's local date; month/day selection
+ *   lives in this route rather than in the calendar components.
+ * - history/ui/date builds a 42-day, Monday-first calendar matrix. Query
+ *   sessionWorkoutRepository.getCompletedInRange for its first day through
+ *   the day after its last cell, so adjacent-month cells have data too.
+ * - Reload when the visible month or ongoing-session mutationVersion changes;
+ *   ignore stale results on cleanup and show a local load error on failure.
+ * - Group completed sessions by local startedAt date and sort each day by
+ *   start time. For calendar coloring, choose the longest session on each
+ *   day and use that session's program color.
+ * - Compute growthBySessionId against the preceding valid strength score;
+ *   it is passed to WorkoutSessionStat but that child currently does not
+ *   read the lookup.
+ * - WorkoutSessionStat scans the selected day's completed or unmarked sets:
+ *   count positive quantities, convert kg/lb loads, sum kg times quantity,
+ *   and average each scored session's (strengthScore - 1) percentage.
+ * - HistoryMonthNavigation changes month and selects its first day;
+ *   CalendarMonth may change month or select an individual day.
+ * - DaySummaryCard receives that day's sessions and opens the selected
+ *   session at /session-workout/[id].
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import { useColorScheme } from "nativewind";
@@ -14,6 +39,7 @@ import {
   toKey,
 } from "@/src/features/history/ui/date";
 import { CalendarMonth } from "@/src/features/history/ui/calendar-month";
+import { HistoryMonthNavigation } from "@/src/features/history/ui/history-month-navigation";
 import { LoadUnit, ProgramColor } from "@/db/enums";
 import { router } from "expo-router";
 import { useOngoingSession } from "@/src/features/session-workout/hooks/use-ongoing-session";
@@ -137,7 +163,7 @@ export default function History() {
   const { colorScheme } = useColorScheme();
   const schemeClass = colorScheme === "dark" ? "dark" : "";
   const insets = useSafeAreaInsets();
-  const tabBarHeight = 56 + insets.bottom;
+  const tabBarHeight = insets.bottom;
 
   const [monthDate, setMonthDate] = useState(() => firstDayOfMonth(new Date()));
   const [selectedDateKey, setSelectedDateKey] = useState<string>(() =>
@@ -172,11 +198,9 @@ export default function History() {
 
         if (cancelled) return;
         setSessions(rows);
-      } catch (e) {
+      } catch {
         if (cancelled) return;
-        setLoadError(
-          e instanceof Error ? e.message : "Failed to load sessions",
-        );
+        setLoadError("Unable to load workout history.");
         setSessions([]);
       } finally {
         if (cancelled) return;
@@ -267,6 +291,13 @@ export default function History() {
 
   return (
     <View className={`${schemeClass} flex-1 bg-white dark:bg-[#2B2D3A]`}>
+      <HistoryMonthNavigation
+        month={monthDate}
+        onChange={(date) => {
+          setMonthDate(date);
+          setSelectedDateKey(toKey(date));
+        }}
+      />
       <View className="border-b border-zinc-200 px-4 pb-3 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
         <Text className="text-xl font-bold text-zinc-900 dark:text-[#F8F8F2]">
           History
@@ -309,7 +340,7 @@ export default function History() {
           sessions={selectedSessions}
           bottomInset={tabBarHeight}
           onSessionPress={(s) => {
-            router.push(`/session-workout/${s.id}`);
+            router.replace(`/session-workout/${s.id}`);
           }}
         />
       </View>
