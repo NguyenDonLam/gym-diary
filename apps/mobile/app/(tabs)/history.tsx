@@ -1,3 +1,28 @@
+/**
+ * Workout History tab flow:
+ * - Start on the current month and today's local date; month/day selection
+ *   lives in this route rather than in the calendar components.
+ * - history/ui/date builds a 42-day, Monday-first calendar matrix. Query
+ *   sessionWorkoutRepository.getCompletedInRange for its first day through
+ *   the day after its last cell, so adjacent-month cells have data too.
+ * - Reload when the visible month or ongoing-session mutationVersion changes;
+ *   ignore stale results on cleanup and show a local load error on failure.
+ * - Group completed sessions by local startedAt date and sort each day by
+ *   start time. For calendar coloring, choose the longest session on each
+ *   day and use that session's program color.
+ * - Compute growthBySessionId against the preceding valid strength score;
+ *   it is passed to WorkoutSessionStat but that child currently does not
+ *   read the lookup.
+ * - WorkoutSessionStat scans the selected day's completed or unmarked sets:
+ *   count positive quantities, convert kg/lb loads, sum kg times quantity,
+ *   and average each scored session's (strengthScore - 1) percentage.
+ * - HistoryMonthNavigation changes month and selects its first day;
+ *   CalendarMonth may change month or select an individual day.
+ * - DaySummaryCard receives that day's sessions and opens the selected
+ *   session at /session-workout/[id].
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import { useColorScheme } from "nativewind";

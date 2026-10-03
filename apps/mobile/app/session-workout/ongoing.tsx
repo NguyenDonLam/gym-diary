@@ -1,5 +1,33 @@
-// apps/mobile/app/session-workout/ongoing.tsx
-
+/**
+ * Ongoing session page flow:
+ * - useOngoingSession supplies the current session, refresh, and mutation
+ *   version; mount refreshes the provider before leaving the loading state.
+ * - When a session arrives, remember its ID and project its exercises/sets
+ *   into SessionExerciseView rows with toView. Carry prior draft set values
+ *   and card expansion state across provider refreshes.
+ * - Batch-load progress history for the session's exercise IDs through
+ *   sessionExerciseRepository, then attach it to the existing view rows.
+ * - If the provider later clears the session, reload the remembered ID
+ *   through sessionWorkoutRepository and show it in completed/read-only
+ *   mode; mutationVersion also retriggers this fallback read.
+ * - Render SessionExerciseCard rows, RestTimerBanner, loading/empty states,
+ *   and keyboard-aware scroll padding. Card onChange updates local draft
+ *   rows; read-only mode hides add actions and blocks mutations.
+ * - Adding exercises opens ExerciseLibraryPicker in multi-select mode.
+ *   SessionExerciseFactory maps selections into ordered session exercises;
+ *   optimistic rows appear before repository saves complete.
+ * - Batch-load new exercises' progress, save each through
+ *   sessionExerciseRepository, refresh the provider, bump mutationVersion,
+ *   then attach progress history to the displayed rows.
+ * - Adding or committing a set saves it through sessionSetRepository,
+ *   refreshes the provider, and bumps mutationVersion.
+ * - A newly completed set may start a rest timer: find its next target,
+ *   normalize restSeconds, and call useRestTimer only for positive duration.
+ * - Back replaces this route with the Workout tab; session finishing lives
+ *   on that tab, not on this page.
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { View, Text, ScrollView, Pressable } from "react-native";
 import { useRouter } from "expo-router";

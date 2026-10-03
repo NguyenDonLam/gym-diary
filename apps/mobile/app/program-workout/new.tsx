@@ -1,3 +1,20 @@
+/**
+ * New workout program flow:
+ * - Read optional folderId and draftKey from Expo Router parameters.
+ * - Initialize editable WorkoutProgramFormData with
+ *   WorkoutProgramFactory.createForm({ folderId }).
+ * - When draftKey is present, consume its one-time saved form draft from
+ *   program-form-draft-store and replace the initial form data if found.
+ * - Pass formData and setFormData to WorkoutProgramForm, which renders and
+ *   edits the nested program, exercise, and set fields.
+ * - Allow Save only for a nonblank program name while no save is running.
+ * - Save converts the draft with WorkoutProgramFactory.domainFromForm,
+ *   persists it through workoutProgramRepository.save, then returns to
+ *   /(tabs)/workout; the saving flag is cleared in finally.
+ * - Cancel returns to Workout unless a save is in progress.
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useEffect, useState } from "react";
 import {
   View,

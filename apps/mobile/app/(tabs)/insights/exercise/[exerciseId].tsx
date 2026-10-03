@@ -1,4 +1,19 @@
-// app/(tabs)/insights/exercise/[exerciseId].tsx
+/**
+ * Exercise statistics detail flow:
+ * - Read exerciseId from the route and default the period selector to month.
+ * - When the ID changes, load the exercise, lifetime stat, and all period
+ *   stats in parallel from their three feature repositories.
+ * - Cancel stale async results on route changes; on failure clear loaded
+ *   values and show the error while loading is reported separately.
+ * - Filter all period rows to the chosen week/month/year and sort them by
+ *   periodStart ascending; the final row is the latest period.
+ * - Render ExerciseStatsView for lifetime data, ExercisePeriodStatsView for
+ *   the latest period, and delta/trend views for the sorted period rows.
+ * - Changing the selector recomputes these views from already loaded data;
+ *   it does not issue another repository query.
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useEffect, useMemo, useState } from "react";
 import { ScrollView, View, Text, Pressable } from "react-native";
 import { useLocalSearchParams } from "expo-router";

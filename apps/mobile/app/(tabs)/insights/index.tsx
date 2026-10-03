@@ -1,4 +1,28 @@
-// app/(tabs)/insights/index.tsx
+/**
+ * Insights overview flow:
+ * - Default the local time lens to 4W; the selector can switch to 12W or
+ *   ALL without refetching.
+ * - On mount, load all exercises, exercise usage summaries, and exercise
+ *   period stats in parallel from their three repositories.
+ * - Ignore responses after unmount; on failure clear the loaded arrays and
+ *   display the error while the page tracks loading separately.
+ * - Map exercise IDs to names and combine weekly period rows with the same
+ *   periodStart into chronological buckets of exercise-entry counts.
+ * - For 4W/12W, use the last 4/12 available weekly buckets, select period
+ *   rows in those buckets, count distinct exercises and total entries,
+ *   and rank a three-exercise preview by count, recency, then name.
+ * - For ALL, use usage summaries for distinct-exercise and entry totals;
+ *   rank a three-exercise preview by last performance, count, then name,
+ *   while the activity card still displays the last 12 weekly buckets.
+ * - WeeklyActivityCard scales each square's opacity against the largest
+ *   entry count among the displayed buckets.
+ * - The preview is computed and passed to ExerciseCard, but that card does
+ *   not currently render its rows; it is only a navigation link.
+ * - ExerciseCard and ProgramCard replace this route with the corresponding
+ *   Insights exercise/program selection pages.
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Link } from "expo-router";

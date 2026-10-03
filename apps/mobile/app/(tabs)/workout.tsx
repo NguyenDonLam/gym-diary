@@ -1,4 +1,39 @@
-// apps/mobile/app/(tabs)/workout.tsx
+/**
+ * Workout tab — program library and session entry flow:
+ * - useWorkoutPrograms loads programs and exposes deleteProgram;
+ *   useTemplateFolders loads folders and exposes their create/save/remove.
+ * - Copy loaded programs into local templateProgram for drag display;
+ *   external program updates replace that local copy.
+ * - Keep unassigned and folder expansion locally, opening newly loaded
+ *   folders by default. buildRows combines those values into draggable
+ *   unassigned-header, folder-header, and program rows.
+ * - Wait for both program and folder loads before showing the list.
+ * - useOngoingSession supplies the active session and start/end/discard
+ *   actions. useSessionTimer formats elapsed time from its startedAt.
+ * - The active-session card opens /session-workout/[id]; its End button
+ *   invokes the finish flow. The one-off action starts without a program.
+ * - Tapping a program starts a session from its ID; long-pressing opens
+ *   /program-workout/[id] for editing. New program actions open
+ *   /program-workout/new, optionally carrying a folderId.
+ * - If another session is active, the start prompt offers Keep going,
+ *   Finish, or Discard. Finish uses confirmFinishSession and may stop
+ *   there to open a saved program-form draft; otherwise it starts the new
+ *   session. Discard removes the old session before starting the new one.
+ * - The End button uses confirmFinishSession with the provider's program
+ *   save prompt, draft creation, and endSession action. A returned draft
+ *   opens new/edit program with draftKey; otherwise the page stays here.
+ * - Starting a new session routes to /session-workout/ongoing.
+ * - Deleting a program asks for confirmation, then calls deleteProgram.
+ * - Folder create opens the new folder; rename saves an updated folder;
+ *   delete removes it and locally unassigns its displayed programs.
+ * - Renaming scrolls the folder into view above the keyboard and clears
+ *   scheduled scrolling on cleanup.
+ * - Dragging applies applyDragResult locally. Only changed folderId values
+ *   are persisted via workoutProgramRepository.save; display order itself
+ *   remains local rather than being saved here.
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useEffect, useMemo, useState } from "react";
 
 import {

@@ -738,3 +738,133 @@ Use widget-level containers when widgets have independent data, loading, refresh
 67. Internal variables, function names, component names, type names, mapper names, hook names, and file names should remain in English.
 
 68. When modifying existing mobile/frontend code, migrate touched data-driven features toward these container, mapper, repository, query-layer, and presentation patterns without introducing unnecessary rewrites or architectural exceptions.
+
+
+# Human-in-the-Loop Development
+
+Do not make large implementation changes without first ensuring I understand and approve what is being changed.
+
+The goal is not to maximize how much code you can produce. The goal is to keep me actively involved in understanding and controlling the development of the codebase.
+
+## Before Any Significant Change
+
+If a task would involve any of the following:
+
+- multiple files
+- a new feature or subsystem
+- architectural changes
+- database/schema changes
+- new abstractions
+- new dependencies
+- significant state-management changes
+- substantial refactoring
+- more than roughly 100 lines of meaningful new or changed code
+
+STOP before implementing it.
+
+First inspect the relevant code and explain to me:
+
+1. How the current implementation works.
+2. Which files/components/systems are involved.
+3. What you think needs to change.
+4. Why that change is necessary.
+5. The proposed implementation approach.
+6. Any important trade-offs or alternatives.
+7. Approximately how large the change will be.
+
+Then wait for my approval before writing the implementation.
+
+## Break Large Work Into Stages
+
+Never implement a large feature in one pass.
+
+Break it into small, independently understandable stages.
+
+For example:
+
+Stage 1 — types/data model  
+Stage 2 — core logic  
+Stage 3 — integration  
+Stage 4 — UI  
+Stage 5 — edge cases and cleanup
+
+Before each significant stage, explain what you are about to change and why.
+
+Wait for my approval before proceeding to the next stage when the stage introduces substantial new behavior or architecture.
+
+## Make Sure I Understand
+
+Do not assume that approval means I understand the implementation.
+
+When introducing an important concept, briefly explain how it fits into the existing system.
+
+If the implementation depends on a design decision that I may reasonably want control over, present the decision before coding it.
+
+Do not hide architectural decisions inside generated code.
+
+## Small Changes Are Different
+
+For small, obvious changes such as:
+
+- fixing a typo
+- changing styling
+- correcting a simple condition
+- changing a constant
+- fixing a localized bug
+- adding a small validation rule
+
+you may implement directly.
+
+Do not create unnecessary approval checkpoints for trivial changes.
+
+## Do Not Snowball Tasks
+
+If I ask for A, do not silently implement A + B + C because they appear related.
+
+If you discover additional work that would improve the implementation, tell me about it separately.
+
+Do not perform that additional work until I approve it.
+
+## Prefer Understandable Code
+
+Do not generate large abstractions merely to make the implementation look sophisticated.
+
+Prefer code that I can inspect and understand.
+
+Avoid:
+
+- unnecessary abstraction layers
+- premature generalization
+- speculative infrastructure
+- excessive helper functions
+- large generated frameworks around simple features
+- replacing existing systems without a concrete reason
+
+If a straightforward implementation works, prefer it.
+
+## When Existing Code Is Unclear
+
+Do not immediately rewrite it.
+
+Investigate it first.
+
+Explain:
+
+- what it currently does
+- why it appears to have been designed that way
+- what problems you found
+- whether changing it is actually necessary
+
+Then let me decide whether it should be refactored.
+
+## Final Rule
+
+For substantial work, the sequence must be:
+
+**Inspect → Explain → Propose → Get approval → Implement small stage → Review → Continue**
+
+Never:
+
+**Prompt → Generate hundreds of lines → Explain afterward**
+
+I should be able to understand how the application evolves as we build it.

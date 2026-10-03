@@ -1,4 +1,22 @@
-// app/(tabs)/insights/program/[programId].tsx
+/**
+ * Program statistics detail flow:
+ * - Read programId from the route and default the period selector to week.
+ * - When the ID changes, load the full program, lifetime program stat, and
+ *   all period stats in parallel from their feature repositories.
+ * - Ignore stale async results on cleanup; on failure clear the data and
+ *   display the error, with a separate loading indicator.
+ * - Once loaded, set the navigation title to the program name and show its
+ *   color strip above the statistics.
+ * - Filter period rows to week/month/year, sort by periodStart ascending,
+ *   and take the final row for the latest-period card.
+ * - ProgramStatsView renders lifetime data; ProgramPeriodStatsView renders
+ *   the latest row; delta and trend views receive the sorted real rows.
+ * - The DEBUG_TREND branch also constructs dummy rows, but its result is
+ *   currently unused by the rendered trend view.
+ * - Period selection recomputes local rows without refetching.
+ * - Maintenance: Update this docstring with every change to this file;
+ *   keep it current with the code.
+ */
 import React, { useEffect, useMemo, useState, useLayoutEffect } from "react";
 import { ScrollView, View, Text, Pressable } from "react-native";
 import { useLocalSearchParams, useNavigation } from "expo-router";
