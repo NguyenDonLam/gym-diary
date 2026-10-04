@@ -10,7 +10,7 @@ import {
 import DraggableFlatList, {
   DragEndParams,
 } from "react-native-draggable-flatlist";
-import { Dumbbell, ListChecks, Palette, Plus } from "lucide-react-native";
+import { ChevronDown, Dumbbell, ListChecks, Plus } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 
 import ValueWheelSheet from "@/src/components/value-wheel-sheet";
@@ -96,7 +96,7 @@ export default function WorkoutProgramForm({
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const keyboardHeight = useKeyboardHeight();
-  const listBottomPadding = keyboardHeight > 0 ? keyboardHeight + 180 : 120;
+  const listBottomPadding = keyboardHeight > 0 ? keyboardHeight + 180 : 24;
 
   const selectedExerciseIds = useMemo(
     () =>
@@ -200,41 +200,10 @@ export default function WorkoutProgramForm({
   };
 
   const renderHeader = () => (
-    <View>
-      <View className="mb-4 rounded-[28px] bg-neutral-950 px-4 pb-4 pt-4 dark:bg-[#21222C]">
-        <View className="mb-4 flex-row items-center justify-between">
-          <View className="flex-row items-center">
-            <View className="mr-2 h-9 w-9 items-center justify-center rounded-2xl bg-white/10">
-              <ListChecks width={18} height={18} color="#FFFFFF" />
-            </View>
-
-            <View>
-              <Text className="text-[11px] font-semibold uppercase text-white/50">
-                Program
-              </Text>
-              <Text className="text-[12px] text-white/75">
-                Build the workout template
-              </Text>
-            </View>
-          </View>
-
-          <Pressable
-            onPress={() => setColorPickerOpen(true)}
-            className="h-9 flex-row items-center rounded-full bg-white/10 px-3"
-            hitSlop={8}
-          >
-            <View
-              className={`mr-2 h-3.5 w-3.5 rounded-full ${currentColorOption.dotBg}`}
-            />
-            <Text className="mr-1.5 text-[11px] font-semibold text-white">
-              Colour
-            </Text>
-            <Palette size={14} color="#FFFFFF" />
-          </Pressable>
-        </View>
-
+    <View className="mb-4">
+      <View className="bg-neutral-950 px-4 pb-4 pt-4 dark:bg-[#21222C]">
         <TextInput
-          className="rounded-2xl bg-white px-4 py-3 text-[22px] font-semibold text-neutral-950 dark:bg-[#343746] dark:text-[#F8F8F2]"
+          className=" bg-white px-4 py-3 text-[22px] font-semibold text-neutral-950 dark:bg-[#343746] dark:text-[#F8F8F2]"
           placeholder="Program name"
           placeholderTextColor={isDark ? "#6272A4" : "#A3A3A3"}
           value={name}
@@ -243,7 +212,7 @@ export default function WorkoutProgramForm({
         />
 
         <TextInput
-          className="mt-3 min-h-[78px] rounded-2xl bg-white/95 px-4 py-3 text-[13px] text-neutral-900 dark:bg-[#343746] dark:text-[#F8F8F2]"
+          className="mt-3 min-h-[78px]  bg-white/95 px-4 py-3 text-[13px] text-neutral-900 dark:bg-[#343746] dark:text-[#F8F8F2]"
           placeholder="Notes, focus, warmups..."
           placeholderTextColor={isDark ? "#6272A4" : "#A3A3A3"}
           value={description}
@@ -252,8 +221,24 @@ export default function WorkoutProgramForm({
           textAlignVertical="top"
         />
 
+        <Pressable
+          onPress={() => setColorPickerOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Program colour: ${currentColorOption.label}`}
+          className="mt-3 h-11 flex-row items-center justify-between border-b border-white/10"
+        >
+          <Text className="text-[12px] text-white/60">Colour</Text>
+          <View className="flex-row items-center gap-2">
+            <View className={`h-3 w-3 ${currentColorOption.dotBg}`} />
+            <Text className="text-[12px] font-medium text-white/90">
+              {currentColorOption.label}
+            </Text>
+            <ChevronDown size={14} color="#A1A1AA" />
+          </View>
+        </Pressable>
+
         <View className="mt-4 flex-row gap-2">
-          <View className="flex-1 rounded-2xl bg-white/10 px-3 py-2">
+          <View className="flex-1  bg-white/10 px-3 py-2">
             <Text className="text-[20px] font-semibold text-white">
               {exerciseCount}
             </Text>
@@ -262,7 +247,7 @@ export default function WorkoutProgramForm({
             </Text>
           </View>
 
-          <View className="flex-1 rounded-2xl bg-white/10 px-3 py-2">
+          <View className="flex-1  bg-white/10 px-3 py-2">
             <Text className="text-[20px] font-semibold text-white">
               {setCount}
             </Text>
@@ -270,63 +255,20 @@ export default function WorkoutProgramForm({
               {setCount === 1 ? "Planned set" : "Planned sets"}
             </Text>
           </View>
-
-          <View className="flex-1 rounded-2xl bg-white/10 px-3 py-2">
-            <Text className="text-[20px] font-semibold text-white">
-              {currentColorOption.label}
-            </Text>
-            <Text className="text-[11px] text-white/55">Colour</Text>
-          </View>
         </View>
       </View>
 
-      <View className="mb-3 flex-row items-center justify-between">
-        <View className="flex-row items-center">
-          <View className="mr-2 h-9 w-9 items-center justify-center rounded-2xl bg-white dark:bg-[#343746]">
-            <Dumbbell size={17} color={mutedIconColor} />
-          </View>
-
-          <View>
-            <Text className="text-[15px] font-semibold text-neutral-950 dark:text-[#F8F8F2]">
-              Exercises
-            </Text>
-            <Text className="text-[11px] text-neutral-500 dark:text-[#6272A4]">
-              Drag to reorder once added
-            </Text>
-          </View>
-        </View>
-
-        <Pressable
-          onPress={() => setLibraryOpen(true)}
-          className="h-10 flex-row items-center justify-center rounded-full bg-neutral-900 px-4 dark:bg-[#BD93F9]"
-          hitSlop={8}
-        >
-          <Plus size={16} color={primaryIconColor} />
-          <Text className="ml-1.5 text-[13px] font-semibold text-white dark:text-[#282A36]">
-            Add
-          </Text>
-        </Pressable>
-      </View>
     </View>
   );
 
   const renderEmpty = () => (
-    <View className="mt-8 items-center rounded-[28px] border border-dashed border-neutral-300 bg-white px-5 py-8 dark:border-[#44475A] dark:bg-[#282A36]">
-      <View className="h-12 w-12 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-[#343746]">
+    <View className="mt-8 items-center border border-dashed border-neutral-300 bg-white px-5 py-8 dark:border-[#44475A] dark:bg-[#282A36]">
+      <View className="h-12 w-12 items-center justify-center  bg-neutral-100 dark:bg-[#343746]">
         <Plus size={20} color={secondaryIconColor} />
       </View>
       <Text className="mt-3 text-[14px] font-semibold text-neutral-900 dark:text-[#F8F8F2]">
         No exercises yet
       </Text>
-      <Pressable
-        onPress={() => setLibraryOpen(true)}
-        className="mt-4 h-10 flex-row items-center rounded-full bg-neutral-900 px-4 dark:bg-[#BD93F9]"
-      >
-        <Plus size={15} color={primaryIconColor} />
-        <Text className="ml-1.5 text-[13px] font-semibold text-white dark:text-[#282A36]">
-          Add exercise
-        </Text>
-      </Pressable>
     </View>
   );
 
@@ -363,6 +305,20 @@ export default function WorkoutProgramForm({
             </View>
           )}
         />
+
+        <View className="border-t border-neutral-200 py-3 dark:border-[#44475A]">
+          <Pressable
+            onPress={() => setLibraryOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Add exercises to program"
+            className="h-12 flex-row items-center justify-center bg-neutral-900 px-4 dark:bg-[#BD93F9]"
+          >
+            <Plus size={18} color={primaryIconColor} />
+            <Text className="ml-2 text-[14px] font-semibold text-white dark:text-[#282A36]">
+              Add
+            </Text>
+          </Pressable>
+        </View>
 
         {libraryOpen ? (
           <View className="absolute inset-0 z-50">

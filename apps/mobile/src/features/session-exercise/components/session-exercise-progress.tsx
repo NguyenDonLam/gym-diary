@@ -113,7 +113,7 @@ function DotPlot({ points, metric }: { points: TrendPoint[]; metric: Metric }) {
   const delta = prevValue == null ? null : selValue - prevValue;
 
   return (
-    <View className="mt-2 rounded-xl bg-neutral-50 px-2 py-2 dark:bg-neutral-900">
+    <View className="mt-2  bg-neutral-50 px-2 py-2 dark:bg-neutral-900">
       <View className="flex-row items-center justify-between">
         <Text className="text-[10px] text-neutral-500 dark:text-neutral-400">
           {metric === "best" ? "best score" : "volume"}
@@ -292,7 +292,7 @@ function RawHistory({
   const last6 = points.slice(-6);
 
   return (
-    <View className="mt-2 rounded-xl bg-neutral-50 px-2 py-2 dark:bg-neutral-900">
+    <View className="mt-2  bg-neutral-50 px-2 py-2 dark:bg-neutral-900">
       <View className="flex-row items-center justify-between">
         <Text className="text-[10px] text-neutral-500 dark:text-neutral-400">
           last 6
@@ -338,7 +338,7 @@ export function SessionExerciseProgress({
 
   const activeIconColor = colorScheme === "dark" ? "#282A36" : "#FFFFFF";
   const idleIconColor = colorScheme === "dark" ? "#D4D4D4" : "#4B5563";
-  const controlBase = "h-11 w-11 items-center justify-center rounded-xl";
+  const controlBase = "h-11 w-11 items-center justify-center ";
   const activeControl = "bg-neutral-900 dark:bg-[#BD93F9]";
   const idleControl = "bg-transparent";
 
@@ -350,7 +350,7 @@ export function SessionExerciseProgress({
         </Text>
 
         <View className="flex-row items-center gap-2">
-          <View className="flex-row rounded-xl bg-neutral-100 p-0.5 dark:bg-neutral-800">
+          <View className="flex-row  bg-neutral-100 p-0.5 dark:bg-neutral-800">
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Show progress chart"
@@ -382,7 +382,7 @@ export function SessionExerciseProgress({
             </Pressable>
           </View>
 
-          <View className="flex-row rounded-xl bg-neutral-100 p-0.5 dark:bg-neutral-800">
+          <View className="flex-row  bg-neutral-100 p-0.5 dark:bg-neutral-800">
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Show best set data"

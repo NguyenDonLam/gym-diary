@@ -252,7 +252,7 @@ export function ProgressPhotoScreen({
           {selectedPhoto ? (
             <>
               <View
-                className="overflow-hidden rounded-3xl bg-neutral-100 dark:bg-[#343746]"
+                className="overflow-hidden  bg-neutral-100 dark:bg-[#343746]"
                 style={{
                   alignSelf: "center",
                   width: previewWidth,
@@ -314,7 +314,7 @@ export function ProgressPhotoScreen({
                 <View
                   pointerEvents="none"
                   className={[
-                    "absolute left-3 top-3 rounded-full px-3 py-1.5",
+                    "absolute left-3 top-3  px-3 py-1.5",
                     alignmentNeedsAttention ? "bg-amber-500/90" : "bg-black/55",
                   ].join(" ")}
                 >
@@ -336,7 +336,7 @@ export function ProgressPhotoScreen({
                       setFullOriginalPhoto(displayedPhoto);
                     }
                   }}
-                  className="absolute right-3 top-3 h-10 w-10 items-center justify-center rounded-full bg-black/55"
+                  className="absolute right-3 top-3 h-10 w-10 items-center justify-center  bg-black/55"
                 >
                   <Maximize2 size={18} color="#FFFFFF" strokeWidth={2.2} />
                 </Pressable>
@@ -365,7 +365,7 @@ export function ProgressPhotoScreen({
                   accessibilityLabel="Adjust photo alignment"
                   disabled={isDeleting}
                   onPress={onEditAlignment}
-                  className="mt-3 flex-row items-center justify-center rounded-xl bg-neutral-100 px-4 py-3 dark:bg-[#343746]"
+                  className="mt-3 flex-row items-center justify-center  bg-neutral-100 px-4 py-3 dark:bg-[#343746]"
                 >
                   <SlidersHorizontal
                     size={17}
@@ -385,7 +385,7 @@ export function ProgressPhotoScreen({
                 onPress={() =>
                   displayedPhoto && onDeletePhoto(displayedPhoto.id)
                 }
-                className="mt-3 flex-row items-center justify-center rounded-xl bg-red-50 px-4 py-3 dark:bg-red-950/40"
+                className="mt-3 flex-row items-center justify-center  bg-red-50 px-4 py-3 dark:bg-red-950/40"
               >
                 {isDeleting ? (
                   <ActivityIndicator color="#DC2626" />
@@ -398,7 +398,7 @@ export function ProgressPhotoScreen({
               </Pressable>
 
               {comparisonPhoto ? (
-                <View className="mt-3 rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
+                <View className="mt-3  bg-neutral-100 p-4 dark:bg-[#343746]">
                   <View className="flex-row items-start justify-between">
                     <View className="mr-4 flex-1">
                       <Text className="text-sm font-semibold text-zinc-900 dark:text-[#F8F8F2]">
@@ -414,7 +414,7 @@ export function ProgressPhotoScreen({
                   </View>
 
                   <View className="mt-3 flex-row gap-2">
-                    <View className="flex-1 rounded-xl bg-white px-3 py-2 dark:bg-[#2B2D3A]">
+                    <View className="flex-1  bg-white px-3 py-2 dark:bg-[#2B2D3A]">
                       <Text className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-[#6272A4]">
                         Default
                       </Text>
@@ -425,7 +425,7 @@ export function ProgressPhotoScreen({
                         {selectedPhoto.timeLabel}
                       </Text>
                     </View>
-                    <View className="flex-1 rounded-xl bg-white px-3 py-2 dark:bg-[#2B2D3A]">
+                    <View className="flex-1  bg-white px-3 py-2 dark:bg-[#2B2D3A]">
                       <Text className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-[#6272A4]">
                         Comparison
                       </Text>
@@ -445,7 +445,7 @@ export function ProgressPhotoScreen({
                       disabled={!canSelectPreviousComparison}
                       onPress={onSelectPreviousComparison}
                       className={[
-                        "flex-1 flex-row items-center justify-center rounded-xl px-3 py-2.5",
+                        "flex-1 flex-row items-center justify-center  px-3 py-2.5",
                         canSelectPreviousComparison
                           ? "bg-white dark:bg-[#2B2D3A]"
                           : "bg-white/50 dark:bg-[#2B2D3A]/50",
@@ -477,7 +477,7 @@ export function ProgressPhotoScreen({
                       disabled={!canSelectNextComparison}
                       onPress={onSelectNextComparison}
                       className={[
-                        "flex-1 flex-row items-center justify-center rounded-xl px-3 py-2.5",
+                        "flex-1 flex-row items-center justify-center  px-3 py-2.5",
                         canSelectNextComparison
                           ? "bg-white dark:bg-[#2B2D3A]"
                           : "bg-white/50 dark:bg-[#2B2D3A]/50",
@@ -527,7 +527,7 @@ export function ProgressPhotoScreen({
                               accessibilityState={{ selected: isSelected }}
                               onPress={() => onSelectComparisonPhoto(photo.id)}
                               className={[
-                                "overflow-hidden rounded-xl border-2",
+                                "overflow-hidden  border-2",
                                 isSelected
                                   ? "border-neutral-900 dark:border-[#BD93F9]"
                                   : "border-transparent",
@@ -579,7 +579,7 @@ export function ProgressPhotoScreen({
                       accessibilityState={{ selected: isSelected }}
                       onPress={() => onSelectPhoto(photo.id)}
                       className={[
-                        "overflow-hidden rounded-2xl border-2",
+                        "overflow-hidden  border-2",
                         isSelected
                           ? "border-neutral-900 dark:border-[#BD93F9]"
                           : "border-transparent",
@@ -598,8 +598,8 @@ export function ProgressPhotoScreen({
               </ScrollView>
             </>
           ) : (
-            <View className="items-center rounded-3xl bg-neutral-100 px-6 py-12 dark:bg-[#343746]">
-              <View className="h-20 w-20 items-center justify-center rounded-full bg-white dark:bg-[#2B2D3A]">
+            <View className="items-center  bg-neutral-100 px-6 py-12 dark:bg-[#343746]">
+              <View className="h-20 w-20 items-center justify-center  bg-white dark:bg-[#2B2D3A]">
                 <Images size={34} color={iconColor} strokeWidth={1.8} />
               </View>
 
@@ -630,7 +630,7 @@ export function ProgressPhotoScreen({
             <View
               accessibilityRole="alert"
               accessibilityLiveRegion="polite"
-              className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950"
+              className="mt-4  border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950"
             >
               <Text className="text-sm font-bold text-amber-900 dark:text-amber-100">
                 Pose guidance unavailable
@@ -660,7 +660,7 @@ export function ProgressPhotoScreen({
             disabled={isCapturing || isDeleting}
             onPress={onTakePhoto}
             className={[
-              "mt-4 flex-row items-center justify-center rounded-2xl px-4 py-4",
+              "mt-4 flex-row items-center justify-center  px-4 py-4",
               isCapturing
                 ? "bg-neutral-400 dark:bg-[#6272A4]"
                 : "bg-neutral-900 dark:bg-[#BD93F9]",
@@ -708,7 +708,7 @@ export function ProgressPhotoScreen({
               accessibilityRole="button"
               accessibilityLabel="Close full original photo"
               onPress={() => setFullOriginalPhoto(null)}
-              className="h-11 w-11 items-center justify-center rounded-full bg-white/15"
+              className="h-11 w-11 items-center justify-center  bg-white/15"
             >
               <X size={22} color="#FFFFFF" strokeWidth={2.2} />
             </Pressable>

@@ -69,6 +69,7 @@
 - **Purpose:** Manage program blueprints/folders and control the current workout.
 - **Imports to follow:** program-workout/hooks/use-workout-programs.tsx, template-folder/hooks/use-template-folders.ts, program-workout/utils/index.ts, session-workout/hooks/use-ongoing-session.tsx, and session-workout/ui/finish-session-prompt.ts.
 - **Load/prepare:** Mirror loaded programs in templateProgram for drag UI; combine them with folders and open/closed state through buildRows; use-session-timer.tsx formats the active banner's elapsed time.
+- **Loading:** The Workout header appears immediately; row placeholders occupy the list until programs and folders load.
 - **Workflow:** Load programs/folders → expand/rename/create/delete folders, create/edit/delete programs, or drag programs between visible groups.
 - **Program actions:** Tapping starts from that program; long-press edits it in /program-workout/[id]. New program opens /program-workout/new, optionally with folderId; delete asks for confirmation then uses the program hook.
 - **Start:** Choose a program or one-off session → provider creates/saves it → navigate to /session-workout/ongoing. If one is already active, choose to keep, finish, or discard it before starting another.
@@ -148,7 +149,7 @@
 - **Imports to follow:** the same form/factory/repository as New program, plus data/program-form-draft-store.ts for a finish-workout draft.
 - **Initialize:** Validate route ID → repository.get loads nested graph → factory maps to editable form → optional draftKey replaces that form with the proposed session-derived changes.
 - **Workflow:** Load full program graph by ID → map to form, optionally consume a finish-workout draft → edit fields/exercises/sets → validate nonblank name → map back with original program ID → repository save → return to Workout.
-- **States:** Invalid/missing ID or load failure shows an error; Cancel returns without saving.
+- **States:** The Edit header appears immediately; form-shaped placeholders or an inline error occupy the content area until its program loads. Cancel returns without saving.
 
 ### Ongoing session — app/session-workout/ongoing.tsx
 
@@ -318,3 +319,9 @@
 - **Cross-module change:** Update system-wide state and every affected module section.
 - **Verify:** Check actual source, storage owner, downstream refresh, and platform-specific behavior.
 - **Rules:** AGENTS.md is the architecture and human-review authority; this file records implemented behavior.
+
+
+
+## Current problem
+- opening the keypad does not slide content upward properly
+- maybe make buttons and cards have sharp edges instead of rounded program edit UI looks ugly right now

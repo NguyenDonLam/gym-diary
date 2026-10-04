@@ -100,13 +100,13 @@ export function ProgressPhotoCameraScreen({
               accessibilityLabel="Close progress photo camera"
               disabled={isCapturing}
               onPress={onCancel}
-              className="h-11 w-11 items-center justify-center rounded-full bg-black/70"
+              className="h-11 w-11 items-center justify-center  bg-black/70"
             >
               <X color="#FFFFFF" size={23} />
             </Pressable>
 
             {errorMessage ? (
-              <View className="ml-3 max-w-72 rounded-2xl bg-red-950/90 px-4 py-2">
+              <View className="ml-3 max-w-72  bg-red-950/90 px-4 py-2">
                 <Text className="text-center text-xs font-semibold text-white">
                   {errorMessage}
                 </Text>
@@ -114,7 +114,7 @@ export function ProgressPhotoCameraScreen({
             ) : null}
           </View>
 
-          <View className="mt-3 rounded-2xl bg-black/70 p-3">
+          <View className="mt-3  bg-black/70 p-3">
             <View className="flex-row items-center justify-between">
               <Text className="text-xs font-semibold text-white">
                 Pose reference
@@ -144,7 +144,7 @@ export function ProgressPhotoCameraScreen({
                       disabled={isCapturing || isCountingDown}
                       onPress={() => onSelectReference(reference.id)}
                       className={[
-                        "overflow-hidden rounded-xl border-2",
+                        "overflow-hidden  border-2",
                         isSelected ? "border-white" : "border-transparent",
                       ].join(" ")}
                     >
@@ -180,7 +180,7 @@ export function ProgressPhotoCameraScreen({
                     }}
                     onPress={() => setOverlayOpacity(opacity)}
                     className={[
-                      "mr-1 rounded-lg px-2 py-1",
+                      "mr-1  px-2 py-1",
                       overlayOpacity === opacity ? "bg-white" : "bg-white/15",
                     ].join(" ")}
                   >
@@ -200,7 +200,7 @@ export function ProgressPhotoCameraScreen({
             ) : null}
           </View>
 
-          <View className="mt-2 rounded-2xl bg-black/75 px-4 py-3">
+          <View className="mt-2  bg-black/75 px-4 py-3">
             <View className="flex-row items-center justify-between">
               <Text className="text-lg font-bold text-white">
                 {guidance.overallLabel}
@@ -272,9 +272,9 @@ export function ProgressPhotoCameraScreen({
                     {holdRemainingSeconds.toFixed(1)}s
                   </Text>
                 </View>
-                <View className="mt-2 h-2 overflow-hidden rounded-full bg-white/20">
+                <View className="mt-2 h-2 overflow-hidden  bg-white/20">
                   <View
-                    className="h-full rounded-full bg-emerald-400"
+                    className="h-full  bg-emerald-400"
                     style={{
                       width: `${Math.round(autoCaptureHoldProgress * 100)}%`,
                     }}
@@ -290,7 +290,7 @@ export function ProgressPhotoCameraScreen({
             <Text
               accessibilityLiveRegion="polite"
               accessibilityLabel={`Photo in ${countdownSeconds} seconds`}
-              className="rounded-3xl bg-black/70 px-8 py-2 text-7xl font-bold text-white"
+              className=" bg-black/70 px-8 py-2 text-7xl font-bold text-white"
             >
               {countdownSeconds}
             </Text>
@@ -298,7 +298,7 @@ export function ProgressPhotoCameraScreen({
         ) : null}
 
         <View className="items-center pb-8">
-          <View className="mb-4 flex-row items-center rounded-2xl bg-black/70 p-2">
+          <View className="mb-4 flex-row items-center  bg-black/70 p-2">
             <Text className="mx-2 text-xs font-semibold text-white">Timer</Text>
             {[0, 3, 5, 10].map((seconds) => (
               <Pressable
@@ -312,7 +312,7 @@ export function ProgressPhotoCameraScreen({
                 accessibilityState={{ selected: timerSeconds === seconds }}
                 disabled={isCapturing || isCountingDown}
                 onPress={() => onTimerSecondsChange(seconds)}
-                className={`min-h-11 min-w-11 items-center justify-center rounded-xl px-3 ${timerSeconds === seconds ? "bg-white" : "bg-transparent"}`}
+                className={`min-h-11 min-w-11 items-center justify-center  px-3 ${timerSeconds === seconds ? "bg-white" : "bg-transparent"}`}
               >
                 <Text
                   className={`text-sm font-semibold ${timerSeconds === seconds ? "text-black" : "text-white"}`}
@@ -334,7 +334,7 @@ export function ProgressPhotoCameraScreen({
             disabled={isCapturing || !isCameraReady}
             onPress={isCountingDown ? onCancelCountdown : onCapture}
             className={[
-              "h-20 w-20 items-center justify-center rounded-full border-4 border-white",
+              "h-20 w-20 items-center justify-center  border-4 border-white",
               isCapturing ? "bg-white/40" : "bg-white/20",
             ].join(" ")}
           >

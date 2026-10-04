@@ -74,7 +74,7 @@ export function ProgramPeriodDeltaView({ rows, period, className }: Props) {
   return (
     <View
       className={[
-        "border border-neutral-800 bg-neutral-950 rounded-xl px-3 py-2",
+        "border border-neutral-800 bg-neutral-950  px-3 py-2",
         className ?? "",
       ].join(" ")}
     >

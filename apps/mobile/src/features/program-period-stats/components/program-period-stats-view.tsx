@@ -74,7 +74,7 @@ export function ProgramPeriodStatsView({ stat, className }: Props) {
     return (
       <View
         className={[
-          "border border-neutral-800 bg-neutral-950 rounded-xl px-3 py-2",
+          "border border-neutral-800 bg-neutral-950  px-3 py-2",
           className ?? "",
         ].join(" ")}
       >
@@ -86,13 +86,13 @@ export function ProgramPeriodStatsView({ stat, className }: Props) {
   return (
     <View
       className={[
-        "border border-neutral-800 bg-neutral-950 rounded-xl px-3 py-2",
+        "border border-neutral-800 bg-neutral-950  px-3 py-2",
         className ?? "",
       ].join(" ")}
     >
       {/* Header */}
       <View className="flex-row items-center gap-2 mb-2">
-        <View className="h-6 w-6 rounded-full bg-sky-400/20 items-center justify-center">
+        <View className="h-6 w-6  bg-sky-400/20 items-center justify-center">
           <CalendarDays size={13} color="#38BDF8" />
         </View>
         <Text className="text-neutral-200 text-xs font-semibold">

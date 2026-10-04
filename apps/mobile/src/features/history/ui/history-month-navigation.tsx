@@ -45,7 +45,7 @@ export function HistoryMonthNavigation({
       <View className="flex-1 items-center justify-center bg-black/50 px-6">
         <View
           accessibilityViewIsModal
-          className="w-full max-w-sm rounded-3xl bg-white p-5 dark:bg-[#282A36]"
+          className="w-full max-w-sm  bg-white p-5 dark:bg-[#282A36]"
         >
           <Text className="text-lg font-semibold text-zinc-900 dark:text-white">
             Choose month

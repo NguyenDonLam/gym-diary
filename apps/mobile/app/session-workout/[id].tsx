@@ -299,7 +299,7 @@ export default function SessionWorkoutPage() {
             </Text>
 
             {sessionStatus && (
-              <View className="ml-2 rounded-full border border-neutral-200 bg-neutral-100 px-2 py-[1px] dark:border-[#44475A] dark:bg-[#343746]">
+              <View className="ml-2  border border-neutral-200 bg-neutral-100 px-2 py-[1px] dark:border-[#44475A] dark:bg-[#343746]">
                 <Text className="text-[10px] font-medium text-neutral-700 dark:text-[#F8F8F2]">
                   {formatStatus(sessionStatus)}
                 </Text>
@@ -356,7 +356,7 @@ export default function SessionWorkoutPage() {
         <View className="border-t border-zinc-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#21222C]">
           <Pressable
             onPress={() => setPickerOpen(true)}
-            className="h-12 flex-row items-center justify-center rounded-2xl bg-neutral-900 dark:bg-[#BD93F9]"
+            className="h-12 flex-row items-center justify-center  bg-neutral-900 dark:bg-[#BD93F9]"
           >
             <Plus size={16} color={isDark ? "#282A36" : "#FFFFFF"} />
             <Text className="ml-2 text-sm font-medium text-white dark:text-[#282A36]">

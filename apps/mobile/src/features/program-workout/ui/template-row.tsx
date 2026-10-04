@@ -29,7 +29,7 @@ export function ProgramRow({
 
   return (
     <Pressable
-      className={`mb-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-2.5 py-2 dark:border-[#44475A] dark:bg-slate-900 ${
+      className={`mb-2 border border-neutral-200 bg-neutral-50 px-2.5 py-4 dark:border-[#44475A] dark:bg-slate-900 ${
         inFolder ? "ml-4" : ""
       } ${isActive ? "opacity-80" : ""}`}
       onPress={onPress}
@@ -42,20 +42,17 @@ export function ProgramRow({
               onLongPress={onDragHandleLongPress}
               delayLongPress={120}
               hitSlop={8}
-              className="mr-2 h-9 flex-row items-center rounded-xl border border-neutral-300 bg-white px-2 dark:border-[#6272A4] dark:bg-[#343746]"
+              className="mr-2 h-9 flex-row items-center px-2"
             >
-              <GripVertical width={15} height={15} color="#6B7280" />
+              <GripVertical width={30} height={30} color="#6B7280" />
             </Pressable>
           ) : null}
 
-          <View className={`mr-3 h-7 w-1 rounded-full ${stripClass}`} />
+          <View className={`mr-3 h-2 w-2 rounded-full ${stripClass}`} />
 
           <View className="shrink">
             <Text className="text-[15px] font-semibold text-neutral-900 dark:text-slate-50">
               {template.name}
-            </Text>
-            <Text className="mt-0.5 text-[11px] text-neutral-500 dark:text-neutral-400">
-              Tap to start - long-press card to edit
             </Text>
           </View>
         </View>
@@ -63,9 +60,9 @@ export function ProgramRow({
         <Pressable
           onPress={onDeletePress}
           hitSlop={8}
-          className="ml-2 h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 bg-white dark:border-[#44475A] dark:bg-[#343746]"
+          className="ml-2 h-9 w-9 items-center justify-center"
         >
-          <Trash2 width={16} height={16} color="#EF4444" />
+          <Trash2 width={16} height={16} color="#7393B3" />
         </Pressable>
       </View>
     </Pressable>

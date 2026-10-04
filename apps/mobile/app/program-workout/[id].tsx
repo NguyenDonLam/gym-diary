@@ -6,12 +6,13 @@
  *   WorkoutProgramFactory.formFromDomain.
  * - If draftKey exists, consume its one-time form draft and use it in place
  *   of the saved values; cancellation prevents stale async updates.
- * - Show a loading indicator or load error until a program has been loaded;
+ * - Render the editor header immediately. Show form-shaped placeholders or
+ *   an inline load error in the content area until this route's data arrives;
  *   only then mount WorkoutProgramForm with editable formData.
  * - Save requires a loaded program, a nonblank name, and no active load/save.
  * - Convert the form back with domainFromForm, restore the route's original
  *   id, persist via workoutProgramRepository.save, then return to Workout.
- * - Cancel returns to Workout unless a save is in progress.
+ * - The plain X icon cancels back to Workout unless a save is in progress.
  * - Maintenance: Update this docstring with every change to this file;
  *   keep it current with the code.
  */
@@ -20,7 +21,6 @@ import {
   View,
   Text,
   Pressable,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -52,7 +52,8 @@ export default function ProgramWorkoutEditScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [hasLoadedTemplate, setHasLoadedTemplate] = useState(false);
+  const routeKey = JSON.stringify([id, draftKey]);
+  const [loadedRouteKey, setLoadedRouteKey] = useState<string | null>(null);
 
   // Load existing template
   useEffect(() => {
@@ -61,6 +62,7 @@ export default function ProgramWorkoutEditScreen() {
     async function load() {
       if (!id || typeof id !== "string") {
         setLoadError("Invalid template id.");
+        setLoadedRouteKey(routeKey);
         setIsLoading(false);
         return;
       }
@@ -75,6 +77,7 @@ export default function ProgramWorkoutEditScreen() {
         if (!template) {
           if (!cancelled) {
             setLoadError("Template not found.");
+            setLoadedRouteKey(routeKey);
           }
           return;
         }
@@ -87,12 +90,13 @@ export default function ProgramWorkoutEditScreen() {
           }
 
           setFormData(form);
-          setHasLoadedTemplate(true);
+          setLoadedRouteKey(routeKey);
         }
       } catch (error) {
         console.warn("[program-workout/edit] failed to load template", error);
         if (!cancelled) {
           setLoadError("Failed to load template.");
+          setLoadedRouteKey(routeKey);
         }
       } finally {
         if (!cancelled) {
@@ -106,7 +110,10 @@ export default function ProgramWorkoutEditScreen() {
     return () => {
       cancelled = true;
     };
-  }, [id, draftKey]);
+  }, [id, draftKey, routeKey]);
+
+  const hasLoadedTemplate = loadedRouteKey === routeKey && !loadError;
+  const showLoadError = loadedRouteKey === routeKey && loadError && !isLoading;
 
   const canSave =
     hasLoadedTemplate &&
@@ -136,53 +143,6 @@ export default function ProgramWorkoutEditScreen() {
     }
   };
 
-  // Loading / error state
-  if (isLoading || !hasLoadedTemplate) {
-    return (
-      <View className="flex-1 bg-neutral-50 dark:bg-[#2B2D3A]">
-        <View className="flex-row items-center border-b border-neutral-200 bg-neutral-50 px-4 pb-3 pt-3 dark:border-[#44475A] dark:bg-[#21222C]">
-          <View className="w-[88px] items-start">
-            <Pressable
-              onPress={handleCancel}
-              disabled={isSaving}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel program editing"
-              className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-[#343746]"
-            >
-              <X size={24} color={isDark ? "#F8F8F2" : "#111827"} />
-            </Pressable>
-          </View>
-
-          <View className="flex-1 items-center">
-            <Text className="text-[17px] font-semibold text-neutral-950 dark:text-[#F8F8F2]">
-              Edit program
-            </Text>
-            <Text className="mt-0.5 text-[11px] text-neutral-500 dark:text-[#6272A4]">
-              Workout template
-            </Text>
-          </View>
-
-          <View className="w-[88px] items-end">
-            <View className="h-11 w-11 items-center justify-center rounded-full bg-neutral-200 dark:bg-[#44475A]">
-              <ActivityIndicator color="#BD93F9" />
-            </View>
-          </View>
-        </View>
-
-        <View className="flex-1 items-center justify-center bg-neutral-50 px-4 dark:bg-[#2B2D3A]">
-          {loadError ? (
-            <Text className="text-sm text-red-500 dark:text-[#FF5555] text-center">
-              {loadError}
-            </Text>
-          ) : (
-            <ActivityIndicator color="#BD93F9" />
-          )}
-        </View>
-      </View>
-    );
-  }
-
-  // Normal edit state
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-neutral-50 dark:bg-[#2B2D3A]"
@@ -196,7 +156,7 @@ export default function ProgramWorkoutEditScreen() {
             disabled={isSaving}
             accessibilityRole="button"
             accessibilityLabel="Cancel program editing"
-            className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-[#343746]"
+            className="h-11 w-11 items-center justify-center"
           >
             <X size={24} color={isDark ? "#F8F8F2" : "#111827"} />
           </Pressable>
@@ -217,7 +177,7 @@ export default function ProgramWorkoutEditScreen() {
             disabled={!canSave}
             accessibilityRole="button"
             accessibilityLabel="Save program"
-            className={`h-11 flex-row items-center justify-center gap-1.5 rounded-full px-3.5 ${
+            className={`h-11 flex-row items-center justify-center gap-1.5  px-3.5 ${
               canSave
                 ? "bg-neutral-900 dark:bg-[#BD93F9]"
                 : "bg-neutral-300 dark:bg-[#44475A]"
@@ -249,7 +209,24 @@ export default function ProgramWorkoutEditScreen() {
       </View>
 
       <View className="flex-1 bg-neutral-50 dark:bg-[#2B2D3A]">
-        <WorkoutProgramForm formData={formData} setFormData={setFormData} />
+        {isLoading || !hasLoadedTemplate ? (
+          showLoadError ? (
+            <View className="px-4 pt-5">
+              <Text className="text-sm text-red-500 dark:text-[#FF5555]">
+                {loadError}
+              </Text>
+            </View>
+          ) : (
+            <View accessibilityLabel="Loading program" className="px-4 pt-4">
+              <View className="h-48 bg-neutral-200 dark:bg-[#343746]" />
+              <View className="mt-5 h-6 w-40 bg-neutral-200 dark:bg-[#343746]" />
+              <View className="mt-3 h-24 bg-neutral-200 dark:bg-[#343746]" />
+              <View className="mt-3 h-24 bg-neutral-200 dark:bg-[#343746]" />
+            </View>
+          )
+        ) : (
+          <WorkoutProgramForm formData={formData} setFormData={setFormData} />
+        )}
       </View>
     </KeyboardAvoidingView>
   );

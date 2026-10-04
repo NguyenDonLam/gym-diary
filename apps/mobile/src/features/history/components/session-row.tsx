@@ -40,7 +40,7 @@ const Chip = memo(function Chip({
   const s = CHIP_STYLES[variant];
   return (
     <View
-      className={`flex-row items-center gap-1 px-2 py-1 rounded-full ${s.bg}`}
+      className={`flex-row items-center gap-1 px-2 py-1  ${s.bg}`}
     >
       {icon}
       {label ? <Text className={`text-[11px] ${s.text}`}>{label}</Text> : null}
@@ -94,13 +94,13 @@ export const SessionRow = memo(function SessionRow({
 
   return (
     <Pressable
-      className={`mb-2 rounded-xl bg-neutral-50 px-3 py-2 dark:bg-slate-900 ${isActive ? "opacity-80" : ""}`}
+      className={`mb-2  bg-neutral-50 px-3 py-2 dark:bg-slate-900 ${isActive ? "opacity-80" : ""}`}
       onPress={handleTap}
       hitSlop={2}
     >
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center flex-1">
-          <View className={`mr-3 h-7 w-1 rounded-full ${stripClass}`} />
+          <View className={`mr-3 h-7 w-1  ${stripClass}`} />
 
           <View className="shrink">
             <Text className="text-[15px] font-semibold text-neutral-900 dark:text-slate-50">

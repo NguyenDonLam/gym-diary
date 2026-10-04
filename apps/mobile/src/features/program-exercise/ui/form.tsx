@@ -90,7 +90,7 @@ export default function ExerciseProgramForm({
 
   return (
     <View
-      className={`mb-2 rounded-2xl border px-3 py-2.5 ${cardBg} ${cardBorder}`}
+      className={`mb-2  border px-3 py-2.5 ${cardBg} ${cardBorder}`}
     >
       <View className="mb-2 flex-row items-center justify-between">
         <View className="flex-row items-center flex-1">
@@ -99,13 +99,9 @@ export default function ExerciseProgramForm({
               onLongPress={onDrag}
               delayLongPress={120}
               hitSlop={8}
-              className={`mr-2 h-8 flex-row items-center rounded-xl border px-2 ${
-                isDark
-                  ? "border-[#6272A4] bg-[#343746]"
-                  : "border-neutral-300 bg-neutral-50"
-              }`}
+              className={`mr-2 h-8 flex-row items-center`}
             >
-              <GripVertical size={14} color={isDark ? "#6272A4" : "#6B7280"} />
+              <GripVertical size={25} color={isDark ? "#6272A4" : "#6B7280"} />
 
             </Pressable>
           ) : (
@@ -123,13 +119,9 @@ export default function ExerciseProgramForm({
         <Pressable
           onPress={onRemove}
           hitSlop={8}
-          className={`h-8 w-8 items-center justify-center rounded-xl border ${
-            isDark
-              ? "border-[#44475A] bg-[#343746]"
-              : "border-neutral-200 bg-neutral-50"
-          }`}
+          className={`h-8 w-8 items-center justify-center`}
         >
-          <X size={14} color="#EF4444" />
+          <X size={20} color="#7393B3" />
         </Pressable>
       </View>
 
@@ -138,7 +130,7 @@ export default function ExerciseProgramForm({
           {presetOptions.map((preset) => (
             <Pressable
               key={preset.label}
-              className={`rounded-full px-3 py-1.5 ${chipBg}`}
+              className={` px-3 py-1.5 ${chipBg}`}
               onPress={() => applyPreset(preset.count, preset.quantity)}
             >
               <Text className={`text-[11px] font-semibold ${chipText}`}>
@@ -152,24 +144,21 @@ export default function ExerciseProgramForm({
       {formData.sets.length > 0 ? (
         <View className="mb-1 flex-row items-center gap-2 px-2">
           <View className="w-7" />
-          <Text
-            className="text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]"
-            style={{ flex: 0.82 }}
-          >
-            Target
-          </Text>
-          <Text
-            className="text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]"
-            style={{ flex: 1.55 }}
-          >
-            Load
-          </Text>
-          <Text
-            className="text-center text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]"
-            style={{ width: 70 }}
-          >
-            Effort
-          </Text>
+          <View style={{ flex: 0.82 }}>
+            <Text className="text-center text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]">
+              Target
+            </Text>
+          </View>
+          <View style={{ flex: 1.55 }}>
+            <Text className="text-center text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]">
+              Load
+            </Text>
+          </View>
+          <View style={{ width: 70 }}>
+            <Text className="text-center text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]">
+              Effort
+            </Text>
+          </View>
         </View>
       ) : null}
 
@@ -199,7 +188,7 @@ export default function ExerciseProgramForm({
             onPress={removeLastSet}
             disabled={formData.sets.length === 0}
             hitSlop={8}
-            className={`h-8 w-8 items-center justify-center rounded-full ${
+            className={`h-8 w-8 items-center justify-center  ${
               formData.sets.length === 0
                 ? "bg-neutral-200 dark:bg-[#44475A]"
                 : chipBg
@@ -220,7 +209,7 @@ export default function ExerciseProgramForm({
           <Pressable
             onPress={addSet}
             hitSlop={8}
-            className={`h-8 flex-row items-center justify-center rounded-full px-3 ${chipBg}`}
+            className={`h-8 flex-row items-center justify-center  px-3 ${chipBg}`}
           >
             <Plus size={12} color={isDark ? "#282A36" : "#F9FAFB"} />
             <Text className={`ml-1 text-[11px] font-semibold ${chipText}`}>

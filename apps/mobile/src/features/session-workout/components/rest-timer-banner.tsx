@@ -34,7 +34,7 @@ export function RestTimerBanner({ sessionId }: RestTimerBannerProps) {
     <View className="border-b border-emerald-200 bg-emerald-600 px-4 py-2 dark:border-[#44475A] dark:bg-[#50FA7B]">
       <View className="flex-row items-center justify-between">
         <View className="min-w-0 flex-1 flex-row items-center">
-          <View className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-white/15 dark:bg-[#282A36]/10">
+          <View className="mr-2 h-8 w-8 items-center justify-center  bg-white/15 dark:bg-[#282A36]/10">
             <Clock3 size={16} color={iconColor} />
           </View>
 
@@ -57,7 +57,7 @@ export function RestTimerBanner({ sessionId }: RestTimerBannerProps) {
             void cancelRestTimer();
           }}
           hitSlop={8}
-          className="ml-3 h-9 w-9 items-center justify-center rounded-full bg-white/15 dark:bg-[#282A36]/10"
+          className="ml-3 h-9 w-9 items-center justify-center  bg-white/15 dark:bg-[#282A36]/10"
         >
           <X size={17} color={iconColor} />
         </Pressable>

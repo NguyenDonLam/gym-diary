@@ -100,7 +100,7 @@ export function ExerciseStatsView({ stat, exercise, className }: Props) {
     return (
       <View
         className={[
-          "border border-neutral-800 bg-neutral-950 rounded-xl px-3 py-2",
+          "border border-neutral-800 bg-neutral-950  px-3 py-2",
           className ?? "",
         ].join(" ")}
       >
@@ -112,13 +112,13 @@ export function ExerciseStatsView({ stat, exercise, className }: Props) {
   return (
     <View
       className={[
-        "border border-neutral-800 bg-neutral-950 rounded-xl px-3 py-2",
+        "border border-neutral-800 bg-neutral-950  px-3 py-2",
         className ?? "",
       ].join(" ")}
     >
       <View className="flex-row justify-center mb-1">
         <View className="flex-row items-center gap-2">
-          <View className="h-6 w-6 rounded-full bg-amber-400/20 items-center justify-center">
+          <View className="h-6 w-6  bg-amber-400/20 items-center justify-center">
             <Trophy size={13} color="#FBBF24" />
           </View>
           <View className="items-center">

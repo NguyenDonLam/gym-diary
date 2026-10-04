@@ -178,7 +178,7 @@ export default function ProgramStatsPage() {
           <View className="mb-3">
             <View
               className={[
-                "h-2 rounded-full",
+                "h-2 ",
                 COLOR_STRIP_MAP[program.color],
               ].join(" ")}
             />
@@ -189,7 +189,7 @@ export default function ProgramStatsPage() {
         <ProgramStatsView stat={lifetime} className="mb-3" />
 
         {/* Period selector */}
-        <View className="flex-row overflow-hidden rounded-xl border border-neutral-200 dark:border-[#44475A] mt-3 mb-3">
+        <View className="flex-row overflow-hidden  border border-neutral-200 dark:border-[#44475A] mt-3 mb-3">
           {(["week", "month", "year"] as PeriodKey[]).map((p) => {
             const active = period === p;
 

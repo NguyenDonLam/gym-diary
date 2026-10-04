@@ -1,5 +1,6 @@
 /**
  * Workout tab — program library and session entry flow:
+ * - Cards, buttons, folder controls, and program rows use square corners.
  * - useWorkoutPrograms loads programs and exposes deleteProgram;
  *   useTemplateFolders loads folders and exposes their create/save/remove.
  * - Copy loaded programs into local templateProgram for drag display;
@@ -7,11 +8,13 @@
  * - Keep unassigned and folder expansion locally, opening newly loaded
  *   folders by default. buildRows combines those values into draggable
  *   unassigned-header, folder-header, and program rows.
- * - Wait for both program and folder loads before showing the list.
+ * - Render the Workout header immediately; show row-shaped placeholders
+ *   while programs or folders load, then replace them with draggable rows.
  * - useOngoingSession supplies the active session and start/end/discard
  *   actions. useSessionTimer formats elapsed time from its startedAt.
  * - The active-session card opens /session-workout/[id]; its End button
- *   invokes the finish flow. The one-off action starts without a program.
+ *   invokes the finish flow. Its name and elapsed time appear without a
+ *   timer icon. The one-off action starts without a program.
  * - Tapping a program starts a session from its ID; long-pressing opens
  *   /program-workout/[id] for editing. New program actions open
  *   /program-workout/new, optionally carrying a folderId.
@@ -41,7 +44,6 @@ import {
   Text,
   Pressable,
   Alert,
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -77,7 +79,6 @@ import {
   FolderPlus,
   Play,
   Plus,
-  Timer,
 } from "lucide-react-native";
 
 export default function Workout() {
@@ -141,6 +142,8 @@ export default function Workout() {
     () => buildRows(templateProgram, folders, unassignedOpen, openFolderIds),
     [templateProgram, folders, unassignedOpen, openFolderIds],
   );
+  const isProgramListLoading =
+    isLoading || foldersLoading || programs.length !== templateProgram.length;
 
   const scrollFolderIntoKeyboardView = React.useCallback(
     (folderId: string) => {
@@ -468,14 +471,6 @@ export default function Workout() {
     );
   };
 
-  if (isLoading || foldersLoading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-[#282A36]">
-        <ActivityIndicator size="large" color="#BD93F9" />
-      </View>
-    );
-  }
-
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-white dark:bg-[#282A36]"
@@ -484,7 +479,7 @@ export default function Workout() {
     >
       <DraggableFlatList
         ref={listRef}
-        data={rows}
+        data={isProgramListLoading ? [] : rows}
         keyExtractor={(item) => item.key}
         renderItem={renderRow}
         onDragEnd={handleDragEnd}
@@ -511,15 +506,15 @@ export default function Workout() {
             </Text>
 
             <Text className="mt-1 text-xs text-neutral-700 dark:text-[#6272A4]">
-              Tap to start. Long-press to edit. Drag handle to move.
+              Drag handle to move programs between folders.
             </Text>
 
             <Text className="mt-0.5 text-xs text-neutral-500 dark:text-[#6272A4]">
-              Total: {programs.length}
+              Total: {isLoading ? "…" : programs.length}
             </Text>
 
             {ongoingSession ? (
-              <View className="mt-3 overflow-hidden rounded-2xl border-2 border-emerald-500 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-500/10">
+              <View className="mt-3 overflow-hidden  border-2 border-emerald-500 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-500/10">
                 <View className="flex-row items-stretch">
                   <Pressable
                     onPress={handleOpenOngoingSession}
@@ -537,13 +532,6 @@ export default function Workout() {
                         }`}
                       >
                         <View className="flex-row items-center flex-1 pr-3">
-                          <View className="mr-3 rounded-full bg-emerald-500/15 p-2 dark:bg-emerald-400/20">
-                            <Timer
-                              size={17}
-                              color={isDark ? "#34D399" : "#047857"}
-                            />
-                          </View>
-
                           <View className="flex-1">
                             <Text className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
                               Current session
@@ -600,7 +588,7 @@ export default function Workout() {
               <Pressable
                 onPress={() => handleStartSession()}
                 android_ripple={{ color: "rgba(255,255,255,0.08)" }}
-                className="mt-3 overflow-hidden rounded-2xl border border-neutral-300 bg-white dark:border-[#6272A4] dark:bg-[#21222C]"
+                className="mt-3 overflow-hidden  border border-neutral-300 bg-white dark:border-[#6272A4] dark:bg-[#21222C]"
               >
                 {({ pressed }) => (
                   <View
@@ -609,7 +597,7 @@ export default function Workout() {
                     }`}
                   >
                     <View className="flex-row items-center flex-1">
-                      <View className="mr-3 rounded-full bg-neutral-900/10 p-2 dark:bg-[#BD93F9]/20">
+                      <View className="mr-3  bg-neutral-900/10 p-2 dark:bg-[#BD93F9]/20">
                         <Play
                           size={16}
                           color={isDark ? "#BD93F9" : "#111827"}
@@ -638,7 +626,7 @@ export default function Workout() {
 
             <View className="mt-3 flex-row gap-2">
               <Pressable
-                className="flex-1 flex-row items-center justify-center rounded-lg bg-neutral-900 px-3 py-2.5 dark:bg-[#BD93F9]"
+                className="flex-1 flex-row items-center justify-center  bg-neutral-900 px-3 py-2.5 dark:bg-[#BD93F9]"
                 onPress={handleCreateTemplate}
               >
                 <Plus
@@ -652,7 +640,7 @@ export default function Workout() {
               </Pressable>
 
               <Pressable
-                className="flex-1 flex-row items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-2.5 dark:border-[#6272A4] dark:bg-[#21222C]"
+                className="flex-1 flex-row items-center justify-center  border border-neutral-300 bg-white px-3 py-2.5 dark:border-[#6272A4] dark:bg-[#21222C]"
                 onPress={handleCreateFolder}
               >
                 <FolderPlus
@@ -666,6 +654,15 @@ export default function Workout() {
               </Pressable>
             </View>
           </View>
+        }
+        ListEmptyComponent={
+          isProgramListLoading ? (
+            <View accessibilityLabel="Loading programs" className="gap-2">
+              <View className="h-12 bg-neutral-200 dark:bg-[#343746]" />
+              <View className="h-16 bg-neutral-200 dark:bg-[#343746]" />
+              <View className="h-16 bg-neutral-200 dark:bg-[#343746]" />
+            </View>
+          ) : null
         }
         ListFooterComponent={
           foldersError ? (

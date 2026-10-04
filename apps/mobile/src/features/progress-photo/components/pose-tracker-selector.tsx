@@ -91,7 +91,7 @@ export function PoseTrackerSelector({
         >
           <View
             accessibilityViewIsModal
-            className="w-full max-w-sm rounded-3xl bg-white p-6 dark:bg-[#282A36]"
+            className="w-full max-w-sm  bg-white p-6 dark:bg-[#282A36]"
           >
             <Text className="text-xl font-semibold text-zinc-900 dark:text-white">
               Rename pose
@@ -108,7 +108,7 @@ export function PoseTrackerSelector({
               editable={!isRenaming}
               returnKeyType="done"
               onSubmitEditing={() => void save()}
-              className="mt-5 rounded-xl border border-zinc-200 px-4 py-3 text-base text-zinc-900 dark:border-[#6272A4] dark:text-white"
+              className="mt-5  border border-zinc-200 px-4 py-3 text-base text-zinc-900 dark:border-[#6272A4] dark:text-white"
             />
             {!name.trim() ? (
               <Text className="mt-2 text-xs text-red-500">
@@ -139,7 +139,7 @@ export function PoseTrackerSelector({
                 disabled={!name.trim() || isRenaming}
                 onPress={() => void save()}
                 style={{ opacity: !name.trim() || isRenaming ? 0.5 : 1 }}
-                className="min-h-11 justify-center rounded-xl bg-violet-600 px-5"
+                className="min-h-11 justify-center  bg-violet-600 px-5"
               >
                 <Text className="font-semibold text-white">
                   {isRenaming ? "Saving…" : "Save name"}

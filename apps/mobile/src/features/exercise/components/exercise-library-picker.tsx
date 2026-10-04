@@ -165,7 +165,7 @@ const ExerciseRow = React.memo(function ExerciseRow(props: {
   return (
     <Pressable
       onPress={props.onPress}
-      className={`rounded-2xl border p-4 ${
+      className={` border p-4 ${
         props.selected
           ? "border-neutral-900 bg-neutral-900 dark:border-[#BD93F9] dark:bg-[#BD93F9]"
           : "border-neutral-200 bg-white dark:border-[#44475A] dark:bg-[#343746]"
@@ -174,7 +174,7 @@ const ExerciseRow = React.memo(function ExerciseRow(props: {
       <View className="flex-row items-center justify-between gap-3">
         <View className="flex-row flex-1 items-center">
           <View
-            className={`mr-3 h-10 w-10 items-center justify-center rounded-xl ${
+            className={`mr-3 h-10 w-10 items-center justify-center  ${
               props.selected
                 ? "bg-white/15"
                 : "bg-neutral-100 dark:bg-[#21222C]"
@@ -223,23 +223,25 @@ const ExerciseRow = React.memo(function ExerciseRow(props: {
         </View>
 
         <View className="items-end">
-          <View
-            className={`rounded-full px-2 py-0.5 ${
-              props.selected
-                ? "bg-white/15 dark:bg-[#282A36]/10"
-                : "bg-neutral-100 dark:bg-[#21222C]"
-            }`}
-          >
-            <Text
-              className={`text-[10px] font-semibold ${
+          {props.exercise.quantityUnit === "time" ? (
+            <View
+              className={` px-2 py-0.5 ${
                 props.selected
-                  ? "text-white dark:text-[#282A36]"
-                  : "text-neutral-500 dark:text-[#6272A4]"
+                  ? "bg-white/15 dark:bg-[#282A36]/10"
+                  : "bg-neutral-100 dark:bg-[#21222C]"
               }`}
             >
-              {getQuantityUnitLabel(props.exercise.quantityUnit ?? "reps")}
-            </Text>
-          </View>
+              <Text
+                className={`text-[10px] font-semibold ${
+                  props.selected
+                    ? "text-white dark:text-[#282A36]"
+                    : "text-neutral-500 dark:text-[#6272A4]"
+                }`}
+              >
+                Time
+              </Text>
+            </View>
+          ) : null}
 
           <Text
             className={`mt-1 text-base ${
@@ -257,6 +259,7 @@ const ExerciseRow = React.memo(function ExerciseRow(props: {
 }, (prev, next) => {
   return (
     getExerciseId(prev.exercise) === getExerciseId(next.exercise) &&
+    prev.exercise.quantityUnit === next.exercise.quantityUnit &&
     prev.subtitle === next.subtitle &&
     prev.selected === next.selected &&
     prev.selectable === next.selectable
@@ -645,7 +648,7 @@ export default function ExerciseLibraryPicker({
 
         return (
           <View
-            className={`rounded-2xl border p-4 ${
+            className={` border p-4 ${
               isError
                 ? "border-rose-200 bg-rose-50 dark:border-[#FF5555] dark:bg-[#3A3D4F]"
                 : "border-neutral-200 bg-white dark:border-[#44475A] dark:bg-[#343746]"
@@ -694,7 +697,7 @@ export default function ExerciseLibraryPicker({
         return (
           <Pressable
             onPress={() => setShowAll((v) => !v)}
-            className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]"
+            className=" border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]"
           >
             <Text className="text-sm font-medium text-neutral-900 dark:text-[#F8F8F2]">
               {showAll ? "Hide all exercises" : "Browse all exercises"}
@@ -751,7 +754,7 @@ export default function ExerciseLibraryPicker({
             {onCancel ? (
               <Pressable
                 onPress={onCancel}
-                className="h-9 w-9 items-center justify-center rounded-full bg-neutral-100 dark:bg-[#343746]"
+                className="h-9 w-9 items-center justify-center  bg-neutral-100 dark:bg-[#343746]"
               >
                 <X size={16} color={isDark ? "#F8F8F2" : "#111827"} />
               </Pressable>
@@ -760,7 +763,7 @@ export default function ExerciseLibraryPicker({
             {mode === "multi-select" && onConfirmSelection ? (
               <Pressable
                 onPress={handleConfirm}
-                className="rounded-full bg-neutral-900 px-4 py-2 dark:bg-[#BD93F9]"
+                className=" bg-neutral-900 px-4 py-2 dark:bg-[#BD93F9]"
               >
                 <Text className="text-sm font-medium text-white dark:text-[#282A36]">
                   {confirmLabel}
@@ -773,7 +776,7 @@ export default function ExerciseLibraryPicker({
 
       <View className="px-4 pt-4">
         <View className="flex-row items-center gap-2">
-          <View className="flex-1 rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]">
+          <View className="flex-1  border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]">
             <View className="flex-row items-center">
               <Search
                 size={16}
@@ -801,7 +804,7 @@ export default function ExerciseLibraryPicker({
               }}
               accessibilityRole="button"
               accessibilityLabel="Create new exercise"
-              className="h-[50px] flex-row items-center justify-center gap-1.5 rounded-2xl bg-neutral-900 px-4 dark:bg-[#BD93F9]"
+              className="h-[50px] flex-row items-center justify-center gap-1.5  bg-neutral-900 px-4 dark:bg-[#BD93F9]"
             >
               <Plus size={17} color={isDark ? "#282A36" : "#FFFFFF"} />
               <Text className="text-[13px] font-semibold text-white dark:text-[#282A36]">
@@ -837,13 +840,13 @@ export default function ExerciseLibraryPicker({
           className="absolute inset-0 bg-[#21222C]/70"
           style={{ zIndex: 60 }}
         >
-          <View className="absolute inset-x-8 top-32 rounded-2xl bg-white px-4 py-3 dark:bg-[#343746]">
+          <View className="absolute inset-x-8 top-32  bg-white px-4 py-3 dark:bg-[#343746]">
             <Text className="mb-2 text-[13px] font-semibold text-neutral-900 dark:text-[#F8F8F2]">
               Create exercise
             </Text>
 
             <TextInput
-              className="mb-3 rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-[13px] text-neutral-900 dark:border-[#44475A] dark:bg-[#21222C] dark:text-[#F8F8F2]"
+              className="mb-3  border border-neutral-300 bg-neutral-50 px-3 py-2 text-[13px] text-neutral-900 dark:border-[#44475A] dark:bg-[#21222C] dark:text-[#F8F8F2]"
               placeholder="Exercise name"
               placeholderTextColor="#9CA3AF"
               value={newExerciseName}
@@ -851,7 +854,7 @@ export default function ExerciseLibraryPicker({
               autoCapitalize="words"
             />
 
-            <View className="mb-3 flex-row rounded-xl bg-neutral-100 p-1 dark:bg-[#21222C]">
+            <View className="mb-3 flex-row  bg-neutral-100 p-1 dark:bg-[#21222C]">
               {(["reps", "time"] as const).map((unit) => {
                 const selected = newExerciseQuantityUnit === unit;
 
@@ -859,7 +862,7 @@ export default function ExerciseLibraryPicker({
                   <Pressable
                     key={unit}
                     onPress={() => setNewExerciseQuantityUnit(unit)}
-                    className={`h-9 flex-1 items-center justify-center rounded-lg ${
+                    className={`h-9 flex-1 items-center justify-center  ${
                       selected
                         ? "bg-white dark:bg-[#BD93F9]"
                         : "bg-transparent"
@@ -886,7 +889,7 @@ export default function ExerciseLibraryPicker({
                   setNewExerciseName("");
                   setNewExerciseQuantityUnit("reps");
                 }}
-                className="h-7 items-center justify-center rounded-full bg-neutral-100 px-3 dark:bg-[#44475A]"
+                className="h-7 items-center justify-center  bg-neutral-100 px-3 dark:bg-[#44475A]"
               >
                 <Text className="text-[12px] text-neutral-600 dark:text-[#6272A4]">
                   Cancel
@@ -895,7 +898,7 @@ export default function ExerciseLibraryPicker({
 
               <Pressable
                 onPress={handleSubmitCreateExercise}
-                className="h-7 items-center justify-center rounded-full bg-neutral-900 px-3 dark:bg-[#BD93F9]"
+                className="h-7 items-center justify-center  bg-neutral-900 px-3 dark:bg-[#BD93F9]"
               >
                 <Text className="text-[12px] font-medium text-white dark:text-[#282A36]">
                   Create
