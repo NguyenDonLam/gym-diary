@@ -74,11 +74,11 @@ export default function FolderRow({
   const inputBorder = isDark ? "border-neutral-700" : "border-neutral-300";
   const iconColor = isDark ? "#9CA3AF" : "#6B7280";
   const buttonClass =
-    "h-9 w-9 items-center justify-center rounded-none border border-neutral-200 bg-white dark:border-[#44475A] dark:bg-[#343746]";
+    "h-9 w-9 items-center justify-center border border-neutral-200 bg-white dark:border-[#44475A] dark:bg-[#343746]";
 
   return (
     <View className="mb-2">
-      <View className="flex-row items-center justify-between rounded-none bg-neutral-50 px-2 py-2 dark:bg-[#21222C]">
+      <View className="flex-row items-center justify-between bg-neutral-50 px-2 py-2 dark:bg-[#21222C]">
         <Pressable className="flex-1 pr-2" onPress={onToggleOpen}>
           <Text
             className={`text-[13px] font-semibold ${titleText}`}
@@ -109,7 +109,7 @@ export default function FolderRow({
       {renaming && (
         <View className="mb-2 mt-2 flex-row items-center">
           <TextInput
-            className={`flex-1 rounded-none border px-3 py-1.5 text-[13px] ${inputText} ${inputBg} ${inputBorder}`}
+            className={`flex-1 border px-3 py-1.5 text-[13px] ${inputText} ${inputBg} ${inputBorder}`}
             placeholder="Folder name"
             placeholderTextColor={isDark ? "#6B7280" : "#9CA3AF"}
             value={renameValue}

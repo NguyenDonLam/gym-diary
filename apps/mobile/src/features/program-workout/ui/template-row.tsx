@@ -29,7 +29,7 @@ export function ProgramRow({
 
   return (
     <Pressable
-      className={`mb-2 rounded-none border border-neutral-200 bg-neutral-50 px-2.5 py-4 dark:border-[#44475A] dark:bg-slate-900 ${
+      className={`mb-2 border border-neutral-200 bg-neutral-50 px-2.5 py-4 dark:border-[#44475A] dark:bg-slate-900 ${
         inFolder ? "ml-4" : ""
       } ${isActive ? "opacity-80" : ""}`}
       onPress={onPress}
@@ -42,13 +42,13 @@ export function ProgramRow({
               onLongPress={onDragHandleLongPress}
               delayLongPress={120}
               hitSlop={8}
-              className="mr-2 h-9 flex-row items-center rounded-none px-2"
+              className="mr-2 h-9 flex-row items-center px-2"
             >
               <GripVertical width={30} height={30} color="#6B7280" />
             </Pressable>
           ) : null}
 
-          <View className={`mr-3 h-7 w-1 rounded-none ${stripClass}`} />
+          <View className={`mr-3 h-7 w-1 ${stripClass}`} />
 
           <View className="shrink">
             <Text className="text-[15px] font-semibold text-neutral-900 dark:text-slate-50">
@@ -60,7 +60,7 @@ export function ProgramRow({
         <Pressable
           onPress={onDeletePress}
           hitSlop={8}
-          className="ml-2 h-9 w-9 items-center justify-center rounded-none"
+          className="ml-2 h-9 w-9 items-center justify-center"
         >
           <Trash2 width={16} height={16} color="#EF4444" />
         </Pressable>
