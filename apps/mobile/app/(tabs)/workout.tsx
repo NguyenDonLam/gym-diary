@@ -1,5 +1,6 @@
 /**
  * Workout tab — program library and session entry flow:
+ * - Cards, buttons, folder controls, and program rows use square corners.
  * - useWorkoutPrograms loads programs and exposes deleteProgram;
  *   useTemplateFolders loads folders and exposes their create/save/remove.
  * - Copy loaded programs into local templateProgram for drag display;
@@ -505,7 +506,7 @@ export default function Workout() {
             </Text>
 
             <Text className="mt-1 text-xs text-neutral-700 dark:text-[#6272A4]">
-              Tap to start. Long-press to edit. Drag handle to move.
+              Drag handle to move programs between folders.
             </Text>
 
             <Text className="mt-0.5 text-xs text-neutral-500 dark:text-[#6272A4]">
@@ -513,7 +514,7 @@ export default function Workout() {
             </Text>
 
             {ongoingSession ? (
-              <View className="mt-3 overflow-hidden rounded-2xl border-2 border-emerald-500 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-500/10">
+              <View className="mt-3 overflow-hidden rounded-none border-2 border-emerald-500 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-500/10">
                 <View className="flex-row items-stretch">
                   <Pressable
                     onPress={handleOpenOngoingSession}
@@ -531,7 +532,7 @@ export default function Workout() {
                         }`}
                       >
                         <View className="flex-row items-center flex-1 pr-3">
-                          <View className="mr-3 rounded-full bg-emerald-500/15 p-2 dark:bg-emerald-400/20">
+                          <View className="mr-3 rounded-none bg-emerald-500/15 p-2 dark:bg-emerald-400/20">
                             <Timer
                               size={17}
                               color={isDark ? "#34D399" : "#047857"}
@@ -594,7 +595,7 @@ export default function Workout() {
               <Pressable
                 onPress={() => handleStartSession()}
                 android_ripple={{ color: "rgba(255,255,255,0.08)" }}
-                className="mt-3 overflow-hidden rounded-2xl border border-neutral-300 bg-white dark:border-[#6272A4] dark:bg-[#21222C]"
+                className="mt-3 overflow-hidden rounded-none border border-neutral-300 bg-white dark:border-[#6272A4] dark:bg-[#21222C]"
               >
                 {({ pressed }) => (
                   <View
@@ -603,7 +604,7 @@ export default function Workout() {
                     }`}
                   >
                     <View className="flex-row items-center flex-1">
-                      <View className="mr-3 rounded-full bg-neutral-900/10 p-2 dark:bg-[#BD93F9]/20">
+                      <View className="mr-3 rounded-none bg-neutral-900/10 p-2 dark:bg-[#BD93F9]/20">
                         <Play
                           size={16}
                           color={isDark ? "#BD93F9" : "#111827"}
@@ -632,7 +633,7 @@ export default function Workout() {
 
             <View className="mt-3 flex-row gap-2">
               <Pressable
-                className="flex-1 flex-row items-center justify-center rounded-lg bg-neutral-900 px-3 py-2.5 dark:bg-[#BD93F9]"
+                className="flex-1 flex-row items-center justify-center rounded-none bg-neutral-900 px-3 py-2.5 dark:bg-[#BD93F9]"
                 onPress={handleCreateTemplate}
               >
                 <Plus
@@ -646,7 +647,7 @@ export default function Workout() {
               </Pressable>
 
               <Pressable
-                className="flex-1 flex-row items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-2.5 dark:border-[#6272A4] dark:bg-[#21222C]"
+                className="flex-1 flex-row items-center justify-center rounded-none border border-neutral-300 bg-white px-3 py-2.5 dark:border-[#6272A4] dark:bg-[#21222C]"
                 onPress={handleCreateFolder}
               >
                 <FolderPlus
