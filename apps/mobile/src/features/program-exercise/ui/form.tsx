@@ -152,24 +152,21 @@ export default function ExerciseProgramForm({
       {formData.sets.length > 0 ? (
         <View className="mb-1 flex-row items-center gap-2 px-2">
           <View className="w-7" />
-          <Text
-            className="text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]"
-            style={{ flex: 0.82 }}
-          >
-            Target
-          </Text>
-          <Text
-            className="text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]"
-            style={{ flex: 1.55 }}
-          >
-            Load
-          </Text>
-          <Text
-            className="text-center text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]"
-            style={{ width: 70 }}
-          >
-            Effort
-          </Text>
+          <View style={{ flex: 0.82 }}>
+            <Text className="text-center text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]">
+              Target
+            </Text>
+          </View>
+          <View style={{ flex: 1.55 }}>
+            <Text className="text-center text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]">
+              Load
+            </Text>
+          </View>
+          <View style={{ width: 70 }}>
+            <Text className="text-center text-[9px] font-semibold uppercase text-neutral-400 dark:text-[#6272A4]">
+              Effort
+            </Text>
+          </View>
         </View>
       ) : null}
 
