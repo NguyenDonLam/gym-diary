@@ -27,7 +27,7 @@ export function ProgressPoseDiagnosticOverlay({
       {pose?.landmarks.map((landmark) => (
         <View
           key={landmark.name}
-          className="absolute h-2 w-2 rounded-full bg-[#50FA7B]"
+          className="absolute h-2 w-2  bg-[#50FA7B]"
           style={{
             left: `${landmark.x * 100}%`,
             top: `${landmark.y * 100}%`,
@@ -37,7 +37,7 @@ export function ProgressPoseDiagnosticOverlay({
         />
       ))}
 
-      <View className="absolute left-3 top-3 rounded-lg bg-black/70 px-2 py-1">
+      <View className="absolute left-3 top-3  bg-black/70 px-2 py-1">
         <Text className="font-mono text-xs text-white">
           Pose {Math.max(0, inferenceRateHz).toFixed(1)} Hz
         </Text>

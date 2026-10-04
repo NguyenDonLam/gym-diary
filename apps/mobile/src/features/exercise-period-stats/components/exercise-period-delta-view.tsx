@@ -166,7 +166,7 @@ export function ExercisePeriodDeltaView({ rows, period, className }: Props) {
     <View
       className={[
         // Different from Program card: no border, softer surface, dividers only between rows.
-        "bg-neutral-900/40 rounded-2xl px-4 py-3",
+        "bg-neutral-900/40  px-4 py-3",
         className ?? "",
       ].join(" ")}
     >

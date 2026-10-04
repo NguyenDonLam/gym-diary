@@ -17,7 +17,7 @@ export function UnassignedHeaderRow({
   return (
     <Pressable
       onPress={onToggle}
-      className="mt-2 mb-1 flex-row items-center justify-between rounded-none bg-neutral-50 px-2 py-2 dark:bg-[#21222C]"
+      className="mt-2 mb-1 flex-row items-center justify-between  bg-neutral-50 px-2 py-2 dark:bg-[#21222C]"
     >
       <View>
         <Text className="text-[12px] font-semibold text-neutral-700 dark:text-neutral-200">
@@ -29,7 +29,7 @@ export function UnassignedHeaderRow({
         </Text>
       </View>
       <View className="flex-row items-center">
-        <View className="h-9 w-9 items-center justify-center rounded-none border border-neutral-200 bg-white dark:border-[#44475A] dark:bg-[#343746]">
+        <View className="h-9 w-9 items-center justify-center  border border-neutral-200 bg-white dark:border-[#44475A] dark:bg-[#343746]">
           {open ? (
             <ChevronDown width={17} height={17} color="#9CA3AF" />
           ) : (

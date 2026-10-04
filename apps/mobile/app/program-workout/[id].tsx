@@ -12,7 +12,7 @@
  * - Save requires a loaded program, a nonblank name, and no active load/save.
  * - Convert the form back with domainFromForm, restore the route's original
  *   id, persist via workoutProgramRepository.save, then return to Workout.
- * - Cancel returns to Workout unless a save is in progress.
+ * - The plain X icon cancels back to Workout unless a save is in progress.
  * - Maintenance: Update this docstring with every change to this file;
  *   keep it current with the code.
  */
@@ -156,7 +156,7 @@ export default function ProgramWorkoutEditScreen() {
             disabled={isSaving}
             accessibilityRole="button"
             accessibilityLabel="Cancel program editing"
-            className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-[#343746]"
+            className="h-11 w-11 items-center justify-center"
           >
             <X size={24} color={isDark ? "#F8F8F2" : "#111827"} />
           </Pressable>
@@ -177,7 +177,7 @@ export default function ProgramWorkoutEditScreen() {
             disabled={!canSave}
             accessibilityRole="button"
             accessibilityLabel="Save program"
-            className={`h-11 flex-row items-center justify-center gap-1.5 rounded-full px-3.5 ${
+            className={`h-11 flex-row items-center justify-center gap-1.5  px-3.5 ${
               canSave
                 ? "bg-neutral-900 dark:bg-[#BD93F9]"
                 : "bg-neutral-300 dark:bg-[#44475A]"

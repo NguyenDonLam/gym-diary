@@ -104,7 +104,7 @@ export const CalendarMonth = memo(function CalendarMonth(
           onPress={handlePrev}
           accessibilityRole="button"
           accessibilityLabel="Previous month"
-          className="h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-900"
+          className="h-10 w-10 items-center justify-center  bg-zinc-100 dark:bg-zinc-900"
         >
           <ChevronLeft size={22} color={navIconColor} strokeWidth={2.4} />
         </Pressable>
@@ -117,7 +117,7 @@ export const CalendarMonth = memo(function CalendarMonth(
           onPress={handleNext}
           accessibilityRole="button"
           accessibilityLabel="Next month"
-          className="h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-900"
+          className="h-10 w-10 items-center justify-center  bg-zinc-100 dark:bg-zinc-900"
         >
           <ChevronRight size={22} color={navIconColor} strokeWidth={2.4} />
         </Pressable>
@@ -146,7 +146,7 @@ export const CalendarMonth = memo(function CalendarMonth(
             }) ?? "";
 
           const dayClasses = [
-            "w-10 h-10 items-center justify-center rounded-full my-0.5",
+            "w-10 h-10 items-center justify-center  my-0.5",
             "border border-transparent",
             !cell.inMonth && "opacity-30",
             isMarked && "border-zinc-300 dark:border-zinc-700",

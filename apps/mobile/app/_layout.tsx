@@ -155,7 +155,7 @@ export default function RootLayout() {
                         </Stack>
 
                         {seedErr ? (
-                          <View className="absolute bottom-3 left-3 right-3 rounded-xl bg-[#111827] p-3 dark:bg-[#3A3D4F]">
+                          <View className="absolute bottom-3 left-3 right-3  bg-[#111827] p-3 dark:bg-[#3A3D4F]">
                             <Text className="font-semibold text-[#E5E7EB] dark:text-[#FF5555]">
                               Seeding failed
                             </Text>

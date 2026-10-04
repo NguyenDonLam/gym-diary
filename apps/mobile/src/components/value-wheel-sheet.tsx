@@ -99,7 +99,7 @@ function WheelColumnView({
       <View style={{ height: WHEEL_HEIGHT }}>
         <View
           pointerEvents="none"
-          className="absolute inset-x-0 rounded-2xl bg-neutral-100 dark:bg-[#44475A]"
+          className="absolute inset-x-0  bg-neutral-100 dark:bg-[#44475A]"
           style={{ top: CENTER_OFFSET, height: ITEM_HEIGHT }}
         />
 
@@ -127,7 +127,7 @@ function WheelColumnView({
               >
                 {option.swatchClassName ? (
                   <View
-                    className={`mr-2 h-3.5 w-3.5 rounded-full ${option.swatchClassName}`}
+                    className={`mr-2 h-3.5 w-3.5  ${option.swatchClassName}`}
                   />
                 ) : null}
 
@@ -203,11 +203,11 @@ export default function ValueWheelSheet({
       <View className="flex-1 bg-[#111827]/45">
         <Pressable className="flex-1" onPress={onCancel} />
 
-        <View className="rounded-t-3xl border border-neutral-200 bg-white px-4 pb-5 pt-3 dark:border-[#44475A] dark:bg-[#343746]">
+        <View className="border border-neutral-200 bg-white px-4 pb-5 pt-3 dark:border-[#44475A] dark:bg-[#343746]">
           <View className="mb-3 flex-row items-start justify-between gap-3">
             <Pressable
               onPress={onCancel}
-              className="h-10 w-10 items-center justify-center rounded-full bg-neutral-100 dark:bg-[#44475A]"
+              className="h-10 w-10 items-center justify-center  bg-neutral-100 dark:bg-[#44475A]"
               hitSlop={8}
             >
               <X size={20} color={isDark ? "#F8F8F2" : "#111827"} />
@@ -233,7 +233,7 @@ export default function ValueWheelSheet({
 
             <Pressable
               onPress={() => onConfirm(values)}
-              className="h-10 min-w-10 items-center justify-center rounded-full bg-neutral-900 px-3 dark:bg-[#BD93F9]"
+              className="h-10 min-w-10 items-center justify-center  bg-neutral-900 px-3 dark:bg-[#BD93F9]"
               hitSlop={8}
               accessibilityLabel={confirmLabel}
             >
@@ -241,7 +241,7 @@ export default function ValueWheelSheet({
             </Pressable>
           </View>
 
-          <View className="rounded-[28px] bg-neutral-50 px-3 py-4 dark:bg-[#282A36]">
+          <View className="bg-neutral-50 px-3 py-4 dark:bg-[#282A36]">
             <View className="flex-row items-start gap-2">
               {resolvedColumns.map((column) => (
                 <WheelColumnView

@@ -119,7 +119,7 @@ function WorkoutSessionStat({
   }, [sessions]);
 
   return (
-    <View className="mb-3 rounded-xl border border-zinc-200 bg-white p-3 dark:border-[#44475A] dark:bg-[#343746]">
+    <View className="mb-3  border border-zinc-200 bg-white p-3 dark:border-[#44475A] dark:bg-[#343746]">
       <Text className="text-sm font-semibold text-zinc-900 dark:text-[#F8F8F2]">
         Workout stats
       </Text>

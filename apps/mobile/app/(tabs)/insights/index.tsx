@@ -189,7 +189,7 @@ function buildWindowPreview(
 
 function StatTile(props: { label: string; value: string }) {
   return (
-    <View className="flex-1 rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
+    <View className="flex-1  bg-neutral-100 p-4 dark:bg-[#343746]">
       <Text className="text-xs text-neutral-700 dark:text-[#6272A4]">
         {props.label}
       </Text>
@@ -207,7 +207,7 @@ function LensToggle(props: {
   const items: TimeLens[] = ["4W", "12W", "ALL"];
 
   return (
-    <View className="flex-row rounded-2xl bg-neutral-100 p-1 dark:bg-[#343746]">
+    <View className="flex-row  bg-neutral-100 p-1 dark:bg-[#343746]">
       {items.map((it) => {
         const active = it === props.value;
 
@@ -216,7 +216,7 @@ function LensToggle(props: {
             key={it}
             onPress={() => props.onChange(it)}
             className={[
-              "rounded-xl px-3 py-2",
+              " px-3 py-2",
               active ? "bg-neutral-900 dark:bg-[#44475A]" : "bg-transparent",
             ].join(" ")}
           >
@@ -241,7 +241,7 @@ function WeeklyActivityCard(props: { buckets: WeekBucket[] }) {
   const max = Math.max(1, ...props.buckets.map((b) => b.entries));
 
   return (
-    <View className="rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
+    <View className=" bg-neutral-100 p-4 dark:bg-[#343746]">
       <Text className="text-sm font-semibold text-neutral-900 dark:text-[#F8F8F2]">
         Weekly activity
       </Text>
@@ -271,7 +271,7 @@ function WeeklyActivityCard(props: { buckets: WeekBucket[] }) {
                 <View
                   key={b.key}
                   className={[
-                    "h-3 w-3 rounded-sm bg-neutral-900 dark:bg-[#BD93F9]",
+                    "h-3 w-3 bg-neutral-900 dark:bg-[#BD93F9]",
                     opacityClass,
                   ].join(" ")}
                   accessibilityLabel={`${b.entries} exercise entries`}
@@ -292,7 +292,7 @@ function WeeklyActivityCard(props: { buckets: WeekBucket[] }) {
 function ExerciseCard(props: { rows: PreviewRow[] }) {
   return (
     <Link replace href="/(tabs)/insights/exercise" asChild>
-      <Pressable className="rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
+      <Pressable className=" bg-neutral-100 p-4 dark:bg-[#343746]">
         <View className="flex-row items-start justify-between">
           <View className="pr-4">
             <Text className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2]">
@@ -312,7 +312,7 @@ function ExerciseCard(props: { rows: PreviewRow[] }) {
 function ProgramCard() {
   return (
     <Link replace href="/(tabs)/insights/program" asChild>
-      <Pressable className="rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746]">
+      <Pressable className=" bg-neutral-100 p-4 dark:bg-[#343746]">
         <View className="flex-row items-start justify-between">
           <View className="pr-4">
             <Text className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2]">

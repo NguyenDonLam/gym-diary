@@ -27,7 +27,7 @@ export function ThemeToggle() {
   return (
     <Pressable
       onPress={handleToggle}
-      className="mr-4 mt-2 h-8 w-8 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800"
+      className="mr-4 mt-2 h-8 w-8 items-center justify-center  bg-slate-200 dark:bg-slate-800"
       hitSlop={8}
     >
       {isDark ? (

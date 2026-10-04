@@ -13,7 +13,8 @@
  * - useOngoingSession supplies the active session and start/end/discard
  *   actions. useSessionTimer formats elapsed time from its startedAt.
  * - The active-session card opens /session-workout/[id]; its End button
- *   invokes the finish flow. The one-off action starts without a program.
+ *   invokes the finish flow. Its name and elapsed time appear without a
+ *   timer icon. The one-off action starts without a program.
  * - Tapping a program starts a session from its ID; long-pressing opens
  *   /program-workout/[id] for editing. New program actions open
  *   /program-workout/new, optionally carrying a folderId.
@@ -78,7 +79,6 @@ import {
   FolderPlus,
   Play,
   Plus,
-  Timer,
 } from "lucide-react-native";
 
 export default function Workout() {
@@ -514,7 +514,7 @@ export default function Workout() {
             </Text>
 
             {ongoingSession ? (
-              <View className="mt-3 overflow-hidden rounded-none border-2 border-emerald-500 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-500/10">
+              <View className="mt-3 overflow-hidden  border-2 border-emerald-500 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-500/10">
                 <View className="flex-row items-stretch">
                   <Pressable
                     onPress={handleOpenOngoingSession}
@@ -532,13 +532,6 @@ export default function Workout() {
                         }`}
                       >
                         <View className="flex-row items-center flex-1 pr-3">
-                          <View className="mr-3 rounded-none bg-emerald-500/15 p-2 dark:bg-emerald-400/20">
-                            <Timer
-                              size={17}
-                              color={isDark ? "#34D399" : "#047857"}
-                            />
-                          </View>
-
                           <View className="flex-1">
                             <Text className="text-xs font-semibold uppercase text-emerald-700 dark:text-emerald-300">
                               Current session
@@ -595,7 +588,7 @@ export default function Workout() {
               <Pressable
                 onPress={() => handleStartSession()}
                 android_ripple={{ color: "rgba(255,255,255,0.08)" }}
-                className="mt-3 overflow-hidden rounded-none border border-neutral-300 bg-white dark:border-[#6272A4] dark:bg-[#21222C]"
+                className="mt-3 overflow-hidden  border border-neutral-300 bg-white dark:border-[#6272A4] dark:bg-[#21222C]"
               >
                 {({ pressed }) => (
                   <View
@@ -604,7 +597,7 @@ export default function Workout() {
                     }`}
                   >
                     <View className="flex-row items-center flex-1">
-                      <View className="mr-3 rounded-none bg-neutral-900/10 p-2 dark:bg-[#BD93F9]/20">
+                      <View className="mr-3  bg-neutral-900/10 p-2 dark:bg-[#BD93F9]/20">
                         <Play
                           size={16}
                           color={isDark ? "#BD93F9" : "#111827"}
@@ -633,7 +626,7 @@ export default function Workout() {
 
             <View className="mt-3 flex-row gap-2">
               <Pressable
-                className="flex-1 flex-row items-center justify-center rounded-none bg-neutral-900 px-3 py-2.5 dark:bg-[#BD93F9]"
+                className="flex-1 flex-row items-center justify-center  bg-neutral-900 px-3 py-2.5 dark:bg-[#BD93F9]"
                 onPress={handleCreateTemplate}
               >
                 <Plus
@@ -647,7 +640,7 @@ export default function Workout() {
               </Pressable>
 
               <Pressable
-                className="flex-1 flex-row items-center justify-center rounded-none border border-neutral-300 bg-white px-3 py-2.5 dark:border-[#6272A4] dark:bg-[#21222C]"
+                className="flex-1 flex-row items-center justify-center  border border-neutral-300 bg-white px-3 py-2.5 dark:border-[#6272A4] dark:bg-[#21222C]"
                 onPress={handleCreateFolder}
               >
                 <FolderPlus

@@ -60,7 +60,7 @@ export function ProgramStatsView({ stat, className }: Props) {
     return (
       <View
         className={[
-          "border border-neutral-800 bg-neutral-950 rounded-xl px-3 py-2",
+          "border border-neutral-800 bg-neutral-950  px-3 py-2",
           className ?? "",
         ].join(" ")}
       >
@@ -72,7 +72,7 @@ export function ProgramStatsView({ stat, className }: Props) {
   return (
     <View
       className={[
-        "border border-neutral-800 bg-neutral-950 rounded-xl px-3 py-2",
+        "border border-neutral-800 bg-neutral-950  px-3 py-2",
         className ?? "",
       ].join(" ")}
     >
@@ -80,7 +80,7 @@ export function ProgramStatsView({ stat, className }: Props) {
       <View className="flex-row justify-between mb-1">
         {/* Sessions */}
         <View className="flex-row items-center gap-2">
-          <View className="h-6 w-6 rounded-full bg-emerald-400/20 items-center justify-center">
+          <View className="h-6 w-6  bg-emerald-400/20 items-center justify-center">
             <Dumbbell size={13} color="#34D399" />
           </View>
 
@@ -101,7 +101,7 @@ export function ProgramStatsView({ stat, className }: Props) {
             </Text>
           </View>
 
-          <View className="h-6 w-6 rounded-full bg-sky-400/20 items-center justify-center">
+          <View className="h-6 w-6  bg-sky-400/20 items-center justify-center">
             <Clock3 size={13} color="#38BDF8" />
           </View>
         </View>

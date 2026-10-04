@@ -218,12 +218,12 @@ export default function SetProgramForm({
   const mutedIconColor = isDark ? "#6272A4" : "#6B7280";
   const placeholderColor = isDark ? "#6272A4" : "#A3A3A3";
   const fieldClass =
-    "h-9 justify-center rounded-xl bg-neutral-100 px-2 dark:bg-[#21222C]";
+    "h-9 justify-center  bg-neutral-100 px-2 dark:bg-[#21222C]";
 
   return (
-    <View className="mt-1.5 rounded-2xl bg-neutral-100 px-2 py-1.5 dark:bg-[#21222C]">
+    <View className="mt-1.5  bg-neutral-100 px-2 py-1.5 dark:bg-[#21222C]">
       <View className="flex-row items-center gap-2">
-        <View className="h-7 w-7 items-center justify-center rounded-full bg-neutral-100 dark:bg-[#21222C]">
+        <View className="h-7 w-7 items-center justify-center  bg-neutral-100 dark:bg-[#21222C]">
           <Text className="text-[10px] font-semibold text-neutral-600 dark:text-[#F8F8F2]">
             {index + 1}
           </Text>
@@ -246,7 +246,7 @@ export default function SetProgramForm({
         </View>
 
         <View
-          className="h-9 flex-row items-center rounded-xl bg-neutral-100 dark:bg-[#21222C]"
+          className="h-9 flex-row items-center  bg-neutral-100 dark:bg-[#21222C]"
           style={{ flex: 1.55 }}
         >
           {isNumericUnit || isCustomUnit ? (
@@ -268,7 +268,7 @@ export default function SetProgramForm({
             >
               {isBandUnit ? (
                 <View
-                  className={`mr-1.5 h-3 w-7 rounded-full ${selectedBand.dotClass}`}
+                  className={`mr-1.5 h-3 w-7  ${selectedBand.dotClass}`}
                 />
               ) : null}
               <Text
@@ -284,7 +284,7 @@ export default function SetProgramForm({
 
           <Pressable
             onPress={() => setPicker("loadType")}
-            className="mr-1 h-7 flex-row items-center rounded-lg border border-neutral-300 bg-neutral-100 px-2 dark:border-[#6272A4] dark:bg-[#21222C]"
+            className="mr-1 h-7 flex-row items-center  border border-neutral-300 bg-neutral-100 px-2 dark:border-[#6272A4] dark:bg-[#21222C]"
             hitSlop={8}
           >
             <Text className="text-[10px] font-bold text-neutral-800 dark:text-[#F8F8F2]">
@@ -296,7 +296,7 @@ export default function SetProgramForm({
 
         <Pressable
           onPress={() => setPicker("effort")}
-          className="h-9 w-[70px] flex-row items-center justify-center rounded-xl bg-neutral-100 px-1 dark:bg-[#21222C]"
+          className="h-9 w-[70px] flex-row items-center justify-center  bg-neutral-100 px-1 dark:bg-[#21222C]"
           hitSlop={6}
         >
           {renderIntensityIcon(selectedIntensity.id, iconColor)}
@@ -312,7 +312,7 @@ export default function SetProgramForm({
       </View>
 
       <View className="mt-1.5 flex-row items-center justify-center">
-        <View className="h-8 flex-row items-center rounded-xl bg-neutral-100 px-2 dark:bg-[#21222C]">
+        <View className="h-8 flex-row items-center  bg-neutral-100 px-2 dark:bg-[#21222C]">
           <Clock3 size={13} color={mutedIconColor} />
           <TextInput
             accessibilityLabel={`Rest after set ${index + 1} in seconds`}

@@ -216,7 +216,7 @@ export function SessionExerciseCard({
 
   return (
     <View
-      className={`mb-3 rounded-2xl border ${colors.containerBorder} ${colors.containerBg}`}
+      className={`mb-3  border ${colors.containerBorder} ${colors.containerBg}`}
     >
       <View className="flex-row items-center justify-between px-3 py-2">
         <View className="flex-row items-center flex-1">
@@ -226,7 +226,7 @@ export function SessionExerciseCard({
             accessibilityRole="button"
             accessibilityLabel={value.isOpen ? "Collapse exercise" : "Open exercise"}
             accessibilityState={{ expanded: value.isOpen === true }}
-            className={`mr-2 h-8 w-8 items-center justify-center rounded-full ${colors.statusPillBg}`}
+            className={`mr-2 h-8 w-8 items-center justify-center  ${colors.statusPillBg}`}
           >
             {value.isOpen ? (
               <ChevronDown width={17} height={17} color={chevronColor} />
@@ -245,7 +245,7 @@ export function SessionExerciseCard({
 
             <View className="mt-0.5 flex-row items-center">
               <View
-                className={`mr-1 rounded-full px-2 py-0.5 ${colors.statusPillBg}`}
+                className={`mr-1  px-2 py-0.5 ${colors.statusPillBg}`}
               >
                 <Text
                   className={`text-[10px] font-medium ${colors.statusText}`}
@@ -279,7 +279,7 @@ export function SessionExerciseCard({
                     return (
                       <View
                         key={s.id ?? String(idx)}
-                        className="rounded-full bg-neutral-100 px-2 py-0.5 dark:bg-neutral-800"
+                        className=" bg-neutral-100 px-2 py-0.5 dark:bg-neutral-800"
                       >
                         <Text className="text-[9px] text-neutral-700 dark:text-neutral-200">
                           {label}
@@ -306,7 +306,7 @@ export function SessionExerciseCard({
             <View className="mb-2">
               <Pressable
                 onPress={toggleProgressOpen}
-                className="flex-row items-center justify-between rounded-xl bg-white px-2.5 py-2 dark:bg-neutral-900"
+                className="flex-row items-center justify-between  bg-white px-2.5 py-2 dark:bg-neutral-900"
               >
                 <View className="flex-row items-center">
                   <LineChart width={14} height={14} color={subtleIcon} />
@@ -393,7 +393,7 @@ export function SessionExerciseCard({
           {!readOnly && (
             <Pressable
               onPress={addSet}
-              className="mt-3 h-10 self-end flex-row items-center justify-center gap-1.5 rounded-full bg-neutral-900 px-3 dark:bg-[#BD93F9]"
+              className="mt-3 h-10 self-end flex-row items-center justify-center gap-1.5  bg-neutral-900 px-3 dark:bg-[#BD93F9]"
             >
               <Plus size={18} color={primaryIcon} />
               <Text className="text-[13px] font-semibold text-white dark:text-[#282A36]">

@@ -30,7 +30,7 @@ function ProgramRow(props: {
   return (
     <Pressable
       onPress={props.onPress}
-      className="rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 overflow-hidden"
+      className=" border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950 overflow-hidden"
     >
       <View className="flex-row">
         {/* Color strip */}
@@ -123,7 +123,7 @@ export default function InsightsProgramIndexScreen() {
       </View>
 
       <View className="px-4 pt-4 gap-4">
-        <View className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]">
+        <View className=" border border-neutral-200 bg-white px-4 py-3 dark:border-[#44475A] dark:bg-[#343746]">
           <TextInput
             value={q}
             onChangeText={setQ}
@@ -144,7 +144,7 @@ export default function InsightsProgramIndexScreen() {
             {error.message}
           </Text>
         ) : filtered.length === 0 ? (
-          <View className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-[#44475A] dark:bg-[#343746]">
+          <View className=" border border-neutral-200 bg-white p-4 dark:border-[#44475A] dark:bg-[#343746]">
             <Text className="text-sm font-medium text-neutral-900 dark:text-[#F8F8F2]">
               No programs
             </Text>

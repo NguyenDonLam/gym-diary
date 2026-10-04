@@ -93,7 +93,7 @@ export function AppTabRail({
             style={{
               minHeight: "icon" in item ? 60 : 44,
               padding: 6,
-              borderRadius: 12,
+              borderRadius: 0,
               justifyContent: "center",
               gap: 4,
               backgroundColor: item.selected
@@ -202,7 +202,7 @@ export function AppTabRail({
                 justifyContent: "center",
                 gap: 5,
                 paddingVertical: 8,
-                borderRadius: 16,
+                borderRadius: 0,
                 backgroundColor: focused
                   ? dark
                     ? "#353047"

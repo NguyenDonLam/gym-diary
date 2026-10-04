@@ -70,7 +70,7 @@ export default function SettingsScreen() {
       <Pressable
         onPress={() => setThemePreference(value)}
         className={[
-          "flex-1 rounded-full px-3 py-2",
+          "flex-1  px-3 py-2",
           active
             ? "bg-neutral-900 dark:bg-[#BD93F9] "
             : "bg-white dark:bg-[#2B2D3A]",
@@ -133,7 +133,7 @@ export default function SettingsScreen() {
       </View>
 
       <View className="px-4 pt-4">
-        <View className="mb-3 rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746] ">
+        <View className="mb-3  bg-neutral-100 p-4 dark:bg-[#343746] ">
           <Text className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2]">
             Appearance
           </Text>
@@ -148,7 +148,7 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <View className="mb-3 rounded-2xl bg-neutral-100 p-4 dark:bg-[#343746] ">
+        <View className="mb-3  bg-neutral-100 p-4 dark:bg-[#343746] ">
           <Text className="text-base font-semibold text-neutral-900 dark:text-[#F8F8F2]">
             Workout sessions
           </Text>
@@ -165,7 +165,7 @@ export default function SettingsScreen() {
                 accessibilityState={{ selected: !autoEndEnabled }}
                 onPress={() => void disableAutoEnd()}
                 className={[
-                  "h-11 items-center justify-center rounded-full px-4",
+                  "h-11 items-center justify-center  px-4",
                   !autoEndEnabled
                     ? "bg-neutral-900 dark:bg-[#BD93F9]"
                     : "bg-white dark:bg-[#2B2D3A]",
@@ -185,7 +185,7 @@ export default function SettingsScreen() {
 
               <View
                 className={[
-                  "ml-2 h-11 flex-1 flex-row items-center rounded-full border bg-white px-3 dark:bg-[#2B2D3A]",
+                  "ml-2 h-11 flex-1 flex-row items-center  border bg-white px-3 dark:bg-[#2B2D3A]",
                   autoEndEnabled
                     ? "border-neutral-900 dark:border-[#BD93F9]"
                     : "border-transparent dark:border-transparent",
@@ -212,7 +212,7 @@ export default function SettingsScreen() {
                   accessibilityLabel="Set automatic session ending minutes"
                   onPress={() => void confirmAutoEndDraft()}
                   className={[
-                    "ml-2 h-9 w-9 items-center justify-center rounded-full",
+                    "ml-2 h-9 w-9 items-center justify-center ",
                     hasAutoEndDraft
                       ? "bg-neutral-900 dark:bg-[#BD93F9]"
                       : "bg-neutral-200 dark:bg-[#44475A]",

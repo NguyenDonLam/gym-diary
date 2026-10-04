@@ -617,7 +617,7 @@ export function SessionSetRow({
 
   return (
     <View
-      className={`mb-2 rounded-xl px-2.5 py-2 ${shellBg} ${readOnly ? "opacity-70" : ""}`}
+      className={`mb-2  px-2.5 py-2 ${shellBg} ${readOnly ? "opacity-70" : ""}`}
     >
       <View className="flex-row items-center gap-2">
         <Pressable
@@ -626,7 +626,7 @@ export function SessionSetRow({
           accessibilityLabel={showCompleted ? "Set logged" : "Log set"}
           accessibilityState={{ disabled: readOnly, selected: showCompleted }}
           onPress={completeSet}
-          className={`h-12 w-12 items-center justify-center rounded-xl border ${
+          className={`h-12 w-12 items-center justify-center  border ${
             showCompleted
               ? "border-emerald-600 bg-emerald-600 dark:border-emerald-400 dark:bg-emerald-400"
               : "border-neutral-200 bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800"
@@ -639,7 +639,7 @@ export function SessionSetRow({
           )}
         </Pressable>
 
-        <View className="h-12 flex-1 flex-row items-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900">
+        <View className="h-12 flex-1 flex-row items-center  bg-neutral-50 px-2 dark:bg-neutral-900">
           <TextInput
             ref={repsRef}
             className="min-w-0 flex-1 text-center text-[14px] font-semibold text-neutral-900 dark:text-neutral-50"
@@ -662,7 +662,7 @@ export function SessionSetRow({
                 disabled={readOnly}
                 onPress={handleTimerPress}
                 hitSlop={6}
-                className={`ml-1 h-9 w-8 items-center justify-center rounded-lg ${
+                className={`ml-1 h-9 w-8 items-center justify-center  ${
                   timerButtonIsReset || readOnly
                     ? "bg-neutral-200 dark:bg-neutral-800"
                     : "bg-neutral-900 dark:bg-[#BD93F9]"
@@ -680,7 +680,7 @@ export function SessionSetRow({
           ) : null}
         </View>
 
-        <View className="h-12 flex-1 flex-row items-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900">
+        <View className="h-12 flex-1 flex-row items-center  bg-neutral-50 px-2 dark:bg-neutral-900">
           {isBandUnit ? (
             <Pressable
               disabled={readOnly}
@@ -689,7 +689,7 @@ export function SessionSetRow({
               className="h-full flex-1 items-center justify-center"
             >
               <View
-                className={`h-5 w-12 rounded-full ${selectedBand.dotClass}`}
+                className={`h-5 w-12  ${selectedBand.dotClass}`}
               />
             </Pressable>
           ) : (
@@ -709,7 +709,7 @@ export function SessionSetRow({
             disabled={readOnly}
             onPress={cycleLoadUnit}
             hitSlop={8}
-            className="ml-1 h-9 min-w-[46px] items-center justify-center rounded-lg bg-neutral-200 px-2 dark:bg-neutral-800"
+            className="ml-1 h-9 min-w-[46px] items-center justify-center  bg-neutral-200 px-2 dark:bg-neutral-800"
           >
             <Text className="text-[11px] font-semibold text-neutral-900 dark:text-neutral-50">
               {getLoadUnitLabel(value.loadUnit)}
@@ -721,7 +721,7 @@ export function SessionSetRow({
           disabled={readOnly}
           onPress={cycleEffort}
           hitSlop={8}
-          className="h-12 w-[88px] flex-row items-center justify-center gap-1 rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900"
+          className="h-12 w-[88px] flex-row items-center justify-center gap-1  bg-neutral-50 px-2 dark:bg-neutral-900"
         >
           {renderEffortIcon(effort.id, activeIcon)}
           <Text className="text-[11px] font-semibold text-neutral-900 dark:text-neutral-50">
@@ -742,7 +742,7 @@ export function SessionSetRow({
             </Text>
           </View>
 
-          <View className="h-8 flex-row items-center rounded-xl bg-neutral-50 px-2 dark:bg-neutral-900">
+          <View className="h-8 flex-row items-center  bg-neutral-50 px-2 dark:bg-neutral-900">
             <TextInput
               value={String(restSeconds)}
               onChangeText={handleChangeRestSeconds}
@@ -763,7 +763,7 @@ export function SessionSetRow({
             disabled={readOnly || restSeconds <= 0}
             onPress={handleRestStart}
             hitSlop={8}
-            className={`h-8 flex-row items-center rounded-xl px-2.5 ${
+            className={`h-8 flex-row items-center  px-2.5 ${
               readOnly || restSeconds <= 0
                 ? "bg-neutral-200 dark:bg-neutral-800"
                 : "bg-neutral-900 dark:bg-[#BD93F9]"

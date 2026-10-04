@@ -48,7 +48,7 @@ export function ProgramRow({
             </Pressable>
           ) : null}
 
-          <View className={`mr-3 h-7 w-1 ${stripClass}`} />
+          <View className={`mr-3 h-2 w-2 rounded-full ${stripClass}`} />
 
           <View className="shrink">
             <Text className="text-[15px] font-semibold text-neutral-900 dark:text-slate-50">
@@ -62,7 +62,7 @@ export function ProgramRow({
           hitSlop={8}
           className="ml-2 h-9 w-9 items-center justify-center"
         >
-          <Trash2 width={16} height={16} color="#EF4444" />
+          <Trash2 width={16} height={16} color="#7393B3" />
         </Pressable>
       </View>
     </Pressable>

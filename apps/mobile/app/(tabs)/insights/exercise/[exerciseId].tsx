@@ -118,7 +118,7 @@ export default function ExerciseProgressionScreen() {
 
           {/* Period stats */}
           <View>
-            <View className="mb-2 flex-row overflow-hidden rounded-xl border border-neutral-200 dark:border-[#44475A]">
+            <View className="mb-2 flex-row overflow-hidden  border border-neutral-200 dark:border-[#44475A]">
               {(["week", "month", "year"] as PeriodKey[]).map((p) => {
                 const active = period === p;
 

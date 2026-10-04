@@ -229,7 +229,7 @@ export function ProgressPhotoAlignmentEditor({
             accessibilityLabel="Close alignment editor"
             disabled={isSaving}
             onPress={onCancel}
-            className="h-11 w-11 items-center justify-center rounded-full bg-neutral-100 dark:bg-[#343746]"
+            className="h-11 w-11 items-center justify-center  bg-neutral-100 dark:bg-[#343746]"
           >
             <X size={21} color="#7C3AED" />
           </Pressable>
@@ -244,7 +244,7 @@ export function ProgressPhotoAlignmentEditor({
         >
           <GestureDetector gesture={gestures}>
             <View
-              className="overflow-hidden rounded-3xl bg-black"
+              className="overflow-hidden  bg-black"
               style={{
                 width: viewport.width,
                 height: viewport.height,
@@ -279,7 +279,7 @@ export function ProgressPhotoAlignmentEditor({
 
               <View
                 pointerEvents="none"
-                className="absolute bottom-3 left-3 rounded-full bg-black/60 px-3 py-1.5"
+                className="absolute bottom-3 left-3  bg-black/60 px-3 py-1.5"
               >
                 <Text className="text-xs font-semibold text-white">
                   {draftStatus === "manual"
@@ -322,7 +322,7 @@ export function ProgressPhotoAlignmentEditor({
                   accessibilityState={{ selected: overlayOpacity === opacity }}
                   onPress={() => setOverlayOpacity(opacity)}
                   className={[
-                    "flex-1 items-center rounded-xl px-2 py-2.5",
+                    "flex-1 items-center  px-2 py-2.5",
                     overlayOpacity === opacity
                       ? "bg-neutral-900 dark:bg-[#BD93F9]"
                       : "bg-neutral-100 dark:bg-[#343746]",
@@ -354,7 +354,7 @@ export function ProgressPhotoAlignmentEditor({
                 }
               }}
               className={[
-                "flex-1 flex-row items-center justify-center rounded-xl px-3 py-3",
+                "flex-1 flex-row items-center justify-center  px-3 py-3",
                 photo.automaticRenderTransform
                   ? "bg-neutral-100 dark:bg-[#343746]"
                   : "bg-neutral-100/50 dark:bg-[#343746]/50",
@@ -370,7 +370,7 @@ export function ProgressPhotoAlignmentEditor({
               accessibilityLabel="Reset to no alignment"
               disabled={isSaving}
               onPress={() => applyTransform(identityTransform(), "unavailable")}
-              className="flex-1 items-center justify-center rounded-xl bg-neutral-100 px-3 py-3 dark:bg-[#343746]"
+              className="flex-1 items-center justify-center  bg-neutral-100 px-3 py-3 dark:bg-[#343746]"
             >
               <Text className="text-xs font-semibold text-zinc-800 dark:text-[#F8F8F2]">
                 No alignment
@@ -384,7 +384,7 @@ export function ProgressPhotoAlignmentEditor({
             disabled={isSaving || hasImageError}
             onPress={save}
             className={[
-              "mt-4 w-full flex-row items-center justify-center rounded-2xl px-4 py-4",
+              "mt-4 w-full flex-row items-center justify-center  px-4 py-4",
               isSaving || hasImageError
                 ? "bg-neutral-400 dark:bg-[#6272A4]"
                 : "bg-neutral-900 dark:bg-[#BD93F9]",

@@ -58,7 +58,7 @@ export const CalendarMonth = memo(function CalendarMonth({
           onPress={goPrev}
           accessibilityRole="button"
           accessibilityLabel="Previous month"
-          className="h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-900"
+          className="h-10 w-10 items-center justify-center  bg-zinc-100 dark:bg-zinc-900"
         >
           <ChevronLeft size={22} color={navIconColor} strokeWidth={2.4} />
         </Pressable>
@@ -71,7 +71,7 @@ export const CalendarMonth = memo(function CalendarMonth({
           onPress={goNext}
           accessibilityRole="button"
           accessibilityLabel="Next month"
-          className="h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-900"
+          className="h-10 w-10 items-center justify-center  bg-zinc-100 dark:bg-zinc-900"
         >
           <ChevronRight size={22} color={navIconColor} strokeWidth={2.4} />
         </Pressable>
@@ -95,7 +95,7 @@ export const CalendarMonth = memo(function CalendarMonth({
           const bgClass = bgColor ? COLOR_STRIP_MAP[bgColor] : "";
 
           const dayClasses = [
-            "w-10 h-10 items-center justify-center rounded-full",
+            "w-10 h-10 items-center justify-center ",
             "border border-transparent",
             !cell.inMonth && "opacity-30",
             isSelected && "border-2 border-emerald-500 dark:border-emerald-400",

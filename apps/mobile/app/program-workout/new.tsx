@@ -11,7 +11,7 @@
  * - Save converts the draft with WorkoutProgramFactory.domainFromForm,
  *   persists it through workoutProgramRepository.save, then returns to
  *   /(tabs)/workout; the saving flag is cleared in finally.
- * - Cancel returns to Workout unless a save is in progress.
+ * - The plain X icon cancels back to Workout unless a save is in progress.
  * - Maintenance: Update this docstring with every change to this file;
  *   keep it current with the code.
  */
@@ -97,7 +97,7 @@ export default function ProgramWorkoutCreate() {
             disabled={isSaving}
             accessibilityRole="button"
             accessibilityLabel="Cancel program creation"
-            className="h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-[#343746]"
+            className="h-11 w-11 items-center justify-center"
           >
             <X size={24} color={isDark ? "#F8F8F2" : "#111827"} />
           </Pressable>
@@ -118,7 +118,7 @@ export default function ProgramWorkoutCreate() {
             disabled={!canSave}
             accessibilityRole="button"
             accessibilityLabel="Save program"
-            className={`h-11 flex-row items-center justify-center gap-1.5 rounded-full px-3.5 ${
+            className={`h-11 flex-row items-center justify-center gap-1.5  px-3.5 ${
               canSave
                 ? "bg-neutral-900 dark:bg-[#BD93F9]"
                 : "bg-neutral-300 dark:bg-[#44475A]"

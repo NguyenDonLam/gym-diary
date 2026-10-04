@@ -174,7 +174,7 @@ export function DotPlotWithTrend({
   })();
 
   const cardClassName = [
-    "border border-neutral-800 bg-neutral-950 rounded-xl px-3 py-3",
+    "border border-neutral-800 bg-neutral-950  px-3 py-3",
     className ?? "",
   ].join(" ");
 
